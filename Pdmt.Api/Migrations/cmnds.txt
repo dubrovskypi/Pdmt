@@ -1,0 +1,7 @@
+﻿//FOR SQLSERVER LOCALDB
+
+dotnet ef migrations add MigrationName --context SqlServerAppDbContext --output-dir Migrations/SqlServer
+dotnet ef migrations remove --context SqlServerAppDbContext
+dotnet ef database update --context SqlServerAppDbContext
+
+//FOR POSTGERSQL comming soon

@@ -5,6 +5,7 @@ public class Event
 
     public Guid Id { get; set; }
     public Guid UserId { get; set; }
+    public User User { get; set; } = null!;
     public DateTime Timestamp { get; set; }
     public int Type { get; set; } // 0=Negative, 1=Positive
     public string Category { get; set; }

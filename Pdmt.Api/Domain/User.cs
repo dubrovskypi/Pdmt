@@ -6,4 +6,6 @@ public class User
     public string Email { get; set; }
     public string PasswordHash { get; set; }
     public DateTime CreatedAt { get; set; }
+    public List<Event> Events { get; set; } = new();
+    public List<Summary> DailySummaries { get; set; } = new();
 }
