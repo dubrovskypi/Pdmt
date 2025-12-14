@@ -9,10 +9,12 @@ namespace Pdmt.Api.Controllers
     public class EventsController : Controller
     {
         private readonly IEventService _eventService;
+        private readonly IUserService _userService;
 
-        public EventsController(IEventService eventService)
+        public EventsController(IEventService eventService, IUserService userService)
         {
             _eventService = eventService ?? throw new ArgumentNullException(nameof(eventService));
+            _userService = userService ?? throw new ArgumentNullException(nameof(userService));
         }
 
         // GET /events
@@ -28,7 +30,8 @@ namespace Pdmt.Api.Controllers
             [FromQuery] int? minIntensity = null,
             [FromQuery] int? maxIntensity = null)
         {
-            var events = await _eventService.GetEventsAsync(from, to, type, category, isRelationship, minIntensity, maxIntensity);
+            var userId = _userService.GetUserId();
+            var events = await _eventService.GetEventsAsync(userId, from, to, type, category, isRelationship, minIntensity, maxIntensity);
             return Ok(events);
         }
 
@@ -36,7 +39,8 @@ namespace Pdmt.Api.Controllers
         [HttpGet("{id:guid}")]
         public async Task<ActionResult<EventDto>> GetEvent(Guid id)
         {
-            var ev = await _eventService.GetByIdAsync(id);
+            var userId = _userService.GetUserId();
+            var ev = await _eventService.GetByIdAsync(userId, id);
             if (ev == null) return NotFound();
             return Ok(ev);
         }
@@ -45,9 +49,10 @@ namespace Pdmt.Api.Controllers
         [HttpPost]
         public async Task<ActionResult<EventDto>> CreateEvent([FromBody] EventDto model)
         {
+            var userId = _userService.GetUserId();
             if (model == null) return BadRequest();
             model.Id = model.Id == Guid.Empty ? Guid.NewGuid() : model.Id;
-            await _eventService.CreateEventAsync(model);
+            await _eventService.CreateEventAsync(userId, model);
             return CreatedAtAction(nameof(GetEvent), new { id = model.Id }, model);
         }
 
@@ -55,12 +60,13 @@ namespace Pdmt.Api.Controllers
         [HttpPut("{id:guid}")]
         public async Task<IActionResult> UpdateEvent(Guid id, [FromBody] EventDto model)
         {
+            var userId = _userService.GetUserId();
             if (model == null || id != model.Id) return BadRequest();
 
-            var existing = await _eventService.GetByIdAsync(id);
+            var existing = await _eventService.GetByIdAsync(userId, id);
             if (existing == null) return NotFound();
 
-            await _eventService.UpdateEventAsync(model);
+            await _eventService.UpdateEventAsync(userId, id, model);
             return NoContent();
         }
 
@@ -68,10 +74,11 @@ namespace Pdmt.Api.Controllers
         [HttpDelete("{id:guid}")]
         public async Task<IActionResult> DeleteEvent(Guid id)
         {
-            var existing = await _eventService.GetByIdAsync(id);
+            var userId = _userService.GetUserId();
+            var existing = await _eventService.GetByIdAsync(userId, id);
             if (existing == null) return NotFound();
 
-            await _eventService.DeleteEventAsync(id);
+            await _eventService.DeleteEventAsync(userId, id);
             return NoContent();
         }
 
