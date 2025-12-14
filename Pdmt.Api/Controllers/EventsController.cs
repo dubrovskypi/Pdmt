@@ -1,9 +1,13 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.JsonWebTokens;
 using Pdmt.Api.Dto;
 using Pdmt.Api.Services;
+using System.Security.Claims;
 
 namespace Pdmt.Api.Controllers
 {
+    [Authorize]
     [ApiController]
     [Route("api/[controller]")]
     public class EventsController : Controller
@@ -21,6 +25,7 @@ namespace Pdmt.Api.Controllers
         // Supports filtering via query string:
         // ?from=&to=&type=&category=&isRelationship=&minIntensity=&maxIntensity=
         [HttpGet]
+        [AllowAnonymous] //TODO restrict to authorized users only
         public async Task<ActionResult<IEnumerable<EventDto>>> GetEvents(
             [FromQuery] DateTime? from = null,
             [FromQuery] DateTime? to = null,
@@ -30,7 +35,8 @@ namespace Pdmt.Api.Controllers
             [FromQuery] int? minIntensity = null,
             [FromQuery] int? maxIntensity = null)
         {
-            var userId = _userService.GetUserId();
+            //var userId = _userService.GetUserId();
+            var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
             var events = await _eventService.GetEventsAsync(userId, from, to, type, category, isRelationship, minIntensity, maxIntensity);
             return Ok(events);
         }
@@ -39,7 +45,8 @@ namespace Pdmt.Api.Controllers
         [HttpGet("{id:guid}")]
         public async Task<ActionResult<EventDto>> GetEvent(Guid id)
         {
-            var userId = _userService.GetUserId();
+            //var userId = _userService.GetUserId();
+            var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
             var ev = await _eventService.GetByIdAsync(userId, id);
             if (ev == null) return NotFound();
             return Ok(ev);
@@ -83,6 +90,7 @@ namespace Pdmt.Api.Controllers
         }
 
         // keep index for compatibility with existing views
+        [AllowAnonymous]
         public IActionResult Index()
         {
             return View();
