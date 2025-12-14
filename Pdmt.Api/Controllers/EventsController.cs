@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Pdmt.Api.Dto;
+using Pdmt.Api.Infrastructure;
 using Pdmt.Api.Services;
 using System.Security.Claims;
 
@@ -10,7 +11,7 @@ namespace Pdmt.Api.Controllers
     [Authorize]
     [ApiController]
     [Route("api/[controller]")]
-    public class EventsController : Controller
+    public class EventsController : ControllerBase
     {
         private readonly IEventService _eventService;
         private readonly IUserService _userService;
@@ -35,8 +36,8 @@ namespace Pdmt.Api.Controllers
             [FromQuery] int? minIntensity = null,
             [FromQuery] int? maxIntensity = null)
         {
-            //var userId = _userService.GetUserId();
-            var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
+            var userId = _userService.GetUserId();
+            //var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
             var events = await _eventService.GetEventsAsync(userId, from, to, type, category, isRelationship, minIntensity, maxIntensity);
             return Ok(events);
         }
@@ -87,13 +88,6 @@ namespace Pdmt.Api.Controllers
 
             await _eventService.DeleteEventAsync(userId, id);
             return NoContent();
-        }
-
-        // keep index for compatibility with existing views
-        [AllowAnonymous]
-        public IActionResult Index()
-        {
-            return View();
         }
     }
 }

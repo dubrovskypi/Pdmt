@@ -4,13 +4,8 @@ namespace Pdmt.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class SummaryController : Controller
+    public class SummaryController : ControllerBase
     {
-        public IActionResult Index()
-        {
-            return View();
-        }
-
         [HttpPost]
         public IActionResult CreateDailySummary()
         {

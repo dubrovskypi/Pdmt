@@ -5,7 +5,7 @@ namespace Pdmt.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class StatsController : Controller
+    public class StatsController : ControllerBase
     {
         //GET /stats/weekly
 
@@ -37,12 +37,7 @@ namespace Pdmt.Api.Controllers
         [HttpGet("stats/weekly")]
         public IActionResult WeeklyStats()
         {
-            return View();
-        }
-
-        public IActionResult Index()
-        {
-            return View();
+            return NoContent();
         }
     }
 }

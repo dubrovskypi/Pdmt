@@ -1,0 +1,7 @@
+# For more info on HTTP files go to https://aka.ms/vs/httpfile
+# Does not work without .NET 9.0 SDK installed.
+@rootUrl = http://localhost:5131
+
+GET {{rootUrl}}/api/events
+
+###

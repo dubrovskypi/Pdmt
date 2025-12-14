@@ -5,18 +5,15 @@ using Pdmt.Api.Services;
 
 namespace Pdmt.Api.Controllers
 {
-    public class AuthController : Controller
+    [ApiController]
+    [Route("api/auth")]
+    public class AuthController : ControllerBase
     {
         private readonly IAuthService _auth;
 
         public AuthController(IAuthService auth)
         {
             _auth = auth;
-        }
-
-        public IActionResult Index()
-        {
-            return View();
         }
 
         [HttpPost("register")]
@@ -31,12 +28,6 @@ namespace Pdmt.Api.Controllers
         public async Task<ActionResult<AuthResultDto>> Login(UserDto dto)
         {
             return await _auth.LoginAsync(dto);
-        }
-
-        [HttpGet]
-        public IActionResult Me()
-        {
-            return View();
         }
 
     }
