@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Pdmt.Api.Dto;
+using Pdmt.Api.Infrastructure;
 using Pdmt.Api.Services;
 
 namespace Pdmt.Api.Controllers
@@ -20,15 +21,29 @@ namespace Pdmt.Api.Controllers
         [AllowAnonymous]
         public async Task<ActionResult<AuthResultDto>> Register(UserDto dto)
         {
-            return await _auth.RegisterAsync(dto);
+            return Ok(await _auth.RegisterAsync(dto));
         }
 
         [HttpPost("login")]
         [AllowAnonymous]
         public async Task<ActionResult<AuthResultDto>> Login(UserDto dto)
         {
-            return await _auth.LoginAsync(dto);
+            return Ok(await _auth.LoginAsync(dto));
         }
 
+        [HttpPost("refresh")]
+        [AllowAnonymous]
+        public async Task<ActionResult<AuthResultDto>> Refresh(RefreshRequestDto dto)
+        {
+            return Ok(await _auth.RefreshAsync(dto.RefreshToken));
+        }
+
+        [HttpPost("logout")]
+        [Authorize]
+        public async Task<IActionResult> Logout()
+        {
+            await _auth.LogoutAsync(User.GetUserId());
+            return NoContent();
+        }
     }
 }
