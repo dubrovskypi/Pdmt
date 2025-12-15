@@ -7,5 +7,6 @@ public class User
     public string PasswordHash { get; set; }
     public DateTime CreatedAt { get; set; }
     public List<Event> Events { get; set; } = new();
-    public List<Summary> DailySummaries { get; set; } = new();
+    public List<Summary> Summaries { get; set; } = new();
+    public List<RefreshToken> RefreshTokens { get; set; } = new();
 }
