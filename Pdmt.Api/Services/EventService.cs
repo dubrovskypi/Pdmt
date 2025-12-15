@@ -15,7 +15,7 @@ namespace Pdmt.Api.Services
         public async Task CreateEventAsync(Guid userId, EventDto ev)
         {
             if (ev is null)
-                throw new ArgumentNullException("Event cannot be null.", nameof(ev));
+                throw new ArgumentNullException(nameof(ev), "Event cannot be null.");
             if (userId == Guid.Empty)
                 throw new ArgumentException("User ID cannot be empty.", nameof(userId));
             var entity = new Event
@@ -119,6 +119,28 @@ namespace Pdmt.Api.Services
             existing.CanInfluence = newEvent.CanInfluence;
             existing.IsRelationship = newEvent.IsRelationship;
             await _db.SaveChangesAsync();
+        }
+
+        //FOR DEBUGGING PURPOSES ONLY
+        public async Task<IEnumerable<EventDto>> GetAllEventsAsync()
+        {
+            var query = _db.Events.
+                AsNoTracking();
+            var eventDtos = await query.
+                Select(ev => new EventDto
+                {
+                    Id = ev.Id,
+                    Timestamp = ev.Timestamp,
+                    Type = ev.Type,
+                    Category = ev.Category,
+                    Intensity = ev.Intensity,
+                    Title = ev.Title,
+                    Description = ev.Description,
+                    Context = ev.Context,
+                    CanInfluence = ev.CanInfluence,
+                    IsRelationship = ev.IsRelationship
+                }).ToListAsync();
+            return eventDtos;
         }
     }
 }

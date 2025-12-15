@@ -9,5 +9,7 @@ namespace Pdmt.Api.Services
         Task CreateEventAsync(Guid userId, EventDto ev);
         Task UpdateEventAsync(Guid userId, Guid id, EventDto ev);
         Task DeleteEventAsync(Guid userId, Guid id);
+        //FOR DEBUGGING PURPOSES ONLY
+        Task<IEnumerable<EventDto>> GetAllEventsAsync();
     }
 }

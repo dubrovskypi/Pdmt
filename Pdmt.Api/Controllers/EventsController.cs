@@ -1,10 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.JsonWebTokens;
 using Pdmt.Api.Dto;
 using Pdmt.Api.Infrastructure;
 using Pdmt.Api.Services;
-using System.Security.Claims;
 
 namespace Pdmt.Api.Controllers
 {
@@ -14,19 +12,16 @@ namespace Pdmt.Api.Controllers
     public class EventsController : ControllerBase
     {
         private readonly IEventService _eventService;
-        private readonly IUserService _userService;
 
-        public EventsController(IEventService eventService, IUserService userService)
+        public EventsController(IEventService eventService)
         {
             _eventService = eventService ?? throw new ArgumentNullException(nameof(eventService));
-            _userService = userService ?? throw new ArgumentNullException(nameof(userService));
         }
 
         // GET /events
         // Supports filtering via query string:
         // ?from=&to=&type=&category=&isRelationship=&minIntensity=&maxIntensity=
         [HttpGet]
-        [AllowAnonymous] //TODO restrict to authorized users only
         public async Task<ActionResult<IEnumerable<EventDto>>> GetEvents(
             [FromQuery] DateTime? from = null,
             [FromQuery] DateTime? to = null,
@@ -36,8 +31,7 @@ namespace Pdmt.Api.Controllers
             [FromQuery] int? minIntensity = null,
             [FromQuery] int? maxIntensity = null)
         {
-            var userId = _userService.GetUserId();
-            //var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
+            var userId = User.GetUserId();
             var events = await _eventService.GetEventsAsync(userId, from, to, type, category, isRelationship, minIntensity, maxIntensity);
             return Ok(events);
         }
@@ -46,8 +40,7 @@ namespace Pdmt.Api.Controllers
         [HttpGet("{id:guid}")]
         public async Task<ActionResult<EventDto>> GetEvent(Guid id)
         {
-            //var userId = _userService.GetUserId();
-            var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
+            var userId = User.GetUserId();
             var ev = await _eventService.GetByIdAsync(userId, id);
             if (ev == null) return NotFound();
             return Ok(ev);
@@ -57,9 +50,9 @@ namespace Pdmt.Api.Controllers
         [HttpPost]
         public async Task<ActionResult<EventDto>> CreateEvent([FromBody] EventDto model)
         {
-            var userId = _userService.GetUserId();
+            var userId = User.GetUserId();
             if (model == null) return BadRequest();
-            model.Id = model.Id == Guid.Empty ? Guid.NewGuid() : model.Id;
+            if (model.Id == Guid.Empty) model.Id = Guid.NewGuid();
             await _eventService.CreateEventAsync(userId, model);
             return CreatedAtAction(nameof(GetEvent), new { id = model.Id }, model);
         }
@@ -68,12 +61,10 @@ namespace Pdmt.Api.Controllers
         [HttpPut("{id:guid}")]
         public async Task<IActionResult> UpdateEvent(Guid id, [FromBody] EventDto model)
         {
-            var userId = _userService.GetUserId();
+            var userId = User.GetUserId();
             if (model == null || id != model.Id) return BadRequest();
-
             var existing = await _eventService.GetByIdAsync(userId, id);
             if (existing == null) return NotFound();
-
             await _eventService.UpdateEventAsync(userId, id, model);
             return NoContent();
         }
@@ -82,12 +73,20 @@ namespace Pdmt.Api.Controllers
         [HttpDelete("{id:guid}")]
         public async Task<IActionResult> DeleteEvent(Guid id)
         {
-            var userId = _userService.GetUserId();
+            var userId = User.GetUserId();
             var existing = await _eventService.GetByIdAsync(userId, id);
             if (existing == null) return NotFound();
-
             await _eventService.DeleteEventAsync(userId, id);
             return NoContent();
+        }
+
+        // GET /allevents
+        [HttpGet("all")]
+        [AllowAnonymous] //FOR DEBUG PURPOSES ONLY
+        public async Task<ActionResult<EventDto>> GetAllEvents()
+        {
+            var events = await _eventService.GetAllEventsAsync();
+            return Ok(events);
         }
     }
 }

@@ -76,7 +76,6 @@ builder.Services.AddAuthorization();
 
 // Register application services
 builder.Services.AddScoped<IEventService, EventService>();
-builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 
 var app = builder.Build();
