@@ -46,10 +46,9 @@ namespace Pdmt.Api.Services
 
         public async Task<EventDto?> GetByIdAsync(Guid userId, Guid id)
         {
-            //todo use userId to restrict access
             var ev = await _db.Events.
                 AsNoTracking().
-                FirstOrDefaultAsync(e => e.Id == id);
+                FirstOrDefaultAsync(e => e.Id == id && e.UserId == userId);
             if (ev is null) return null;
             var evDto = new EventDto
             {
@@ -105,9 +104,8 @@ namespace Pdmt.Api.Services
 
         public async Task UpdateEventAsync(Guid userId, Guid eventId, EventDto newEvent)
         {
-            //todo use userId to restrict access
             var existing = await _db.Events.
-                FirstOrDefaultAsync(e => e.Id == eventId);
+                FirstOrDefaultAsync(e => e.Id == eventId && e.UserId == userId);
             if (existing is null) return;
             existing.Timestamp = newEvent.Timestamp;
             existing.Type = newEvent.Type;

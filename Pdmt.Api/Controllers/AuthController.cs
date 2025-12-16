@@ -24,6 +24,8 @@ namespace Pdmt.Api.Controllers
             return Ok(await _auth.RegisterAsync(dto));
         }
 
+        //TODO Rate limiting auth endpoints
+        //TODO TLS everywhere
         [HttpPost("login")]
         [AllowAnonymous]
         public async Task<ActionResult<AuthResultDto>> Login(UserDto dto)
