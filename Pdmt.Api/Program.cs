@@ -3,7 +3,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Pdmt.Api.Data;
+using Pdmt.Api.Infrastructure;
 using Pdmt.Api.Services;
+using StackExchange.Redis;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -34,13 +36,10 @@ builder.Services.AddSwaggerGen(options =>
         }
     });
 });
-
 // Add MVC controllers (attribute routing)
 builder.Services.AddControllers();
-
 // Register DbContext
 var dbProvider = builder.Configuration["Database:Provider"];
-
 if (dbProvider == "SqlServer")
 {
     builder.Services.AddDbContext<AppDbContext, SqlServerAppDbContext>(options =>
@@ -55,7 +54,6 @@ else
 {
     throw new Exception("Unknown database provider");
 }
-
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -71,12 +69,20 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt["Secret"]!))
         };
     });
-
 builder.Services.AddAuthorization();
-
+builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
+{
+    var cs = builder.Configuration.GetValue<string>("Redis:ConnectionString");
+    return ConnectionMultiplexer.Connect(cs!);
+});
 // Register application services
 builder.Services.AddScoped<IEventService, EventService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IRateLimitService, RedisRateLimitService>();
+
+// Configurations
+builder.Services.Configure<RateLimitOptions>(
+    builder.Configuration.GetSection("RateLimiting"));
 
 var app = builder.Build();
 

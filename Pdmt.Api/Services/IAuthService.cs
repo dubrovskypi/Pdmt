@@ -4,7 +4,7 @@ namespace Pdmt.Api.Services
 {
     public interface IAuthService
     {
-        Task<AuthResultDto> RegisterAsync(UserDto dto);
+        Task<AuthResultDto> RegisterAsync(UserDto dto, string ip);
         Task<AuthResultDto> LoginAsync(UserDto dto);
         Task<AuthResultDto> RefreshAsync(string refreshToken);
         Task LogoutAsync(Guid userId);

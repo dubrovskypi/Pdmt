@@ -21,10 +21,10 @@ namespace Pdmt.Api.Controllers
         [AllowAnonymous]
         public async Task<ActionResult<AuthResultDto>> Register(UserDto dto)
         {
-            return Ok(await _auth.RegisterAsync(dto));
+            var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+            return Ok(await _auth.RegisterAsync(dto, ip));
         }
 
-        //TODO Rate limiting auth endpoints
         //TODO TLS everywhere
         [HttpPost("login")]
         [AllowAnonymous]

@@ -14,15 +14,19 @@ namespace Pdmt.Api.Services
     {
         private readonly AppDbContext _db;
         private readonly IConfiguration _config;
+        private readonly IRateLimitService _rateLimit;
 
-        public AuthService(AppDbContext db, IConfiguration config)
+        public AuthService(AppDbContext db, IConfiguration config, IRateLimitService rateLimit)
         {
             _db = db;
             _config = config;
+            _rateLimit = rateLimit;
         }
 
-        public async Task<AuthResultDto> RegisterAsync(UserDto dto)
+        public async Task<AuthResultDto> RegisterAsync(UserDto dto, string ip)
         {
+            await _rateLimit.CheckAsync("Auth.Register", ip);
+
             var exists = await _db.Users.AnyAsync(u => u.Email == dto.Email);
             if (exists)
                 throw new InvalidOperationException("User already exists");
@@ -52,6 +56,8 @@ namespace Pdmt.Api.Services
 
         public async Task<AuthResultDto> LoginAsync(UserDto dto)
         {
+            await _rateLimit.CheckAsync("Auth.Login", dto.Email);
+
             var user = await _db.Users.
                 Include(u => u.RefreshTokens).
                 FirstOrDefaultAsync(u => u.Email == dto.Email);
@@ -82,6 +88,9 @@ namespace Pdmt.Api.Services
 
         public async Task<AuthResultDto> RefreshAsync(string refreshToken)
         {
+            //todo hash refresh token
+            await _rateLimit.CheckAsync("Auth.Refresh", refreshToken);
+
             var token = await _db.RefreshTokens
                 .Include(rt => rt.User)
                 .FirstOrDefaultAsync(rt =>
@@ -156,7 +165,6 @@ namespace Pdmt.Api.Services
         {
             public string Token { get; set; } = null!;
             public DateTime ExpiresAt { get; set; }
-
             public AccessToken(string token, DateTime expiresAt)
             {
                 Token = token;
