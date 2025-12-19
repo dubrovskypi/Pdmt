@@ -7,3 +7,5 @@
         public string RefreshToken { get; set; } = null!;
     }
 }
+
+//TODO Separate DTOs: Request DTOs and Response DTOs

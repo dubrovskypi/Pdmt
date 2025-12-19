@@ -1,0 +1,20 @@
+﻿1) DoS prevention 
+	Examples
+		No rate limit on /search
+		No pagination on list endpoints
+		Large file uploads
+		Complex unindexed queries
+
+	Defense
+		Rate limiting (global + per endpoint)
+		Pagination and maximum limits
+		Request size limits
+		Query complexity control
+		Timeouts and cancellation tokens
+
+	ASP.NET Core:
+		built-in rate limiting middleware
+		request body size limits
+		cancellation via HttpContext.RequestAborted
+
+Continue from 7th 
