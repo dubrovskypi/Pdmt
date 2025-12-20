@@ -54,7 +54,7 @@ namespace Pdmt.Api.Services
             };
         }
 
-        public async Task<AuthResultDto> LoginAsync(UserDto dto)
+        public async Task<AuthResultDto> LoginAsync(UserDto dto, string ip)
         {
             await _rateLimit.CheckAsync("Auth.Login", dto.Email);
 
@@ -62,11 +62,17 @@ namespace Pdmt.Api.Services
                 Include(u => u.RefreshTokens).
                 FirstOrDefaultAsync(u => u.Email == dto.Email);
 
-            if (user == null)
-                throw new InvalidOperationException("Invalid credentials (un)");
-            var ok = BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash);
-            if (!ok)
-                throw new InvalidOperationException("Invalid credentials (pwd)");
+            if (user == null || !BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash))
+            {
+                _db.FailedLoginAttempts.Add(new FailedLoginAttempt
+                {
+                    Email = dto.Email,
+                    IpAddress = ip,
+                    OccurredAtUtc = DateTime.UtcNow,
+                    Reason = "Invalid credentials"
+                });
+                throw new InvalidOperationException("Invalid credentials");
+            }
 
             // revoke old tokens
             foreach (var rt in user.RefreshTokens)

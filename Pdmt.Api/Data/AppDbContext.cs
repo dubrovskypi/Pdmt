@@ -42,4 +42,5 @@ public class AppDbContext : DbContext
     public DbSet<RefreshToken> RefreshTokens { get; set; } = null!;
     public DbSet<Event> Events { get; set; } = null!;
     public DbSet<Summary> Summaries { get; set; } = null!;
+    public DbSet<FailedLoginAttempt> FailedLoginAttempts { get; set; } = null!;
 }
