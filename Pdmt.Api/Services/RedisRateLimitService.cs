@@ -7,9 +7,6 @@ namespace Pdmt.Api.Services
 {
     public class RedisRateLimitService : IRateLimitService
     {
-        //private const int MaxAttempts = 3;
-        //private static readonly TimeSpan Window = TimeSpan.FromMinutes(3);
-        
         private readonly IDatabase _db;
         private readonly RateLimitOptions _options;
 
@@ -33,33 +30,5 @@ namespace Pdmt.Api.Services
                 throw new RateLimitExceededException(ruleName);
             }
         }
-
-        //public async Task CheckLoginAttemptAsync(string email)
-        //{
-        //    var key = $"auth:login:{email.ToLowerInvariant()}";
-        //    var attempts = await _db.StringIncrementAsync(key);
-        //    if (attempts == 1)
-        //    {
-        //        await _db.KeyExpireAsync(key, Window);
-        //    }
-        //    if (attempts > MaxAttempts)
-        //    {
-        //        throw new InvalidOperationException("Too many login attempts. Try again later.");
-        //    }
-        //}
-
-        //public async Task CheckRefreshAttemptAsync(string token)
-        //{
-        //    var key = $"auth:refresh:{token}";
-        //    var attempts = await _db.StringIncrementAsync(key);
-        //    if (attempts == 1)
-        //    {
-        //        await _db.KeyExpireAsync(key, Window);
-        //    }
-        //    if (attempts > MaxAttempts)
-        //    {
-        //        throw new InvalidOperationException("Too many login attempts. Try again later.");
-        //    }
-        //}
     }
 }

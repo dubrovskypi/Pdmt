@@ -70,6 +70,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 builder.Services.AddAuthorization();
+builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
 {
     var cs = builder.Configuration.GetValue<string>("Redis:ConnectionString");
@@ -78,7 +79,9 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
 // Register application services
 builder.Services.AddScoped<IEventService, EventService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
-builder.Services.AddScoped<IRateLimitService, RedisRateLimitService>();
+builder.Services.AddScoped<RedisRateLimitService>();
+builder.Services.AddScoped<InMemoryRateLimitService>();
+builder.Services.AddScoped<IRateLimitService, CompositeRateLimitService>();
 
 // Configurations
 builder.Services.Configure<RateLimitOptions>(
