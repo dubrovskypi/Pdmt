@@ -4,6 +4,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Pdmt.Api.Data;
 using Pdmt.Api.Infrastructure;
+using Pdmt.Api.Middleware;
 using Pdmt.Api.Services;
 using StackExchange.Redis;
 using System.Text;
@@ -99,6 +100,7 @@ if (app.Environment.IsDevelopment())
 // Configure the HTTP request pipeline.
 app.UseHttpsRedirection();
 app.MapControllers();
+app.UseMiddleware<HttpLoggingMiddleware>();
 
 app.MapGet("/", () => Results.Ok("Hello World!"));
 
