@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Pdmt.Api.Dto;
-using Pdmt.Api.Infrastructure;
+using Pdmt.Api.Infrastructure.Extensions;
 using Pdmt.Api.Services;
 
 namespace Pdmt.Api.Controllers

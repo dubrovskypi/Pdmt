@@ -1,7 +1,7 @@
 ﻿using Microsoft.IdentityModel.JsonWebTokens;
 using System.Security.Claims;
 
-namespace Pdmt.Api.Infrastructure
+namespace Pdmt.Api.Infrastructure.Extensions
 {
     public static class ClaimsPrincipalExtensions
     {
