@@ -8,6 +8,7 @@ using Pdmt.Api.Middleware;
 using Pdmt.Api.Services;
 using StackExchange.Redis;
 using System.Text;
+using FluentValidation;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -45,6 +46,8 @@ if (dbProvider == "SqlServer")
 {
     builder.Services.AddDbContext<AppDbContext, SqlServerAppDbContext>(options =>
         options.UseSqlServer(builder.Configuration.GetConnectionString("SqlServer")));
+    builder.Services.AddHealthChecks()
+        .AddSqlServer(builder.Configuration.GetConnectionString("SqlServer"));
 }
 else if (dbProvider == "Postgres")
 {
@@ -55,6 +58,7 @@ else
 {
     throw new Exception("Unknown database provider");
 }
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -77,6 +81,8 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
     var cs = builder.Configuration.GetValue<string>("Redis:ConnectionString");
     return ConnectionMultiplexer.Connect(cs!);
 });
+builder.Services.AddHealthChecks().AddRedis(builder.Configuration.GetValue<string>("Redis:ConnectionString"));
+builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 // Register application services
 builder.Services.AddScoped<IEventService, EventService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -85,8 +91,7 @@ builder.Services.AddScoped<InMemoryRateLimitService>();
 builder.Services.AddScoped<IRateLimitService, CompositeRateLimitService>();
 
 // Configurations
-builder.Services.Configure<RateLimitOptions>(
-    builder.Configuration.GetSection("RateLimiting"));
+builder.Services.Configure<RateLimitOptions>(builder.Configuration.GetSection("RateLimiting"));
 
 var app = builder.Build();
 
@@ -102,6 +107,7 @@ app.UseMiddleware<ExceptionHandlingMiddleware>();
 // Configure the HTTP request pipeline.
 app.UseHttpsRedirection();
 app.MapControllers();
+app.MapHealthChecks("/health");
 app.UseMiddleware<HttpLoggingMiddleware>();
 
 app.MapGet("/", () => Results.Ok("Hello World!"));
