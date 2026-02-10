@@ -53,7 +53,6 @@ namespace Pdmt.Api.Controllers
             var userId = User.GetUserId();
             if (model == null) return BadRequest();
             if (model.Id == Guid.Empty) model.Id = Guid.NewGuid();
-            //TODO VALIDATE model
             await _eventService.CreateEventAsync(userId, model);
             return CreatedAtAction(nameof(GetEvent), new { id = model.Id }, model);
         }

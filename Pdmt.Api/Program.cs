@@ -8,7 +8,6 @@ using Pdmt.Api.Middleware;
 using Pdmt.Api.Services;
 using StackExchange.Redis;
 using System.Text;
-using FluentValidation;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -82,7 +81,6 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
     return ConnectionMultiplexer.Connect(cs!);
 });
 builder.Services.AddHealthChecks().AddRedis(builder.Configuration.GetValue<string>("Redis:ConnectionString"));
-builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 // Register application services
 builder.Services.AddScoped<IEventService, EventService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
