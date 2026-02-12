@@ -22,7 +22,7 @@ namespace Pdmt.Api.Controllers
         // Supports filtering via query string:
         // ?from=&to=&type=&category=&isRelationship=&minIntensity=&maxIntensity=
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<EventDto>>> GetEvents(
+        public async Task<ActionResult<IEnumerable<EventResponseDto>>> GetEvents(
             [FromQuery] DateTime? from = null,
             [FromQuery] DateTime? to = null,
             [FromQuery] int? type = null,
@@ -38,7 +38,7 @@ namespace Pdmt.Api.Controllers
 
         // GET /events/{id}
         [HttpGet("{id:guid}")]
-        public async Task<ActionResult<EventDto>> GetEvent(Guid id)
+        public async Task<ActionResult<EventResponseDto>> GetEvent(Guid id)
         {
             var userId = User.GetUserId();
             var ev = await _eventService.GetByIdAsync(userId, id);
@@ -48,21 +48,19 @@ namespace Pdmt.Api.Controllers
 
         // POST /events
         [HttpPost]
-        public async Task<ActionResult<EventDto>> CreateEvent([FromBody] EventDto model)
+        public async Task<ActionResult<EventResponseDto>> CreateEvent([FromBody] CreateEventDto model)
         {
             var userId = User.GetUserId();
             if (model == null) return BadRequest();
-            if (model.Id == Guid.Empty) model.Id = Guid.NewGuid();
-            await _eventService.CreateEventAsync(userId, model);
-            return CreatedAtAction(nameof(GetEvent), new { id = model.Id }, model);
+            var created = await _eventService.CreateEventAsync(userId, model);
+            return CreatedAtAction(nameof(GetEvent), new { id = created.Id }, created);
         }
 
         // PUT /events/{id}
         [HttpPut("{id:guid}")]
-        public async Task<IActionResult> UpdateEvent(Guid id, [FromBody] EventDto model)
+        public async Task<IActionResult> UpdateEvent(Guid id, [FromBody] UpdateEventDto model)
         {
             var userId = User.GetUserId();
-            if (model == null || id != model.Id) return BadRequest();
             var existing = await _eventService.GetByIdAsync(userId, id);
             if (existing == null) return NotFound();
             await _eventService.UpdateEventAsync(userId, id, model);
@@ -83,7 +81,7 @@ namespace Pdmt.Api.Controllers
         // GET /allevents
         [HttpGet("all")]
         [AllowAnonymous] //FOR DEBUG PURPOSES ONLY
-        public async Task<ActionResult<EventDto>> GetAllEvents()
+        public async Task<ActionResult<EventResponseDto>> GetAllEvents()
         {
             var events = await _eventService.GetAllEventsAsync();
             return Ok(events);

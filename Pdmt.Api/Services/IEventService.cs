@@ -4,12 +4,12 @@ namespace Pdmt.Api.Services
 {
     public interface IEventService
     {
-        Task<IEnumerable<EventDto>> GetEventsAsync(Guid userId, DateTime? from, DateTime? to, int? type, string? category, bool? isRelationship, int? minIntensity, int? maxIntensity);
-        Task<EventDto?> GetByIdAsync(Guid userId, Guid id);
-        Task CreateEventAsync(Guid userId, EventDto ev);
-        Task UpdateEventAsync(Guid userId, Guid id, EventDto ev);
+        Task<IEnumerable<EventResponseDto>> GetEventsAsync(Guid userId, DateTime? from, DateTime? to, int? type, string? category, bool? isRelationship, int? minIntensity, int? maxIntensity);
+        Task<EventResponseDto?> GetByIdAsync(Guid userId, Guid id);
+        Task<EventResponseDto> CreateEventAsync(Guid userId, CreateEventDto ev);
+        Task<bool> UpdateEventAsync(Guid userId, Guid id, UpdateEventDto ev);
         Task DeleteEventAsync(Guid userId, Guid id);
         //FOR DEBUGGING PURPOSES ONLY
-        Task<IEnumerable<EventDto>> GetAllEventsAsync();
+        Task<IEnumerable<EventResponseDto>> GetAllEventsAsync();
     }
 }
