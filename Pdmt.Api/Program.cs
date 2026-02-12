@@ -87,6 +87,8 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<RedisRateLimitService>();
 builder.Services.AddScoped<InMemoryRateLimitService>();
 builder.Services.AddScoped<IRateLimitService, CompositeRateLimitService>();
+// Register background services
+//builder.Services.AddHostedService<TokenCleanupBgService>(); //uncoment when cleanup will be needed
 
 // Configurations
 builder.Services.Configure<RateLimitOptions>(builder.Configuration.GetSection("RateLimiting"));

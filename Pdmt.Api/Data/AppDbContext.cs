@@ -13,6 +13,10 @@ public class AppDbContext : DbContext
         base.OnModelCreating(builder);
 
         builder.Entity<User>()
+            .Property(u => u.Email)
+            .HasMaxLength(128)
+            .IsRequired();
+        builder.Entity<User>()
             .HasIndex(u => u.Email)
             .IsUnique();
 
@@ -24,6 +28,8 @@ public class AppDbContext : DbContext
         builder.Entity<RefreshToken>()
             .HasIndex(u => u.Token)
             .IsUnique();
+        builder.Entity<RefreshToken>()
+            .HasIndex(rt => new { rt.UserId, rt.IsRevoked });
 
         builder.Entity<Event>()
             .HasOne(e => e.User)

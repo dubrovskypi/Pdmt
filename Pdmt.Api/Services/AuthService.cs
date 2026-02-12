@@ -27,13 +27,14 @@ namespace Pdmt.Api.Services
         {
             await _rateLimit.CheckAsync("Auth.Register", ip);
 
-            var exists = await _db.Users.AnyAsync(u => u.Email == dto.Email);
+            var normalizedEmail = dto.Email.Trim().ToLower();
+            var exists = await _db.Users.AnyAsync(u => u.Email == normalizedEmail);
             if (exists)
                 throw new InvalidOperationException("User already exists");
             var user = new User
             {
                 Id = Guid.NewGuid(),
-                Email = dto.Email,
+                Email = normalizedEmail,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
                 CreatedAt = DateTime.UtcNow
             };
@@ -58,15 +59,15 @@ namespace Pdmt.Api.Services
         {
             await _rateLimit.CheckAsync("Auth.Login", ip);
 
+            var normalizedEmail = dto.Email.Trim().ToLower();
             var user = await _db.Users.
                 Include(u => u.RefreshTokens).
-                FirstOrDefaultAsync(u => u.Email == dto.Email);
-
+                FirstOrDefaultAsync(u => u.Email == normalizedEmail);
             if (user == null || !BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash))
             {
                 _db.FailedLoginAttempts.Add(new FailedLoginAttempt
                 {
-                    Email = dto.Email,
+                    Email = normalizedEmail,
                     IpAddress = ip,
                     OccurredAtUtc = DateTime.UtcNow,
                     Reason = "Invalid credentials"
