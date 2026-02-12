@@ -53,6 +53,10 @@ public class AppDbContext : DbContext
             .IsUnique();
 
         builder.Entity<FailedLoginAttempt>()
+            .Property(f => f.Email)
+            .HasMaxLength(128)
+            .IsRequired();
+        builder.Entity<FailedLoginAttempt>()
             .HasIndex(f => f.Email);
         builder.Entity<FailedLoginAttempt>()
             .HasIndex(f => f.OccurredAtUtc);

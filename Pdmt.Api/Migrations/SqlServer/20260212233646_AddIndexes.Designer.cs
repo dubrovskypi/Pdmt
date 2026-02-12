@@ -12,8 +12,8 @@ using Pdmt.Api.Data;
 namespace Pdmt.Api.Migrations.SqlServer
 {
     [DbContext(typeof(SqlServerAppDbContext))]
-    [Migration("20260210225121_AddIndexws")]
-    partial class AddIndexws
+    [Migration("20260212233646_AddIndexes")]
+    partial class AddIndexes
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -82,7 +82,8 @@ namespace Pdmt.Api.Migrations.SqlServer
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
 
                     b.Property<string>("IpAddress")
                         .IsRequired()
@@ -131,7 +132,7 @@ namespace Pdmt.Api.Migrations.SqlServer
                     b.HasIndex("Token")
                         .IsUnique();
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("UserId", "IsRevoked");
 
                     b.ToTable("RefreshTokens");
                 });
@@ -176,7 +177,8 @@ namespace Pdmt.Api.Migrations.SqlServer
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
 
                     b.Property<string>("PasswordHash")
                         .IsRequired()

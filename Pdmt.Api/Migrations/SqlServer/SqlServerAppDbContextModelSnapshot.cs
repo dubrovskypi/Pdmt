@@ -79,7 +79,8 @@ namespace Pdmt.Api.Migrations.SqlServer
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
 
                     b.Property<string>("IpAddress")
                         .IsRequired()
@@ -128,7 +129,7 @@ namespace Pdmt.Api.Migrations.SqlServer
                     b.HasIndex("Token")
                         .IsUnique();
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("UserId", "IsRevoked");
 
                     b.ToTable("RefreshTokens");
                 });
@@ -173,7 +174,8 @@ namespace Pdmt.Api.Migrations.SqlServer
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
 
                     b.Property<string>("PasswordHash")
                         .IsRequired()

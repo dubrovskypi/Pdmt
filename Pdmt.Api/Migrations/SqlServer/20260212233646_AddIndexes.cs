@@ -5,11 +5,24 @@
 namespace Pdmt.Api.Migrations.SqlServer
 {
     /// <inheritdoc />
-    public partial class AddIndexws : Migration
+    public partial class AddIndexes : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropIndex(
+                name: "IX_RefreshTokens_UserId",
+                table: "RefreshTokens");
+
+            migrationBuilder.AlterColumn<string>(
+                name: "Email",
+                table: "Users",
+                type: "nvarchar(128)",
+                maxLength: 128,
+                nullable: false,
+                oldClrType: typeof(string),
+                oldType: "nvarchar(450)");
+
             migrationBuilder.AlterColumn<string>(
                 name: "Token",
                 table: "RefreshTokens",
@@ -21,7 +34,8 @@ namespace Pdmt.Api.Migrations.SqlServer
             migrationBuilder.AlterColumn<string>(
                 name: "Email",
                 table: "FailedLoginAttempts",
-                type: "nvarchar(450)",
+                type: "nvarchar(128)",
+                maxLength: 128,
                 nullable: false,
                 oldClrType: typeof(string),
                 oldType: "nvarchar(max)");
@@ -31,6 +45,11 @@ namespace Pdmt.Api.Migrations.SqlServer
                 table: "RefreshTokens",
                 column: "Token",
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_RefreshTokens_UserId_IsRevoked",
+                table: "RefreshTokens",
+                columns: new[] { "UserId", "IsRevoked" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_FailedLoginAttempts_Email",
@@ -61,6 +80,10 @@ namespace Pdmt.Api.Migrations.SqlServer
                 table: "RefreshTokens");
 
             migrationBuilder.DropIndex(
+                name: "IX_RefreshTokens_UserId_IsRevoked",
+                table: "RefreshTokens");
+
+            migrationBuilder.DropIndex(
                 name: "IX_FailedLoginAttempts_Email",
                 table: "FailedLoginAttempts");
 
@@ -77,6 +100,15 @@ namespace Pdmt.Api.Migrations.SqlServer
                 table: "Events");
 
             migrationBuilder.AlterColumn<string>(
+                name: "Email",
+                table: "Users",
+                type: "nvarchar(450)",
+                nullable: false,
+                oldClrType: typeof(string),
+                oldType: "nvarchar(128)",
+                oldMaxLength: 128);
+
+            migrationBuilder.AlterColumn<string>(
                 name: "Token",
                 table: "RefreshTokens",
                 type: "nvarchar(max)",
@@ -90,7 +122,13 @@ namespace Pdmt.Api.Migrations.SqlServer
                 type: "nvarchar(max)",
                 nullable: false,
                 oldClrType: typeof(string),
-                oldType: "nvarchar(450)");
+                oldType: "nvarchar(128)",
+                oldMaxLength: 128);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_RefreshTokens_UserId",
+                table: "RefreshTokens",
+                column: "UserId");
         }
     }
 }
