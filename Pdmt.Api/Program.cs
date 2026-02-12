@@ -102,11 +102,13 @@ if (app.Environment.IsDevelopment())
 
 app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseMiddleware<ExceptionHandlingMiddleware>();
+app.UseMiddleware<HttpLoggingMiddleware>();
 // Configure the HTTP request pipeline.
 app.UseHttpsRedirection();
+app.UseAuthentication();
+app.UseAuthorization();
 app.MapControllers();
 app.MapHealthChecks("/health");
-app.UseMiddleware<HttpLoggingMiddleware>();
 
 app.MapGet("/", () => Results.Ok("Hello World!"));
 

@@ -40,9 +40,9 @@ namespace Pdmt.Api.Services
             _db.Users.Add(user);
             await _db.SaveChangesAsync();
 
-            var refreshToken = CreateRefreshToken(user);
+            var (refreshTokenEntity, rawRefreshToken) = CreateRefreshToken(user);
 
-            _db.RefreshTokens.Add(refreshToken);
+            _db.RefreshTokens.Add(refreshTokenEntity);
             await _db.SaveChangesAsync();
 
             var accessToken = GenerateAccessToken(user);
@@ -50,13 +50,13 @@ namespace Pdmt.Api.Services
             {
                 AccessToken = accessToken.Token,
                 AccessTokenExpiresAt = accessToken.ExpiresAt,
-                RefreshToken = refreshToken.Token
+                RefreshToken = rawRefreshToken
             };
         }
 
         public async Task<AuthResultDto> LoginAsync(UserDto dto, string ip)
         {
-            await _rateLimit.CheckAsync("Auth.Login", dto.Email);
+            await _rateLimit.CheckAsync("Auth.Login", ip);
 
             var user = await _db.Users.
                 Include(u => u.RefreshTokens).
@@ -71,6 +71,7 @@ namespace Pdmt.Api.Services
                     OccurredAtUtc = DateTime.UtcNow,
                     Reason = "Invalid credentials"
                 });
+                await _db.SaveChangesAsync();
                 throw new InvalidOperationException("Invalid credentials");
             }
 
@@ -78,9 +79,9 @@ namespace Pdmt.Api.Services
             foreach (var rt in user.RefreshTokens)
                 rt.IsRevoked = true;
 
-            var refreshToken = CreateRefreshToken(user);
+            var (refreshTokenEntity, rawRefreshToken) = CreateRefreshToken(user);
 
-            _db.RefreshTokens.Add(refreshToken);
+            _db.RefreshTokens.Add(refreshTokenEntity);
             await _db.SaveChangesAsync();
 
             var accessToken = GenerateAccessToken(user);
@@ -88,19 +89,19 @@ namespace Pdmt.Api.Services
             {
                 AccessToken = accessToken.Token,
                 AccessTokenExpiresAt = accessToken.ExpiresAt,
-                RefreshToken = refreshToken.Token
+                RefreshToken = rawRefreshToken
             };
         }
 
         public async Task<AuthResultDto> RefreshAsync(string refreshToken)
         {
-            //todo hash refresh token
-            await _rateLimit.CheckAsync("Auth.Refresh", refreshToken);
+            await _rateLimit.CheckAsync("Auth.Refresh", refreshToken); //todo : consider using IP instead of token for rate limiting
 
+            var hashedRefreshToken = HashToken(refreshToken);
             var token = await _db.RefreshTokens
                 .Include(rt => rt.User)
                 .FirstOrDefaultAsync(rt =>
-                    rt.Token == refreshToken &&
+                    rt.Token == hashedRefreshToken &&
                     !rt.IsRevoked &&
                     rt.ExpiresAt > DateTime.UtcNow);
 
@@ -109,8 +110,8 @@ namespace Pdmt.Api.Services
 
             token.IsRevoked = true;
 
-            var newRefreshToken = CreateRefreshToken(token.User);
-            _db.RefreshTokens.Add(newRefreshToken);
+            var (newRefreshTokenEntity, rawRefreshToken) = CreateRefreshToken(token.User);
+            _db.RefreshTokens.Add(newRefreshTokenEntity);
             await _db.SaveChangesAsync();
 
             var accessToken = GenerateAccessToken(token.User);
@@ -118,7 +119,7 @@ namespace Pdmt.Api.Services
             {
                 AccessToken = accessToken.Token,
                 AccessTokenExpiresAt = accessToken.ExpiresAt,
-                RefreshToken = newRefreshToken.Token
+                RefreshToken = rawRefreshToken
             };
         }
 
@@ -154,17 +155,26 @@ namespace Pdmt.Api.Services
             return new AccessToken(new JwtSecurityTokenHandler().WriteToken(token), expires);
         }
 
-        private RefreshToken CreateRefreshToken(User user)
+        private (RefreshToken entity, string rawToken) CreateRefreshToken(User user)
         {
             var days = int.Parse(_config["Jwt:RefreshTokenLifetimeDays"]!);
-            return new RefreshToken
+            var rawToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
+            var entity = new RefreshToken
             {
                 Id = Guid.NewGuid(),
                 UserId = user.Id,
-                Token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64)),
+                Token = HashToken(rawToken),
                 CreatedAt = DateTime.UtcNow,
                 ExpiresAt = DateTime.UtcNow.AddDays(days)
             };
+            return (entity, rawToken);
+        }
+
+        private static string HashToken(string token)
+        {
+            using var sha = SHA256.Create();
+            var bytes = sha.ComputeHash(Encoding.UTF8.GetBytes(token));
+            return Convert.ToBase64String(bytes);
         }
 
         private class AccessToken

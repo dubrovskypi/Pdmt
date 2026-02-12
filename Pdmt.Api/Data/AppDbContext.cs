@@ -12,7 +12,6 @@ public class AppDbContext : DbContext
     {
         base.OnModelCreating(builder);
 
-        //TODO MAKE MIGRATIONS FOR INDEXES
         builder.Entity<User>()
             .HasIndex(u => u.Email)
             .IsUnique();
