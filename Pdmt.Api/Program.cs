@@ -115,3 +115,5 @@ app.MapHealthChecks("/health");
 app.MapGet("/", () => Results.Ok("Hello World!"));
 
 app.Run();
+
+public partial class Program { }

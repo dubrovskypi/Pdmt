@@ -1,4 +1,7 @@
 <Solution>
+  <Folder Name="/Solution Items/">
+    <File Path="global.json" />
+  </Folder>
   <Project Path="Pdmt.Api.Tests/Pdmt.Api.Tests.csproj" Id="7f9d9a7d-f34e-4e12-a799-7fa4028263d7" />
   <Project Path="Pdmt.Api/Pdmt.Api.csproj" />
 </Solution>
