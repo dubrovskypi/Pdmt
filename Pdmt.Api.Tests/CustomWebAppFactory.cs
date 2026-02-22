@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Pdmt.Api.Data;
 using System.Text;
@@ -17,17 +16,22 @@ namespace Pdmt.Api.Tests
         {
             builder.ConfigureServices(services =>
             {
-            var descriptor = services.SingleOrDefault(
-                d => d.ServiceType == typeof(DbContextOptions<AppDbContext>));
-            if (descriptor != null)
-                services.Remove(descriptor);
-            services.AddDbContext<AppDbContext>(options =>
-            {
-                options.UseInMemoryDatabase("IntegrationTestDb");
-            });
-            // Add a policy scheme that forwards to either TestScheme or JwtBearer depending on the Authorization header.
-            // This allows tests to exercise both the test auth handler (when using "TestScheme") and real JWT flow (when using "Bearer").
-            var testJwtSecret = "your-super-secret-test-key-123456";
+                // --- Remove the real DbContext registrations ---
+                RemoveService<DbContextOptions<SqlServerAppDbContext>>(services);
+                RemoveService<DbContextOptions<PostgresAppDbContext>>(services);
+                RemoveService<DbContextOptions<AppDbContext>>(services);
+                RemoveService<SqlServerAppDbContext>(services);
+                RemoveService<PostgresAppDbContext>(services);
+                RemoveService<AppDbContext>(services);
+
+                // Register in-memory database
+                services.AddDbContext<AppDbContext>(options =>
+                    options.UseInMemoryDatabase("IntegrationTestDb"));
+
+                // --- Replace authentication ---
+                // Add a policy scheme that forwards to either TestScheme or JwtBearer depending on the Authorization header.
+                // This allows tests to exercise both the test auth handler (when using "TestScheme") and real JWT flow (when using "Bearer").
+                var testJwtSecret = "your-super-secret-test-key-123456";
                 services.AddAuthentication(options =>
                 {
                     options.DefaultAuthenticateScheme = "TestOrJwt";
@@ -46,41 +50,28 @@ namespace Pdmt.Api.Tests
                 })
                 .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>(
                     TestAuthHandler.SchemeName, options => { });
-            //.AddJwtBearer(options =>
-            //{
-            //    // Accept tokens signed with the test secret. In tests we don't require issuer/audience.
-            //    options.TokenValidationParameters = new TokenValidationParameters
-            //    {
-            //        ValidateIssuer = false,
-            //        ValidateAudience = false,
-            //        ValidateLifetime = true,
-            //        ValidateIssuerSigningKey = true,
-            //        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(testJwtSecret))
-            //    };
-            //});
 
-            // Configure the existing JwtBearer options (avoid re-registering the "Bearer" scheme).
-            services.Configure<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme, options =>
-            {
-                options.TokenValidationParameters = new TokenValidationParameters
+                // Configure the existing JwtBearer options (avoid re-registering the "Bearer" scheme).
+                services.Configure<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme, options =>
                 {
-                    ValidateIssuer = false,
-                    ValidateAudience = false,
-                    ValidateLifetime = true,
-                    ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(testJwtSecret))
-                }
-                ;
+                    options.TokenValidationParameters = new TokenValidationParameters
+                    {
+                        ValidateIssuer = false,
+                        ValidateAudience = false,
+                        ValidateLifetime = true,
+                        ValidateIssuerSigningKey = true,
+                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(testJwtSecret))
+                    }
+                    ;
+                });
             });
-            //// Переопределяем аутентификацию
-            //services.AddAuthentication(options =>
-            //{
-            //    options.DefaultAuthenticateScheme = TestAuthHandler.SchemeName;
-            //    options.DefaultChallengeScheme = TestAuthHandler.SchemeName;
-            //})
-            //.AddScheme<AuthenticationSchemeOptions, TestAuthHandler>(
-            //    TestAuthHandler.SchemeName, options => { });
-        });
         }
-}
+
+        private static void RemoveService<T>(IServiceCollection services)
+        {
+            var descriptor = services.SingleOrDefault(d => d.ServiceType == typeof(T));
+            if (descriptor != null)
+                services.Remove(descriptor);
+        }
+    }
 }

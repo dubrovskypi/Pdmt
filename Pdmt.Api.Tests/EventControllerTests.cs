@@ -12,17 +12,19 @@ namespace Pdmt.Api.Tests
 {
     public class EventsControllerTests : IClassFixture<CustomWebAppFactory>
     {
-        private readonly HttpClient _client;
+        private readonly CustomWebAppFactory _factory;
 
         public EventsControllerTests(CustomWebAppFactory factory)
         {
-            _client = factory.CreateClient();
+            _factory = factory;
         }
 
         [Fact]
-        public async Task GetEvents_Should_Return_401_Without_Token()
+        public async Task GetEvents_Should_Return_401_For_Anonymous()
         {
-            var response = await _client.GetAsync("/api/events");
+            var client = CreateAnonymousClient();
+
+            var response = await client.GetAsync("/api/events");
 
             Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
         }
@@ -30,7 +32,7 @@ namespace Pdmt.Api.Tests
         [Fact]
         public async Task CreateEvent_Should_Return_201()
         {
-            _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("TestScheme");
+            var client = CreateTestAuthClient();
             var dto = new CreateEventDto
             {
                 Timestamp = DateTime.UtcNow,
@@ -40,25 +42,18 @@ namespace Pdmt.Api.Tests
                 Intensity = 5
             };
 
-            var response = await _client.PostAsJsonAsync("/api/events", dto);
+            var response = await client.PostAsJsonAsync("/api/events", dto);
 
             Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         }
 
-        [Fact]
-        public async Task GetEvents_Should_Return_401_Without_Header()
-        {
-            var response = await _client.GetAsync("/api/events");
-
-            Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
-        }
 
         [Fact]
         public async Task GetEvents_Should_Return_200_With_TestAuth()
         {
-            _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("TestScheme");
+            var client = CreateTestAuthClient();
 
-            var response = await _client.GetAsync("/api/events");
+            var response = await client.GetAsync("/api/events");
 
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         }
@@ -66,9 +61,9 @@ namespace Pdmt.Api.Tests
         [Fact]
         public async Task Should_Return_401_With_Invalid_JWT()
         {
-            _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "invalid_token");
+            var client = CreateJwtClient("invalid_token");
 
-            var response = await _client.GetAsync("/api/events");
+            var response = await client.GetAsync("/api/events");
 
             Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
         }
@@ -76,12 +71,160 @@ namespace Pdmt.Api.Tests
         [Fact]
         public async Task Should_Return_200_With_Valid_JWT()
         {
-            var token = GenerateJwtToken();
-            _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            var client = CreateJwtClient(GenerateJwtToken());
 
-            var response = await _client.GetAsync("/api/events");
+            var response = await client.GetAsync("/api/events");
 
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task CreateEvent_Should_Persist_And_Be_Retrievable()
+        {
+            var client = CreateTestAuthClient();
+            var dto = new CreateEventDto
+            {
+                Timestamp = DateTime.UtcNow,
+                Type = 1,
+                Category = "Health",
+                Title = "Morning Run",
+                Intensity = 7
+            };
+
+            var createResponse = await client.PostAsJsonAsync("/api/events", dto);
+            Assert.Equal(HttpStatusCode.Created, createResponse.StatusCode);
+
+            var created = await createResponse.Content.ReadFromJsonAsync<EventResponseDto>();
+            Assert.NotNull(created);
+
+            var getResponse = await client.GetAsync($"/api/events/{created!.Id}");
+            Assert.Equal(HttpStatusCode.OK, getResponse.StatusCode);
+
+            var fetched = await getResponse.Content.ReadFromJsonAsync<EventResponseDto>();
+            Assert.Equal("Morning Run", fetched!.Title);
+            Assert.Equal("Health", fetched.Category);
+        }
+
+        [Fact]
+        public async Task GetEvent_Should_Return_404_For_NonExistent_Id()
+        {
+            var client = CreateTestAuthClient();
+
+            var response = await client.GetAsync($"/api/events/{Guid.NewGuid()}");
+
+            Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task UpdateEvent_Should_Return_204_And_Reflect_Changes()
+        {
+            var client = CreateTestAuthClient();
+
+            // Create first
+            var createDto = new CreateEventDto
+            {
+                Timestamp = DateTime.UtcNow,
+                Type = 0,
+                Category = "Work",
+                Title = "Original Title",
+                Intensity = 3
+            };
+            var createResponse = await client.PostAsJsonAsync("/api/events", createDto);
+            var created = await createResponse.Content.ReadFromJsonAsync<EventResponseDto>();
+
+            // Update
+            var updateDto = new UpdateEventDto
+            {
+                Timestamp = created!.Timestamp,
+                Type = 1,
+                Category = "Work",
+                Title = "Updated Title",
+                Intensity = 8
+            };
+            var updateResponse = await client.PutAsJsonAsync($"/api/events/{created.Id}", updateDto);
+            Assert.Equal(HttpStatusCode.NoContent, updateResponse.StatusCode);
+
+            // Verify
+            var getResponse = await client.GetAsync($"/api/events/{created.Id}");
+            var updated = await getResponse.Content.ReadFromJsonAsync<EventResponseDto>();
+            Assert.Equal("Updated Title", updated!.Title);
+            Assert.Equal(8, updated.Intensity);
+        }
+
+        [Fact]
+        public async Task DeleteEvent_Should_Return_204_And_Event_Should_Be_Gone()
+        {
+            var client = CreateTestAuthClient();
+
+            // Create first
+            var createDto = new CreateEventDto
+            {
+                Timestamp = DateTime.UtcNow,
+                Type = 1,
+                Category = "Social",
+                Title = "To Be Deleted",
+                Intensity = 4
+            };
+            var createResponse = await client.PostAsJsonAsync("/api/events", createDto);
+            var created = await createResponse.Content.ReadFromJsonAsync<EventResponseDto>();
+
+            // Delete
+            var deleteResponse = await client.DeleteAsync($"/api/events/{created!.Id}");
+            Assert.Equal(HttpStatusCode.NoContent, deleteResponse.StatusCode);
+
+            // Verify gone
+            var getResponse = await client.GetAsync($"/api/events/{created.Id}");
+            Assert.Equal(HttpStatusCode.NotFound, getResponse.StatusCode);
+        }
+
+        [Fact]
+        public async Task GetEvents_Should_Not_Return_Other_Users_Events()
+        {
+            // User A creates an event
+            var clientA = CreateTestAuthClient();
+            var createDto = new CreateEventDto
+            {
+                Timestamp = DateTime.UtcNow,
+                Type = 1,
+                Category = "Personal",
+                Title = "User A Secret Event",
+                Intensity = 5
+            };
+            await clientA.PostAsJsonAsync("/api/events", createDto);
+
+            // User A can see their own event
+            var responseA = await clientA.GetAsync("/api/events");
+            var eventsA = await responseA.Content.ReadFromJsonAsync<IEnumerable<EventResponseDto>>();
+            Assert.Contains(eventsA!, e => e.Title == "User A Secret Event");
+
+            // User B fetches their own events — should not see User A's event
+            var clientB = CreateJwtClient(GenerateJwtToken()); // User B uses a real JWT with a different UserId
+            var responseB = await clientB.GetAsync("/api/events");
+            Assert.Equal(HttpStatusCode.OK, responseB.StatusCode);
+
+            var eventsB = await responseB.Content.ReadFromJsonAsync<IEnumerable<EventResponseDto>>();
+            Assert.DoesNotContain(eventsB!, e => e.Title == "User A Secret Event");
+        }
+
+        // Helper: fresh client, no auth
+        private HttpClient CreateAnonymousClient() => _factory.CreateClient();
+
+        // Helper: fresh client with TestScheme auth
+        private HttpClient CreateTestAuthClient()
+        {
+            var client = _factory.CreateClient();
+            client.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("TestScheme");
+            return client;
+        }
+
+        // Helper: fresh client with a JWT
+        private HttpClient CreateJwtClient(string token)
+        {
+            var client = _factory.CreateClient();
+            client.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", token);
+            return client;
         }
 
         private string GenerateJwtToken()

@@ -78,7 +78,9 @@ builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
 {
     var cs = builder.Configuration.GetValue<string>("Redis:ConnectionString");
-    return ConnectionMultiplexer.Connect(cs!);
+    var config = ConfigurationOptions.Parse(cs!);
+    config.AbortOnConnectFail = false;
+    return ConnectionMultiplexer.Connect(config);
 });
 builder.Services.AddHealthChecks().AddRedis(builder.Configuration.GetValue<string>("Redis:ConnectionString"));
 // Register application services
