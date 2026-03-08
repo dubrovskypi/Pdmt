@@ -1,0 +1,38 @@
+﻿@page "/login"
+@inject NavigationManager Nav
+@inject TokenService TokenService
+@inject AuthService AuthService
+@using Pdmt.Client.Models
+@using Pdmt.Client.Services
+
+<h2>Login</h2>
+
+@if (errorMessage != null)
+{
+    <p style="color:red">@errorMessage</p>
+}
+
+<input @bind="email" placeholder="Email" type="email" />
+<input @bind="password" placeholder="Password" type="password" />
+<button @onclick="DoLogin">Login</button>
+
+@code {
+    private string email = "";
+    private string password = "";
+    private string? errorMessage;
+
+    private async Task DoLogin()
+    {
+        errorMessage = null;
+        try
+        {
+            var result = await AuthService.LoginAsync(email, password);
+            TokenService.SetTokens(result.AccessToken, result.RefreshToken);
+            Nav.NavigateTo("/events");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+}

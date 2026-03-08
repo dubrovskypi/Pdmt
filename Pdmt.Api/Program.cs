@@ -39,6 +39,16 @@ builder.Services.AddSwaggerGen(options =>
 });
 // Add MVC controllers (attribute routing)
 builder.Services.AddControllers();
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("BlazorClient", policy =>
+    {
+        var origins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()!;
+        policy.WithOrigins(origins)
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
 // Register DbContext
 var dbProvider = builder.Configuration["Database:Provider"];
 if (dbProvider == "SqlServer")
@@ -108,6 +118,7 @@ app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseMiddleware<HttpLoggingMiddleware>();
 // Configure the HTTP request pipeline.
+app.UseCors("BlazorClient");
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
