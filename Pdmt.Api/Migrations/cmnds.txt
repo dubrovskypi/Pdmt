@@ -1,7 +1,14 @@
-﻿//FOR SQLSERVER LOCALDB
+// FOR SQLSERVER LOCALDB
 
 dotnet ef migrations add MigrationName --context SqlServerAppDbContext --output-dir Migrations/SqlServer
 dotnet ef migrations remove --context SqlServerAppDbContext
 dotnet ef database update --context SqlServerAppDbContext
 
-//FOR POSTGERSQL comming soon
+
+// FOR POSTGRESQL
+// Миграции генерируются через PostgresDesignTimeFactory — не нужен запущенный Postgres
+// database update требует реальный Postgres (задать env var или временно вписать в DesignTimeFactory)
+
+dotnet ef migrations add MigrationName --context PostgresAppDbContext --output-dir Migrations/Postgres
+dotnet ef migrations remove --context PostgresAppDbContext
+dotnet ef database update --context PostgresAppDbContext

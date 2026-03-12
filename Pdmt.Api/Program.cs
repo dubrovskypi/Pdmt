@@ -11,6 +11,14 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Fail fast if required secrets are not configured
+var jwtSecret = builder.Configuration["Jwt:Secret"];
+if (string.IsNullOrWhiteSpace(jwtSecret))
+    throw new InvalidOperationException(
+        "Jwt:Secret is not configured. " +
+        "Dev: dotnet user-secrets set \"Jwt:Secret\" \"<value>\"  " +
+        "Prod: set env var Jwt__Secret");
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -53,19 +61,32 @@ builder.Services.AddCors(options =>
 var dbProvider = builder.Configuration["Database:Provider"];
 if (dbProvider == "SqlServer")
 {
+    var sqlCs = builder.Configuration.GetConnectionString("SqlServer");
+    if (string.IsNullOrWhiteSpace(sqlCs))
+        throw new InvalidOperationException(
+            "ConnectionStrings:SqlServer is not configured. " +
+            "Dev: set in appsettings.Development.json  " +
+            "Prod: set env var ConnectionStrings__SqlServer");
+
     builder.Services.AddDbContext<AppDbContext, SqlServerAppDbContext>(options =>
-        options.UseSqlServer(builder.Configuration.GetConnectionString("SqlServer")));
+        options.UseSqlServer(sqlCs));
     builder.Services.AddHealthChecks()
-        .AddSqlServer(builder.Configuration.GetConnectionString("SqlServer"));
+        .AddSqlServer(sqlCs);
 }
 else if (dbProvider == "Postgres")
 {
+    var pgCs = builder.Configuration.GetConnectionString("Postgres");
+    if (string.IsNullOrWhiteSpace(pgCs))
+        throw new InvalidOperationException(
+            "ConnectionStrings:Postgres is not configured. " +
+            "Prod: set env var ConnectionStrings__Postgres");
+
     builder.Services.AddDbContext<AppDbContext, PostgresAppDbContext>(options =>
-        options.UseNpgsql(builder.Configuration.GetConnectionString("Postgres")));
+        options.UseNpgsql(pgCs));
 }
 else
 {
-    throw new Exception("Unknown database provider");
+    throw new InvalidOperationException("Unknown database provider. Set Database:Provider to 'SqlServer' or 'Postgres'.");
 }
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
