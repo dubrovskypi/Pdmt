@@ -6,7 +6,7 @@ namespace Pdmt.Api.Services
     {
         Task<AuthResultDto> RegisterAsync(UserDto dto, string ip);
         Task<AuthResultDto> LoginAsync(UserDto dto, string ip);
-        Task<AuthResultDto> RefreshAsync(string refreshToken);
+        Task<AuthResultDto> RefreshAsync(string refreshToken, string ip);
         Task LogoutAsync(Guid userId);
     }
 }

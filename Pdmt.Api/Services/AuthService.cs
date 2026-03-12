@@ -94,9 +94,9 @@ namespace Pdmt.Api.Services
             };
         }
 
-        public async Task<AuthResultDto> RefreshAsync(string refreshToken)
+        public async Task<AuthResultDto> RefreshAsync(string refreshToken, string ip)
         {
-            await _rateLimit.CheckAsync("Auth.Refresh", refreshToken); //todo : consider using IP instead of token for rate limiting
+            await _rateLimit.CheckAsync("Auth.Refresh", ip);
 
             var hashedRefreshToken = HashToken(refreshToken);
             var token = await _db.RefreshTokens

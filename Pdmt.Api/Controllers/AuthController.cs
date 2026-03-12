@@ -38,7 +38,8 @@ namespace Pdmt.Api.Controllers
         [AllowAnonymous]
         public async Task<ActionResult<AuthResultDto>> Refresh(RefreshRequestDto dto)
         {
-            return Ok(await _auth.RefreshAsync(dto.RefreshToken));
+            var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+            return Ok(await _auth.RefreshAsync(dto.RefreshToken, ip));
         }
 
         [HttpPost("logout")]
