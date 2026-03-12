@@ -45,7 +45,8 @@
         }
         catch (Exception ex)
         {
-            errorMessage = ex.Message;
+            Console.Error.WriteLine(ex);
+            errorMessage = "Invalid email or password.";
         }
     }
 }

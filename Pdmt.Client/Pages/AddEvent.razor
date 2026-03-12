@@ -138,7 +138,8 @@
         }
         catch (Exception ex)
         {
-            errorMessage = ex.Message;
+            Console.Error.WriteLine(ex);
+            errorMessage = "Something went wrong. Please try again.";
             submitting = false;
         }
     }
