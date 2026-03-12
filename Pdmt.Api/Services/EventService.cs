@@ -103,15 +103,6 @@ namespace Pdmt.Api.Services
             return true;
         }
 
-        //FOR DEBUGGING PURPOSES ONLY
-        public async Task<IEnumerable<EventResponseDto>> GetAllEventsAsync()
-        {
-            var query = _db.Events.
-                AsNoTracking();
-            var eventDtos = await query.Select(Projection).ToListAsync();
-            return eventDtos;
-        }
-
         private static EventResponseDto MapToResponseDto(Event entity)
         {
             return new EventResponseDto

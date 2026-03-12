@@ -78,13 +78,5 @@ namespace Pdmt.Api.Controllers
             return NoContent();
         }
 
-        // GET /allevents
-        [HttpGet("all")]
-        [AllowAnonymous] //FOR DEBUG PURPOSES ONLY
-        public async Task<ActionResult<EventResponseDto>> GetAllEvents()
-        {
-            var events = await _eventService.GetAllEventsAsync();
-            return Ok(events);
-        }
     }
 }
