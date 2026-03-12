@@ -1,0 +1,101 @@
+@page "/events"
+@inject NavigationManager Nav
+@inject TokenService TokenService
+@inject EventService EventService
+@using Pdmt.Client.Models
+@using Pdmt.Client.Services
+
+<PageTitle>Events</PageTitle>
+
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+    <h2 style="margin:0">Events</h2>
+    <button @onclick='() => Nav.NavigateTo("/events/add")'>+ Add</button>
+</div>
+
+@if (errorMessage is not null)
+{
+    <p style="color:red">@errorMessage</p>
+}
+
+@if (events is null)
+{
+    <p>Loading...</p>
+}
+else if (events.Count == 0)
+{
+    <p>No events yet.</p>
+}
+else
+{
+    <table style="width:100%; border-collapse:collapse;">
+        <thead>
+            <tr style="border-bottom:2px solid #ccc; text-align:left;">
+                <th style="padding:6px 8px;">Date</th>
+                <th style="padding:6px 8px;">Type</th>
+                <th style="padding:6px 8px;">Title</th>
+                <th style="padding:6px 8px;">Category</th>
+                <th style="padding:6px 8px;">Intensity</th>
+                <th style="padding:6px 8px;"></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var ev in events)
+            {
+                <tr style="border-bottom:1px solid #eee;">
+                    <td style="padding:6px 8px; white-space:nowrap;">@ev.Timestamp.ToLocalTime().ToString("dd.MM.yy HH:mm")</td>
+                    <td style="padding:6px 8px; color:@(ev.Type == 1 ? "green" : "crimson"); font-weight:bold;">
+                        @(ev.Type == 1 ? "+" : "−")
+                    </td>
+                    <td style="padding:6px 8px;">@ev.Title</td>
+                    <td style="padding:6px 8px;">@ev.Category</td>
+                    <td style="padding:6px 8px;">@ev.Intensity / 10</td>
+                    <td style="padding:6px 8px;">
+                        <button @onclick="() => DeleteEvent(ev.Id)" style="color:crimson; background:none; border:none; cursor:pointer;">✕</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<EventResponseDto>? events;
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!TokenService.IsAuthenticated)
+        {
+            Nav.NavigateTo("/login");
+            return;
+        }
+
+        await LoadEvents();
+    }
+
+    private async Task LoadEvents()
+    {
+        try
+        {
+            events = await EventService.GetEventsAsync();
+            events = [.. events.OrderByDescending(e => e.Timestamp)];
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+
+    private async Task DeleteEvent(Guid id)
+    {
+        try
+        {
+            await EventService.DeleteEventAsync(id);
+            await LoadEvents();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+}

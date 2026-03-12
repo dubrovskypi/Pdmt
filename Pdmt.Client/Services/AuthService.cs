@@ -20,5 +20,18 @@ namespace Pdmt.Client.Services
             response.EnsureSuccessStatusCode();
             return (await response.Content.ReadFromJsonAsync<AuthResultDto>())!;
         }
+
+        public async Task<AuthResultDto> RegisterAsync(string email, string password)
+        {
+            var response = await _http.PostAsJsonAsync("api/auth/register", new { email, password });
+            response.EnsureSuccessStatusCode();
+            return (await response.Content.ReadFromJsonAsync<AuthResultDto>())!;
+        }
+
+        public async Task LogoutAsync()
+        {
+            var response = await _http.PostAsync("api/auth/logout", null);
+            response.EnsureSuccessStatusCode();
+        }
     }
 }

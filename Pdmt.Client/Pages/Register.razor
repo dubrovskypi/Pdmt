@@ -1,14 +1,14 @@
-@page "/login"
+@page "/register"
 @inject NavigationManager Nav
 @inject TokenService TokenService
 @inject AuthService AuthService
 @using Pdmt.Client.Models
 @using Pdmt.Client.Services
 
-<PageTitle>Login</PageTitle>
+<PageTitle>Create account</PageTitle>
 
 <div style="max-width:320px; margin:60px auto; display:flex; flex-direction:column; gap:12px;">
-    <h2 style="margin:0 0 8px;">Pdmt</h2>
+    <h2 style="margin:0 0 8px;">Create account</h2>
 
     @if (errorMessage is not null)
     {
@@ -17,15 +17,18 @@
 
     <input @bind="email" placeholder="Email" type="email" style="padding:8px;" />
     <input @bind="password" placeholder="Password" type="password" style="padding:8px;" />
+    <input @bind="passwordConfirm" placeholder="Confirm password" type="password" style="padding:8px;" />
 
-    <button @onclick="DoLogin" style="padding:8px;">Login</button>
+    <button @onclick="DoRegister" disabled="@submitting" style="padding:8px;">Create account</button>
 
-    <a href="/register" style="text-align:center; font-size:0.9em;">Create account</a>
+    <a href="/login" style="text-align:center; font-size:0.9em;">Already have an account</a>
 </div>
 
 @code {
     private string email = "";
     private string password = "";
+    private string passwordConfirm = "";
+    private bool submitting;
     private string? errorMessage;
 
     protected override void OnInitialized()
@@ -34,18 +37,33 @@
             Nav.NavigateTo("/events");
     }
 
-    private async Task DoLogin()
+    private async Task DoRegister()
     {
         errorMessage = null;
+
+        if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
+        {
+            errorMessage = "Email and password are required.";
+            return;
+        }
+
+        if (password != passwordConfirm)
+        {
+            errorMessage = "Passwords do not match.";
+            return;
+        }
+
+        submitting = true;
         try
         {
-            var result = await AuthService.LoginAsync(email, password);
+            var result = await AuthService.RegisterAsync(email, password);
             TokenService.SetTokens(result.AccessToken, result.RefreshToken);
             Nav.NavigateTo("/events");
         }
         catch (Exception ex)
         {
             errorMessage = ex.Message;
+            submitting = false;
         }
     }
 }

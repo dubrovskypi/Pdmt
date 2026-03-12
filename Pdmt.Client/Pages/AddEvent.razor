@@ -1,0 +1,145 @@
+@page "/events/add"
+@inject NavigationManager Nav
+@inject TokenService TokenService
+@inject EventService EventService
+@using Pdmt.Client.Models
+@using Pdmt.Client.Services
+
+<PageTitle>Add Event</PageTitle>
+
+<h2>Add Event</h2>
+
+@if (errorMessage is not null)
+{
+    <p style="color:red">@errorMessage</p>
+}
+
+<div style="display:flex; flex-direction:column; gap:12px; max-width:480px;">
+
+    <label>
+        Title *
+        <input @bind="title" placeholder="What happened?" style="display:block; width:100%; margin-top:4px;" />
+    </label>
+
+    <label>
+        Type *
+        <div style="display:flex; gap:16px; margin-top:4px;">
+            <label>
+                <input type="radio" name="type" value="1" @onchange="() => type = 1" checked="@(type == 1)" /> Positive
+            </label>
+            <label>
+                <input type="radio" name="type" value="0" @onchange="() => type = 0" checked="@(type == 0)" /> Negative
+            </label>
+        </div>
+    </label>
+
+    <label>
+        Category *
+        <select @bind="category" style="display:block; width:100%; margin-top:4px;">
+            <option value="">-- select --</option>
+            <option>Work</option>
+            <option>Health</option>
+            <option>Social</option>
+            <option>Family</option>
+            <option>Finance</option>
+            <option>Hobby</option>
+            <option>Other</option>
+        </select>
+    </label>
+
+    <label>
+        Intensity: @intensity / 10
+        <input type="range" min="0" max="10" @bind="intensity" style="display:block; width:100%; margin-top:4px;" />
+    </label>
+
+    <label>
+        Context
+        <select @bind="context" style="display:block; width:100%; margin-top:4px;">
+            <option value="">-- optional --</option>
+            <option>Work</option>
+            <option>Home</option>
+            <option>Street</option>
+            <option>Transport</option>
+            <option>Other</option>
+        </select>
+    </label>
+
+    <label>
+        Description
+        <textarea @bind="description" rows="3" placeholder="Details (optional)" style="display:block; width:100%; margin-top:4px;"></textarea>
+    </label>
+
+    <div style="display:flex; gap:24px;">
+        <label>
+            <input type="checkbox" @bind="canInfluence" /> I can influence this
+        </label>
+        <label>
+            <input type="checkbox" @bind="isRelationship" /> Relationship
+        </label>
+    </div>
+
+    <div style="display:flex; gap:12px; margin-top:8px;">
+        <button @onclick="Submit" disabled="@submitting">Save</button>
+        <button @onclick='() => Nav.NavigateTo("/events")' style="background:none; border:1px solid #ccc;">Cancel</button>
+    </div>
+
+</div>
+
+@code {
+    private string title = "";
+    private int type = 1;
+    private string category = "";
+    private int intensity = 5;
+    private string? context;
+    private string? description;
+    private bool canInfluence;
+    private bool isRelationship;
+    private bool submitting;
+    private string? errorMessage;
+
+    protected override void OnInitialized()
+    {
+        if (!TokenService.IsAuthenticated)
+            Nav.NavigateTo("/login");
+    }
+
+    private async Task Submit()
+    {
+        if (string.IsNullOrWhiteSpace(title))
+        {
+            errorMessage = "Title is required.";
+            return;
+        }
+        if (string.IsNullOrWhiteSpace(category))
+        {
+            errorMessage = "Category is required.";
+            return;
+        }
+
+        submitting = true;
+        errorMessage = null;
+
+        try
+        {
+            await EventService.CreateEventAsync(new CreateEventDto
+            {
+                Timestamp = DateTime.UtcNow,
+                Title = title,
+                Type = type,
+                Category = category,
+                Intensity = intensity,
+                Context = string.IsNullOrWhiteSpace(context) ? null : context,
+                Description = string.IsNullOrWhiteSpace(description) ? null : description,
+                CanInfluence = canInfluence,
+                IsRelationship = isRelationship
+            });
+
+            Nav.NavigateTo("/events");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+            submitting = false;
+        }
+    }
+}

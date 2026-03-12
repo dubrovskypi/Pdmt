@@ -1,5 +1,11 @@
-﻿@page "/"
+@page "/"
+@inject NavigationManager Nav
+@inject TokenService TokenService
+@using Pdmt.Client.Services
 
-<PageTitle>Home</PageTitle>
-
-<h1>Pdmt Client</h1>
+@code {
+    protected override void OnInitialized()
+    {
+        Nav.NavigateTo(TokenService.IsAuthenticated ? "/events" : "/login");
+    }
+}

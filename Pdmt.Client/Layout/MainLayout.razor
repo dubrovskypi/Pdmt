@@ -1,4 +1,10 @@
-﻿@inherits LayoutComponentBase
+@inherits LayoutComponentBase
+@inject TokenService TokenService
+@inject AuthService AuthService
+@inject NavigationManager Nav
+@using Pdmt.Client.Services
+@implements IDisposable
+
 <div class="page">
     <div class="sidebar">
         <NavMenu />
@@ -6,7 +12,16 @@
 
     <main>
         <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
+            @if (TokenService.IsAuthenticated)
+            {
+                <button class="btn-link" @onclick="Logout" style="background:none; border:none; cursor:pointer; color:inherit;">
+                    Logout
+                </button>
+            }
+            else
+            {
+                <a href="/login" style="font-size:0.9rem;">Login</a>
+            }
         </div>
 
         <article class="content px-4">
@@ -14,3 +29,25 @@
         </article>
     </main>
 </div>
+
+@code {
+    protected override void OnInitialized()
+    {
+        TokenService.OnChange += StateHasChanged;
+    }
+
+    public void Dispose()
+    {
+        TokenService.OnChange -= StateHasChanged;
+    }
+
+    private async Task Logout()
+    {
+        try { await AuthService.LogoutAsync(); } catch { }
+        finally
+        {
+            TokenService.Clear();
+            Nav.NavigateTo("/login");
+        }
+    }
+}
