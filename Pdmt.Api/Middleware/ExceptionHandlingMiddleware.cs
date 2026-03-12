@@ -1,26 +1,18 @@
-﻿using Pdmt.Api.Infrastructure;
+using Pdmt.Api.Infrastructure;
 using Pdmt.Api.Infrastructure.Exceptions;
 
 namespace Pdmt.Api.Middleware
 {
-    public class ExceptionHandlingMiddleware
+    public class ExceptionHandlingMiddleware(
+        RequestDelegate next,
+        ILogger<ExceptionHandlingMiddleware> logger,
+        IWebHostEnvironment env)
     {
-        private readonly RequestDelegate _next;
-        private readonly ILogger<ExceptionHandlingMiddleware> _logger;
-
-        public ExceptionHandlingMiddleware(
-            RequestDelegate next,
-            ILogger<ExceptionHandlingMiddleware> logger)
-        {
-            _next = next;
-            _logger = logger;
-        }
-
         public async Task InvokeAsync(HttpContext context)
         {
             try
             {
-                await _next(context);
+                await next(context);
             }
             catch (RateLimitExceededException ex)
             {
@@ -36,7 +28,7 @@ namespace Pdmt.Api.Middleware
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unhandled exception");
+                logger.LogError(ex, "Unhandled exception");
                 await HandleException(context, ex, 500, hideDetails: true);
             }
         }
@@ -51,11 +43,12 @@ namespace Pdmt.Api.Middleware
             context.Response.StatusCode = statusCode;
 
             var correlationId = context.Items["CorrelationId"]?.ToString();
+            var showDetails = !hideDetails && env.IsDevelopment();
 
             var response = new ErrorResponse
             {
                 Message = ex.Message,
-                Details = hideDetails ? null : ex.StackTrace,
+                Details = showDetails ? ex.StackTrace : null,
                 CorrelationId = correlationId
             };
 
