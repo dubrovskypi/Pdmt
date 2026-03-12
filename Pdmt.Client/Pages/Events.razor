@@ -12,6 +12,40 @@
     <button @onclick='() => Nav.NavigateTo("/events/add")'>+ Add</button>
 </div>
 
+<div style="display:flex; flex-wrap:wrap; gap:12px; margin-bottom:1rem; align-items:flex-end;">
+    <label style="display:flex; flex-direction:column; font-size:0.85rem; gap:2px;">
+        From
+        <input type="date" @bind="filterFrom" style="padding:4px;" />
+    </label>
+    <label style="display:flex; flex-direction:column; font-size:0.85rem; gap:2px;">
+        To
+        <input type="date" @bind="filterTo" style="padding:4px;" />
+    </label>
+    <label style="display:flex; flex-direction:column; font-size:0.85rem; gap:2px;">
+        Type
+        <select @bind="filterType" style="padding:4px;">
+            <option value="">All</option>
+            <option value="1">Positive</option>
+            <option value="0">Negative</option>
+        </select>
+    </label>
+    <label style="display:flex; flex-direction:column; font-size:0.85rem; gap:2px;">
+        Category
+        <select @bind="filterCategory" style="padding:4px;">
+            <option value="">All</option>
+            <option>Work</option>
+            <option>Health</option>
+            <option>Social</option>
+            <option>Family</option>
+            <option>Finance</option>
+            <option>Hobby</option>
+            <option>Other</option>
+        </select>
+    </label>
+    <button @onclick="ApplyFilters" style="padding:4px 12px;">Filter</button>
+    <button @onclick="ResetFilters" style="padding:4px 12px; background:none; border:1px solid #ccc;">Reset</button>
+</div>
+
 @if (errorMessage is not null)
 {
     <p style="color:red">@errorMessage</p>
@@ -49,7 +83,8 @@ else
                     <td style="padding:6px 8px;">@ev.Title</td>
                     <td style="padding:6px 8px;">@ev.Category</td>
                     <td style="padding:6px 8px;">@ev.Intensity / 10</td>
-                    <td style="padding:6px 8px;">
+                    <td style="padding:6px 8px; white-space:nowrap;">
+                        <button @onclick="@(() => Nav.NavigateTo($"/events/edit/{ev.Id}"))" style="background:none; border:none; cursor:pointer;">✎</button>
                         <button @onclick="() => DeleteEvent(ev.Id)" style="color:crimson; background:none; border:none; cursor:pointer;">✕</button>
                     </td>
                 </tr>
@@ -62,6 +97,11 @@ else
     private List<EventResponseDto>? events;
     private string? errorMessage;
 
+    private DateTime? filterFrom;
+    private DateTime? filterTo;
+    private string filterType = "";
+    private string filterCategory = "";
+
     protected override async Task OnInitializedAsync()
     {
         if (!TokenService.IsAuthenticated)
@@ -73,11 +113,11 @@ else
         await LoadEvents();
     }
 
-    private async Task LoadEvents()
+    private async Task LoadEvents(DateTime? from = null, DateTime? to = null, int? type = null, string? category = null)
     {
         try
         {
-            events = await EventService.GetEventsAsync();
+            events = await EventService.GetEventsAsync(from, to, type, category);
             events = [.. events.OrderByDescending(e => e.Timestamp)];
         }
         catch (Exception ex)
@@ -86,12 +126,28 @@ else
         }
     }
 
+    private async Task ApplyFilters()
+    {
+        int? type = filterType switch { "1" => 1, "0" => 0, _ => null };
+        string? category = string.IsNullOrEmpty(filterCategory) ? null : filterCategory;
+        await LoadEvents(filterFrom, filterTo.HasValue ? filterTo.Value.AddDays(1).AddSeconds(-1) : null, type, category);
+    }
+
+    private async Task ResetFilters()
+    {
+        filterFrom = null;
+        filterTo = null;
+        filterType = "";
+        filterCategory = "";
+        await LoadEvents();
+    }
+
     private async Task DeleteEvent(Guid id)
     {
         try
         {
             await EventService.DeleteEventAsync(id);
-            await LoadEvents();
+            await ApplyFilters();
         }
         catch (Exception ex)
         {

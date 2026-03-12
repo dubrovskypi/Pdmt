@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Options;
 using Pdmt.Client.Configuration;
 using Pdmt.Client.Models;
 using System.Net.Http.Json;
@@ -14,9 +14,27 @@ namespace Pdmt.Client.Services
             _http = factory.CreateClient(options.Value.ClientName);
         }
 
-        public async Task<List<EventResponseDto>> GetEventsAsync()
+        public async Task<List<EventResponseDto>> GetEventsAsync(
+            DateTime? from = null, DateTime? to = null,
+            int? type = null, string? category = null,
+            bool? isRelationship = null, int? minIntensity = null, int? maxIntensity = null)
         {
-            return await _http.GetFromJsonAsync<List<EventResponseDto>>("api/events") ?? [];
+            var query = new List<string>();
+            if (from.HasValue) query.Add($"from={Uri.EscapeDataString(from.Value.ToString("o"))}");
+            if (to.HasValue) query.Add($"to={Uri.EscapeDataString(to.Value.ToString("o"))}");
+            if (type.HasValue) query.Add($"type={type.Value}");
+            if (category is not null) query.Add($"category={Uri.EscapeDataString(category)}");
+            if (isRelationship.HasValue) query.Add($"isRelationship={isRelationship.Value.ToString().ToLower()}");
+            if (minIntensity.HasValue) query.Add($"minIntensity={minIntensity.Value}");
+            if (maxIntensity.HasValue) query.Add($"maxIntensity={maxIntensity.Value}");
+
+            var url = query.Count > 0 ? $"api/events?{string.Join("&", query)}" : "api/events";
+            return await _http.GetFromJsonAsync<List<EventResponseDto>>(url) ?? [];
+        }
+
+        public async Task<EventResponseDto?> GetByIdAsync(Guid id)
+        {
+            return await _http.GetFromJsonAsync<EventResponseDto>($"api/events/{id}");
         }
 
         public async Task<EventResponseDto> CreateEventAsync(CreateEventDto dto)
