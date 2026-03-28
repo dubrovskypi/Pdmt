@@ -365,3 +365,6 @@ FodyWeavers.xsd
 # Claude settings files
 /.claude/settings.local.json
 /.claude/worktrees/
+
+# Local environment secrets
+.env
