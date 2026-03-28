@@ -60,10 +60,40 @@ public class AppDbContext : DbContext
             .HasIndex(f => f.Email);
         builder.Entity<FailedLoginAttempt>()
             .HasIndex(f => f.OccurredAtUtc);
+
+        builder.Entity<Tag>()
+            .Property(t => t.Name)
+            .HasMaxLength(100)
+            .IsRequired();
+        builder.Entity<Tag>()
+            .HasOne(t => t.User)
+            .WithMany(u => u.Tags)
+            .HasForeignKey(t => t.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+        builder.Entity<Tag>()
+            .HasIndex(t => new { t.UserId, t.Name })
+            .IsUnique();
+
+        builder.Entity<EventTag>()
+            .HasKey(et => new { et.EventId, et.TagId });
+        builder.Entity<EventTag>()
+            .HasOne(et => et.Event)
+            .WithMany(e => e.EventTags)
+            .HasForeignKey(et => et.EventId)
+            .OnDelete(DeleteBehavior.Cascade);
+        builder.Entity<EventTag>()
+            .HasOne(et => et.Tag)
+            .WithMany(t => t.EventTags)
+            .HasForeignKey(et => et.TagId)
+            .OnDelete(DeleteBehavior.ClientCascade);
+        builder.Entity<EventTag>()
+            .HasIndex(et => et.TagId);
     }
     public DbSet<User> Users { get; set; } = null!;
     public DbSet<RefreshToken> RefreshTokens { get; set; } = null!;
     public DbSet<Event> Events { get; set; } = null!;
     public DbSet<Summary> Summaries { get; set; } = null!;
     public DbSet<FailedLoginAttempt> FailedLoginAttempts { get; set; } = null!;
+    public DbSet<Tag> Tags { get; set; } = null!;
+    public DbSet<EventTag> EventTags { get; set; } = null!;
 }

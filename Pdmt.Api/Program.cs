@@ -116,6 +116,7 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
 builder.Services.AddHealthChecks().AddRedis(builder.Configuration.GetValue<string>("Redis:ConnectionString"));
 // Register application services
 builder.Services.AddScoped<IEventService, EventService>();
+builder.Services.AddScoped<ITagService, TagService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<RedisRateLimitService>();
 builder.Services.AddScoped<InMemoryRateLimitService>();

@@ -31,10 +31,6 @@ namespace Pdmt.Api.Migrations.Postgres
                     b.Property<bool>("CanInfluence")
                         .HasColumnType("boolean");
 
-                    b.Property<string>("Category")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.Property<string>("Context")
                         .HasColumnType("text");
 
@@ -43,9 +39,6 @@ namespace Pdmt.Api.Migrations.Postgres
 
                     b.Property<int>("Intensity")
                         .HasColumnType("integer");
-
-                    b.Property<bool>("IsRelationship")
-                        .HasColumnType("boolean");
 
                     b.Property<DateTime>("Timestamp")
                         .HasColumnType("timestamp with time zone");
@@ -69,6 +62,21 @@ namespace Pdmt.Api.Migrations.Postgres
                     b.HasIndex("UserId", "Timestamp");
 
                     b.ToTable("Events");
+                });
+
+            modelBuilder.Entity("Pdmt.Api.Domain.EventTag", b =>
+                {
+                    b.Property<Guid>("EventId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("TagId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("EventId", "TagId");
+
+                    b.HasIndex("TagId");
+
+                    b.ToTable("EventTags");
                 });
 
             modelBuilder.Entity("Pdmt.Api.Domain.FailedLoginAttempt", b =>
@@ -163,6 +171,31 @@ namespace Pdmt.Api.Migrations.Postgres
                     b.ToTable("Summaries");
                 });
 
+            modelBuilder.Entity("Pdmt.Api.Domain.Tag", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "Name")
+                        .IsUnique();
+
+                    b.ToTable("Tags");
+                });
+
             modelBuilder.Entity("Pdmt.Api.Domain.User", b =>
                 {
                     b.Property<Guid>("Id")
@@ -200,6 +233,25 @@ namespace Pdmt.Api.Migrations.Postgres
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("Pdmt.Api.Domain.EventTag", b =>
+                {
+                    b.HasOne("Pdmt.Api.Domain.Event", "Event")
+                        .WithMany("EventTags")
+                        .HasForeignKey("EventId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Pdmt.Api.Domain.Tag", "Tag")
+                        .WithMany("EventTags")
+                        .HasForeignKey("TagId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Event");
+
+                    b.Navigation("Tag");
+                });
+
             modelBuilder.Entity("Pdmt.Api.Domain.RefreshToken", b =>
                 {
                     b.HasOne("Pdmt.Api.Domain.User", "User")
@@ -222,6 +274,27 @@ namespace Pdmt.Api.Migrations.Postgres
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("Pdmt.Api.Domain.Tag", b =>
+                {
+                    b.HasOne("Pdmt.Api.Domain.User", "User")
+                        .WithMany("Tags")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Pdmt.Api.Domain.Event", b =>
+                {
+                    b.Navigation("EventTags");
+                });
+
+            modelBuilder.Entity("Pdmt.Api.Domain.Tag", b =>
+                {
+                    b.Navigation("EventTags");
+                });
+
             modelBuilder.Entity("Pdmt.Api.Domain.User", b =>
                 {
                     b.Navigation("Events");
@@ -229,6 +302,8 @@ namespace Pdmt.Api.Migrations.Postgres
                     b.Navigation("RefreshTokens");
 
                     b.Navigation("Summaries");
+
+                    b.Navigation("Tags");
                 });
 #pragma warning restore 612, 618
         }

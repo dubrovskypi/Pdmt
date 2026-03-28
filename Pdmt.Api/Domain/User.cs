@@ -9,4 +9,5 @@ public class User
     public List<Event> Events { get; set; } = new();
     public List<Summary> Summaries { get; set; } = new();
     public List<RefreshToken> RefreshTokens { get; set; } = new();
+    public List<Tag> Tags { get; set; } = new();
 }

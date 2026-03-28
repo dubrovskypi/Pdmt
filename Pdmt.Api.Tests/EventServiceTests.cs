@@ -19,7 +19,6 @@ namespace Pdmt.Api.Tests
         [Fact]
         public async Task CreateEventAsync_Should_Create_Event_For_User()
         {
-            // Arrange
             var db = CreateDbContext();
             var service = new EventService(db);
             var userId = Guid.NewGuid();
@@ -27,29 +26,23 @@ namespace Pdmt.Api.Tests
             {
                 Timestamp = DateTime.UtcNow,
                 Type = 1,
-                Category = "Work",
                 Title = "Promotion",
                 Intensity = 8,
-                CanInfluence = true,
-                IsRelationship = false
+                CanInfluence = true
             };
 
-            // Act
             var result = await service.CreateEventAsync(userId, dto);
 
-            // Assert
             var entity = await db.Events.FirstOrDefaultAsync();
             Assert.NotNull(entity);
             Assert.Equal(userId, entity.UserId);
             Assert.Equal(dto.Title, entity.Title);
-            Assert.Equal(dto.Category, entity.Category);
             Assert.Equal(entity.Id, result.Id);
         }
 
         [Fact]
         public async Task GetByIdAsync_Should_Return_Null_For_Other_User()
         {
-            // Arrange
             var db = CreateDbContext();
             var service = new EventService(db);
             var ownerId = Guid.NewGuid();
@@ -60,39 +53,32 @@ namespace Pdmt.Api.Tests
                 UserId = ownerId,
                 Timestamp = DateTime.UtcNow,
                 Type = 1,
-                Category = "Work",
                 Title = "Test",
                 Intensity = 5
             };
             db.Events.Add(entity);
             await db.SaveChangesAsync();
 
-            // Act
             var result = await service.GetByIdAsync(otherUserId, entity.Id);
 
-            // Assert
             Assert.Null(result);
         }
 
         [Fact]
         public async Task UpdateEventAsync_Should_Return_False_If_Not_Found()
         {
-            //Arrange
             var db = CreateDbContext();
             var service = new EventService(db);
             var dto = new UpdateEventDto
             {
                 Timestamp = DateTime.UtcNow,
                 Type = 1,
-                Category = "Work",
                 Title = "Updated",
                 Intensity = 5
             };
 
-            //Act
             var result = await service.UpdateEventAsync(Guid.NewGuid(), Guid.NewGuid(), dto);
 
-            //Assert
             Assert.False(result);
         }
 
@@ -106,7 +92,6 @@ namespace Pdmt.Api.Tests
             {
                 Timestamp = DateTime.UtcNow,
                 Type = 1,
-                Category = "Work",
                 Title = "Test",
                 Intensity = 5
             };
@@ -129,7 +114,6 @@ namespace Pdmt.Api.Tests
                 UserId = userId,
                 Timestamp = DateTime.UtcNow,
                 Type = 0,
-                Category = "Old",
                 Title = "Old Title",
                 Intensity = 3
             });
@@ -138,7 +122,6 @@ namespace Pdmt.Api.Tests
             {
                 Timestamp = DateTime.UtcNow,
                 Type = 1,
-                Category = "New",
                 Title = "New Title",
                 Intensity = 9
             };
@@ -148,7 +131,6 @@ namespace Pdmt.Api.Tests
             var updated = await db.Events.FirstAsync();
             Assert.True(result);
             Assert.Equal(1, updated.Type);
-            Assert.Equal("New", updated.Category);
             Assert.Equal("New Title", updated.Title);
             Assert.Equal(9, updated.Intensity);
         }
@@ -166,7 +148,6 @@ namespace Pdmt.Api.Tests
                 UserId = userId,
                 Timestamp = DateTime.UtcNow,
                 Type = 1,
-                Category = "Test",
                 Title = "Test",
                 Intensity = 5
             });
@@ -179,39 +160,47 @@ namespace Pdmt.Api.Tests
         }
 
         [Fact]
-        public async Task GetEventsAsync_Should_Filter_By_Category()
+        public async Task GetEventsAsync_Should_Filter_By_Tag()
         {
             var db = CreateDbContext();
             var service = new EventService(db);
             var userId = Guid.NewGuid();
-            db.Events.AddRange(
-                new Event
-                {
-                    Id = Guid.NewGuid(),
-                    UserId = userId,
-                    Timestamp = DateTime.UtcNow,
-                    Type = 1,
-                    Category = "Work",
-                    Title = "A",
-                    Intensity = 5
-                },
-                new Event
-                {
-                    Id = Guid.NewGuid(),
-                    UserId = userId,
-                    Timestamp = DateTime.UtcNow,
-                    Type = 1,
-                    Category = "Home",
-                    Title = "B",
-                    Intensity = 5
-                }
-            );
+
+            var tag = new Tag
+            {
+                Id = Guid.NewGuid(),
+                Name = "Work",
+                UserId = userId,
+                CreatedAt = DateTime.UtcNow
+            };
+            db.Tags.Add(tag);
+
+            var eventWithTag = new Event
+            {
+                Id = Guid.NewGuid(),
+                UserId = userId,
+                Timestamp = DateTime.UtcNow,
+                Type = 1,
+                Title = "A",
+                Intensity = 5
+            };
+            var eventWithoutTag = new Event
+            {
+                Id = Guid.NewGuid(),
+                UserId = userId,
+                Timestamp = DateTime.UtcNow,
+                Type = 1,
+                Title = "B",
+                Intensity = 5
+            };
+            db.Events.AddRange(eventWithTag, eventWithoutTag);
+            db.EventTags.Add(new EventTag { EventId = eventWithTag.Id, TagId = tag.Id });
             await db.SaveChangesAsync();
 
-            var result = await service.GetEventsAsync(userId, null, null, null, "Work", null, null, null);
+            var result = await service.GetEventsAsync(userId, null, null, null, [tag.Id], null, null);
 
             Assert.Single(result);
-            Assert.Equal("Work", result.First().Category);
+            Assert.Equal("A", result[0].Title);
         }
     }
 }
