@@ -20,6 +20,9 @@ dotnet test Pdmt.Api.Tests/Pdmt.Api.Tests.csproj
 # Run a single test by name
 dotnet test Pdmt.Api.Tests/Pdmt.Api.Tests.csproj --filter "FullyQualifiedName~TestMethodName"
  
+# Add a new EF migration
+dotnet ef migrations add <MigrationName> --project Pdmt.Api
+
 # Apply EF migrations
 dotnet ef database update --project Pdmt.Api
 ```
@@ -49,7 +52,8 @@ dotnet ef database update --project Pdmt.Api
 ### API Layers
  
 - **Controllers** → **Services** → **AppDbContext** (EF Core)
-- Services (`AuthService`, `EventService`) contain all business logic; controllers are thin
+- Services (`AuthService`, `EventService`, `TagService`, `StatsService`, `SummaryService`, `UserService`) contain all business logic; controllers are thin
+- `TokenCleanupBgService` — background service that purges expired refresh tokens
 - Global exception handling via `ExceptionHandlingMiddleware` — do not add try/catch in controllers
  
 ### Authentication
@@ -59,6 +63,12 @@ dotnet ef database update --project Pdmt.Api
 - Token rotation: old refresh tokens are invalidated on login/refresh
 - `POST /api/auth/login` → `POST /api/auth/refresh` → `POST /api/auth/logout`
  
+### Tags
+
+- Tags are per-user; `Tag` has a `UserId` FK — never shared across users
+- `EventTag` is a join entity for the Event↔Tag many-to-many (no direct EF `HasMany(...).WithMany`)
+- `TagService.UpsertTagAsync` is idempotent — returns existing tag if name matches (case-sensitive, trimmed)
+
 ### Rate Limiting
  
 Composite pattern: tries **Redis** first, falls back to **in-memory** if Redis is unavailable.

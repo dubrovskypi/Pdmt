@@ -2,6 +2,7 @@
 @inject NavigationManager Nav
 @inject TokenService TokenService
 @inject EventService EventService
+@inject TagService TagService
 @using Pdmt.Client.Models
 @using Pdmt.Client.Services
 
@@ -34,20 +35,6 @@
     </label>
 
     <label>
-        Category *
-        <select @bind="category" style="display:block; width:100%; margin-top:4px;">
-            <option value="">-- select --</option>
-            <option>Work</option>
-            <option>Health</option>
-            <option>Social</option>
-            <option>Family</option>
-            <option>Finance</option>
-            <option>Hobby</option>
-            <option>Other</option>
-        </select>
-    </label>
-
-    <label>
         Intensity: @intensity / 10
         <input type="range" min="0" max="10" @bind="intensity" style="display:block; width:100%; margin-top:4px;" />
     </label>
@@ -69,14 +56,40 @@
         <textarea @bind="description" rows="3" placeholder="Details (optional)" style="display:block; width:100%; margin-top:4px;"></textarea>
     </label>
 
-    <div style="display:flex; gap:24px;">
-        <label>
-            <input type="checkbox" @bind="canInfluence" /> I can influence this
-        </label>
-        <label>
-            <input type="checkbox" @bind="isRelationship" /> Relationship
-        </label>
+    <div>
+        <div style="font-size:0.9rem; margin-bottom:4px;">Tags</div>
+        @if (selectedTags.Count > 0)
+        {
+            <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:6px;">
+                @foreach (var tag in selectedTags)
+                {
+                    <span style="background:#e0e0e0; border-radius:12px; padding:2px 10px; font-size:0.85rem; cursor:pointer;"
+                          @onclick="() => RemoveTag(tag)">
+                        @tag ×
+                    </span>
+                }
+            </div>
+        }
+        <div style="display:flex; gap:4px;">
+            <input value="@tagInput" @oninput="OnTagInput" @onkeydown="OnTagKeyDown"
+                   placeholder="Add tag..."
+                   style="flex:1; padding:4px;" />
+            <button type="button" @onclick="() => CommitTagInput(tagInput.Trim())">Add</button>
+        </div>
+        @if (suggestions.Count > 0)
+        {
+            <div style="border:1px solid #ccc; background:white; margin-top:2px;">
+                @foreach (var s in suggestions)
+                {
+                    <div style="padding:4px 8px; cursor:pointer;" @onclick="() => SelectSuggestion(s)">@s</div>
+                }
+            </div>
+        }
     </div>
+
+    <label>
+        <input type="checkbox" @bind="canInfluence" /> I can influence this
+    </label>
 
     <div style="display:flex; gap:12px; margin-top:8px;">
         <button @onclick="Submit" disabled="@submitting">Save</button>
@@ -88,19 +101,63 @@
 @code {
     private string title = "";
     private int type = 1;
-    private string category = "";
     private int intensity = 5;
     private string? context;
     private string? description;
     private bool canInfluence;
-    private bool isRelationship;
     private bool submitting;
     private string? errorMessage;
+    private List<string> existingTagNames = [];
+    private List<string> selectedTags = [];
+    private string tagInput = "";
+    private List<string> suggestions = [];
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         if (!TokenService.IsAuthenticated)
+        {
             Nav.NavigateTo("/login");
+            return;
+        }
+        var tags = await TagService.GetTagsAsync();
+        existingTagNames = tags.Select(t => t.Name).ToList();
+    }
+
+    private void OnTagInput(ChangeEventArgs e)
+    {
+        tagInput = e.Value?.ToString() ?? "";
+        var input = tagInput.Trim();
+        suggestions = input.Length == 0
+            ? []
+            : existingTagNames
+                .Where(n => n.Contains(input, StringComparison.OrdinalIgnoreCase) && !selectedTags.Contains(n))
+                .Take(5)
+                .ToList();
+
+    }
+
+    private void SelectSuggestion(string name)
+    {
+        if (!selectedTags.Contains(name))
+            selectedTags.Add(name);
+        tagInput = "";
+        suggestions = [];
+    }
+
+    private void RemoveTag(string name) => selectedTags.Remove(name);
+
+    private void OnTagKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+            CommitTagInput(tagInput.Trim());
+    }
+
+    private void CommitTagInput(string name)
+    {
+        if (!string.IsNullOrWhiteSpace(name) && !selectedTags.Contains(name))
+            selectedTags.Add(name);
+        tagInput = "";
+        suggestions = [];
     }
 
     private async Task Submit()
@@ -108,11 +165,6 @@
         if (string.IsNullOrWhiteSpace(title))
         {
             errorMessage = "Title is required.";
-            return;
-        }
-        if (string.IsNullOrWhiteSpace(category))
-        {
-            errorMessage = "Category is required.";
             return;
         }
 
@@ -126,12 +178,11 @@
                 Timestamp = DateTime.UtcNow,
                 Title = title,
                 Type = type,
-                Category = category,
                 Intensity = intensity,
                 Context = string.IsNullOrWhiteSpace(context) ? null : context,
                 Description = string.IsNullOrWhiteSpace(description) ? null : description,
                 CanInfluence = canInfluence,
-                IsRelationship = isRelationship
+                TagNames = selectedTags
             });
 
             Nav.NavigateTo("/events");

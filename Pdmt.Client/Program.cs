@@ -15,6 +15,7 @@ try
     builder.Services.AddTransient<AuthHeaderHandler>();
     builder.Services.AddScoped<AuthService>();
     builder.Services.AddScoped<EventService>();
+    builder.Services.AddScoped<TagService>();
     //http client
     var apiOptions = builder.Configuration.GetSection(PdmtApiOptions.SectionName).Get<PdmtApiOptions>()!;
     builder.Services.AddHttpClient(apiOptions.ClientName, client =>
