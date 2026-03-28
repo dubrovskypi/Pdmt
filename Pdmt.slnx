@@ -7,5 +7,4 @@
   </Folder>
   <Project Path="Pdmt.Api/Pdmt.Api.csproj" />
   <Project Path="Pdmt.Client/Pdmt.Client.csproj" />
-  <Project Path="Pdmt.Web/Pdmt.Web.csproj" Id="cbbbda77-4d3f-4749-b847-9c3551591f79" />
 </Solution>
