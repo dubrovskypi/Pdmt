@@ -2,10 +2,6 @@
  
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
  
-## Out of scope
- 
-**Pdmt.Web** — ignore this project entirely; do not modify, suggest changes to, or include it in any work.
- 
 ## Build & Run
  
 ```bash
@@ -115,6 +111,8 @@ Integration tests in `EventControllerTests.cs` cover auth enforcement, CRUD, fil
 - API calls only via typed HttpClient services, never raw `HttpClient`
  
 ## Commits
- 
-- Conventional commits: `feat:`, `fix:`, `refactor:`, `test:`
+
+- Conventional commits: `feat:`, `fix:`, `refactor:`, `test:`, `chore:`, `docs:`, `style:`, `perf:`, `ci:`, `build:`, `revert:`
 - One logical change per commit
+- Message: single concise line, imperative mood, no period at the end (e.g. `feat: add tag filtering`)
+- No co-authorship lines — do not add `Co-Authored-By` to commits
