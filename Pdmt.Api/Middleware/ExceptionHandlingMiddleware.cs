@@ -18,6 +18,10 @@ namespace Pdmt.Api.Middleware
             {
                 await HandleException(context, ex, 429);
             }
+            catch (NotFoundException ex)
+            {
+                await HandleException(context, ex, 404);
+            }
             catch (UnauthorizedAccessException ex)
             {
                 await HandleException(context, ex, 401);

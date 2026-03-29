@@ -9,12 +9,11 @@ namespace Pdmt.Api.Controllers
     [Authorize]
     [ApiController]
     [Route("api/[controller]")]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public class EventsController(IEventService eventService) : ControllerBase
     {
-        // GET /events
-        // Supports filtering via query string:
-        // ?from=&to=&type=&tags=guid1,guid2&minIntensity=&maxIntensity=
         [HttpGet]
+        [ProducesResponseType(typeof(IEnumerable<EventResponseDto>), StatusCodes.Status200OK)]
         public async Task<ActionResult<IEnumerable<EventResponseDto>>> GetEvents(
             [FromQuery] DateTime? from = null,
             [FromQuery] DateTime? to = null,
@@ -40,8 +39,9 @@ namespace Pdmt.Api.Controllers
             return Ok(events);
         }
 
-        // GET /events/{id}
         [HttpGet("{id:guid}")]
+        [ProducesResponseType(typeof(EventResponseDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<EventResponseDto>> GetEvent(Guid id)
         {
             var userId = User.GetUserId();
@@ -50,18 +50,18 @@ namespace Pdmt.Api.Controllers
             return Ok(ev);
         }
 
-        // POST /events
         [HttpPost]
+        [ProducesResponseType(typeof(EventResponseDto), StatusCodes.Status201Created)]
         public async Task<ActionResult<EventResponseDto>> CreateEvent([FromBody] CreateEventDto model)
         {
             var userId = User.GetUserId();
-            if (model == null) return BadRequest();
             var created = await eventService.CreateEventAsync(userId, model);
             return CreatedAtAction(nameof(GetEvent), new { id = created.Id }, created);
         }
 
-        // PUT /events/{id}
         [HttpPut("{id:guid}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> UpdateEvent(Guid id, [FromBody] UpdateEventDto model)
         {
             var userId = User.GetUserId();
@@ -71,8 +71,9 @@ namespace Pdmt.Api.Controllers
             return NoContent();
         }
 
-        // DELETE /events/{id}
         [HttpDelete("{id:guid}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> DeleteEvent(Guid id)
         {
             var userId = User.GetUserId();

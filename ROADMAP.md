@@ -148,16 +148,74 @@ GET /api/analytics/correlations?tagId={guid}
   - daysOfWeek: [{day, frequency}]
   - timeOfDay: [{hour, frequency}]
 
-GET /api/analytics/calendar?month=2026-03
+GET /api/analytics/calendar/week?weekOf=2026-03-23
   Returns:
-  - days: [{date, positiveCount, negativeCount, dominantIntensity, colorCode}]
+  - weekStart, weekEnd
+  - days:
+    - date
+    - positiveCount, negativeCount
+    - positiveIntensitySum, negativeIntensitySum
+    - dayScore (float) — see "Day score formula" in §3.2
+    - topPositiveTags: [{name, count}] (top 2 by frequency)
+    - topNegativeTags: [{name, count}] (top 2 by frequency)
+
+GET /api/analytics/calendar/month?month=2026-03
+  Returns:
+  - days: [{date, positiveCount, negativeCount, dayScore}]
+  (lighter payload for month grid — Phase 4)
 ```
 
 **Implementation**: All queries are EF Core LINQ with `GroupBy`. No raw SQL unless performance requires it. Consider caching weekly summaries (Redis) if queries become slow on large datasets.
 
-### 3.2 Calendar view
+### 3.2 Weekly calendar view (primary calendar UI)
 
-Frontend feature (Blazor first, then MAUI, then React):
+**Why**: The core "awareness" tool. Shows the full picture of each week at a glance — not just color, but what happened, how intense it was, and what patterns repeat.
+
+**Design**: Each day is a horizontal card containing:
+
+1. **Day label** (left) — weekday abbreviation + date number.
+
+2. **Horizontal histogram** (center) — a bar stretching in both directions from a center divider:
+   - Green bar extends LEFT from center — proportional to total positive intensity sum for the day.
+   - Red bar extends RIGHT from center — proportional to total negative intensity sum for the day.
+   - Bar width is relative to the max intensity sum across all 7 days (so the worst/best day fills half the track).
+   - Event count numbers shown at bar edges (e.g. "3" on the left, "1" on the right).
+
+3. **Top tags** — positioned above/below the histogram:
+   - Positive tags (green pills) sit ABOVE the bar, aligned toward center-left.
+   - Negative tags (red pills) sit BELOW the bar, aligned toward center-right.
+   - Show top 2 most frequent tags per side per day. If a tag appears in multiple events the same day, it shows once.
+
+4. **Day score + mood dot** (right) — a colored dot and a number:
+   - Dot color: green (score > 1), red (score < -1), amber (neutral).
+   - Number = absolute value of day score.
+   - Label: "pos" / "neg" / "even".
+
+5. **Background**: neutral (no mood-colored card backgrounds).
+
+6. **Interaction**: Tap/click a day card → expand to show full event list for that day (with all tags, descriptions, timestamps).
+
+**Day score formula**:
+
+```
+dayScore = (sumPositiveIntensities - sumNegativeIntensities) / totalEventCount
+```
+
+This means:
+- One negative event with intensity 9 outweighs three positive events with intensity 3 each (score = (9 - 9) / 4 = 0 → neutral).
+- A day with only negatives at high intensity scores deeply negative.
+- A calm day with a few mild positives scores mildly positive.
+
+The formula captures both volume and weight of events, giving a more honest picture than simple event counts.
+
+**API endpoint**: `GET /api/analytics/calendar/week?weekOf=2026-03-23` (see §3.1).
+
+**Navigation**: Previous/Next week buttons. Week starts on Monday.
+
+**Implementation order**: Blazor first (test UI), then MAUI (primary use), then React.
+
+**Monthly calendar view**: deferred to Phase 4. Simpler grid (colored cells only, no histograms), uses the lighter `GET /api/analytics/calendar/month` endpoint. Only useful when there are several months of accumulated data.
+Ideas for monthly UI (discuss and implement later):
 - Monthly grid, each day colored by dominant mood (green → yellow → red gradient)
 - Tap day → see events for that day
 - Swipe between months

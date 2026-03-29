@@ -9,9 +9,11 @@ namespace Pdmt.Api.Controllers;
 [Authorize]
 [ApiController]
 [Route("api/[controller]")]
+[ProducesResponseType(StatusCodes.Status401Unauthorized)]
 public class TagsController(ITagService tagService) : ControllerBase
 {
     [HttpGet]
+    [ProducesResponseType(typeof(IEnumerable<TagResponseDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IEnumerable<TagResponseDto>>> GetTags()
     {
         var userId = User.GetUserId();
@@ -20,6 +22,7 @@ public class TagsController(ITagService tagService) : ControllerBase
     }
 
     [HttpPost]
+    [ProducesResponseType(typeof(TagResponseDto), StatusCodes.Status200OK)]
     public async Task<ActionResult<TagResponseDto>> UpsertTag([FromBody] CreateTagDto dto)
     {
         var userId = User.GetUserId();
@@ -28,6 +31,8 @@ public class TagsController(ITagService tagService) : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteTag(Guid id)
     {
         var userId = User.GetUserId();

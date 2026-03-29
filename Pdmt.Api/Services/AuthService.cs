@@ -73,7 +73,7 @@ namespace Pdmt.Api.Services
                     Reason = "Invalid credentials"
                 });
                 await _db.SaveChangesAsync();
-                throw new InvalidOperationException("Invalid credentials");
+                throw new UnauthorizedAccessException("Invalid credentials");
             }
 
             // revoke old tokens
@@ -104,11 +104,7 @@ namespace Pdmt.Api.Services
                 .FirstOrDefaultAsync(rt =>
                     rt.Token == hashedRefreshToken &&
                     !rt.IsRevoked &&
-                    rt.ExpiresAt > DateTime.UtcNow);
-
-            if (token == null)
-                throw new InvalidOperationException("Invalid refresh token");
-
+                    rt.ExpiresAt > DateTime.UtcNow) ?? throw new UnauthorizedAccessException("Invalid refresh token");
             token.IsRevoked = true;
 
             var (newRefreshTokenEntity, rawRefreshToken) = CreateRefreshToken(token.User);
@@ -178,15 +174,10 @@ namespace Pdmt.Api.Services
             return Convert.ToBase64String(bytes);
         }
 
-        private class AccessToken
+        private class AccessToken(string token, DateTime expiresAt)
         {
-            public string Token { get; set; } = null!;
-            public DateTime ExpiresAt { get; set; }
-            public AccessToken(string token, DateTime expiresAt)
-            {
-                Token = token;
-                ExpiresAt = expiresAt;
-            }
+            public string Token { get; set; } = token;
+            public DateTime ExpiresAt { get; set; } = expiresAt;
         }
     }
 }

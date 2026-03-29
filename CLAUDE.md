@@ -20,6 +20,9 @@ dotnet test Pdmt.Api.Tests/Pdmt.Api.Tests.csproj
 # Run a single test by name
 dotnet test Pdmt.Api.Tests/Pdmt.Api.Tests.csproj --filter "FullyQualifiedName~TestMethodName"
  
+# Start dev infrastructure (PostgreSQL + Redis)
+docker compose up -d
+
 # Add a new EF migration
 dotnet ef migrations add <MigrationName> --project Pdmt.Api
 
@@ -56,9 +59,18 @@ dotnet build Pdmt.Maui/Pdmt.Maui.csproj
 ### API Layers
  
 - **Controllers** → **Services** → **AppDbContext** (EF Core)
-- Services (`AuthService`, `EventService`, `TagService`, `StatsService`, `SummaryService`, `UserService`) contain all business logic; controllers are thin
+- Services (`AuthService`, `EventService`, `TagService`, `AnalyticsService`, `UserService`) contain all business logic; controllers are thin
+- Controllers: `AuthController`, `EventsController`, `TagsController`, `AnalyticsController`
 - `TokenCleanupBgService` — background service that purges expired refresh tokens
 - Global exception handling via `ExceptionHandlingMiddleware` — do not add try/catch in controllers
+
+### Exception → HTTP Status
+
+`ExceptionHandlingMiddleware` maps exceptions to HTTP codes — throw from services, never catch in controllers:
+- `UnauthorizedAccessException` → 401
+- `NotFoundException` (`Infrastructure/Exceptions/`) → 404
+- `InvalidOperationException` → 400
+- `RateLimitExceededException` → 429
  
 ### Authentication
  
@@ -81,8 +93,8 @@ Composite pattern: tries **Redis** first, falls back to **in-memory** if Redis i
  
 ### Database
  
-- **Development:** SQL Server LocalDB (`appsettings.Development.json`)
-- **Production:** PostgreSQL (`appsettings.Prod.json`)
+- **Development:** PostgreSQL via Docker Compose (`appsettings.Development.json`)
+- **Production:** PostgreSQL — required env vars listed in `.env.example`
 - `AppDbContext` has composite indexes on `Events(UserId, Timestamp)` and `Events(UserId, Type)`
 - User data is isolated — all queries filter by `UserId` extracted from JWT claims
  
@@ -110,6 +122,7 @@ Integration tests in `EventControllerTests.cs` cover auth enforcement, CRUD, fil
 - Use EF Core for all data access; no raw SQL unless explicitly needed
 - No lazy loading — always explicit `.Include()`
 - Never edit migration files manually; generate via `dotnet ef migrations add`
+- Custom C# methods cannot be used inside EF Core queries (`IQueryable`) — EF cannot translate them to SQL. Materialize with `ToListAsync()` first, then apply custom logic in-memory.
  
 ## What NOT to do
  
@@ -117,6 +130,7 @@ Integration tests in `EventControllerTests.cs` cover auth enforcement, CRUD, fil
 - No try/catch in controllers — `ExceptionHandlingMiddleware` handles it
 - No `.Result` / `.Wait()` on async code
 - No direct `AppDbContext` access outside of services
+- No manual `if (model == null) return BadRequest()` — `[ApiController]` handles null bodies automatically
  
 ## Pdmt.Maui Conventions
 
