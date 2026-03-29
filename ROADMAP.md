@@ -219,15 +219,160 @@ Ideas for monthly UI (discuss and implement later):
 - Monthly grid, each day colored by dominant mood (green → yellow → red gradient)
 - Tap day → see events for that day
 - Swipe between months
+- 
+### 3.3 Correlation insights (carousel)
 
-### 3.3 Correlation insights
+**Why**: The main "awareness engine" of the app. A dedicated screen with swipeable insight cards — each card answers one specific question about the user's data. No AI, no ML — just SQL aggregations rendered as clear visual statements.
 
-Show on analytics screen:
-- "Events tagged 'ссора' have average intensity 8.2 vs 4.1 for all other events"
-- "Mondays have 40% more negative events than average"
-- "After events tagged 'бар', next-day intensity averages 6.8"
+**UI**: Horizontal carousel of cards. Period selector at the top (last week / last 2 weeks / last month). Each card has a colored type badge, a title, a short explanation, and a visualization (horizontal bars, trend bars, or ratio display). Navigation: swipe or prev/next buttons + dot indicators.
 
-This is the query logic from `GET /api/analytics/correlations` rendered as cards/charts.
+**Implementation approach**: All insights are computed on-the-fly by `AnalyticsService`. For a single user with hundreds/low thousands of events, queries run in milliseconds. No background jobs, no snapshot tables. If performance becomes an issue later — add Redis caching with 1-hour TTL.
+
+**Existing API coverage** (maps to current DTOs and methods):
+
+- `GetWeeklySummaryAsync` → `WeeklySummaryDto` provides: PosCount, NegCount, AvgPosIntensity, AvgNegIntensity, TopTags (with count + avg intensity), ByDayOfWeek
+- `GetTrendsAsync` → `TrendPeriodDto` provides: per-period PosCount, NegCount, AvgIntensity
+- `GetCorrelationsAsync` → `CorrelationsDto` provides: tag-specific AvgIntensityWithTag vs AvgIntensityWithoutTag, DaysOfWeek frequency
+- `GetCalendarWeekAsync` → `CalendarWeekDto` provides: per-day scores, tag breakdowns
+
+#### Insight cards (10 total)
+
+**Card 1 — Strongest negative triggers**
+- Type badge: "Triggers" (red)
+- Shows: Top 5 negative tags ranked by average intensity, plus "all other negative" baseline for comparison.
+- Data source: `WeeklySummaryDto.TopTags` filtered by negative events, sorted by AvgIntensity desc.
+- Visualization: Horizontal bars with intensity values.
+
+**Card 2 — Repeating triggers**
+- Type badge: "Patterns" (purple)
+- Shows: Tags that appeared 3+ times in the period. "These aren't random — they're patterns."
+- Data source: **New method needed** — `GetRepeatingTriggersAsync(userId, from, to, minCount: 3)`
+- Returns: `IReadOnlyList<RepeatingTriggerDto>` where `RepeatingTriggerDto(string TagName, int Count, double AvgIntensity)`
+- Visualization: Tag names with frequency bars.
+
+**Card 3 — Positive vs negative balance**
+- Type badge: "Balance" (teal)
+- Shows: Total positive events vs negative events, plus average intensity comparison showing that negatives feel stronger even when outnumbered.
+- Data source: `WeeklySummaryDto.PosCount`, `NegCount`, `AvgPosIntensity`, `AvgNegIntensity`
+- Visualization: Large numbers side by side + intensity comparison bars.
+
+**Card 4 — Weekly ratio trend**
+- Type badge: "Trends" (blue)
+- Shows: How the positive/negative balance shifted week over week (last 6 weeks).
+- Data source: `GetTrendsAsync` with `TrendGranularity.Week`
+- Visualization: Vertical bars per week, colored green (net positive) or red (net negative).
+
+**Card 5 — Blind spot (discounted positives)**
+- Type badge: "Blind spot" (amber)
+- Shows: Positive tags with high frequency but low average intensity — things that happen often but the user rates as unimportant. "The good stuff is there — you're just scoring it low."
+- Data source: **New method needed** — `GetDiscountedPositivesAsync(userId, from, to)`
+- Logic: positive tags where `count >= 5 AND avgIntensity < 4.0`, sorted by count desc.
+- Returns: `IReadOnlyList<DiscountedPositiveDto>` where `DiscountedPositiveDto(string TagName, double AvgIntensity, int Count)`
+- Visualization: Bars showing low intensity + count annotation.
+
+**Card 6 — Day-of-week patterns**
+- Type badge: "Patterns" (purple)
+- Shows: Average day score per day of week. "Tuesday is your hardest day, Saturday is your best."
+- Data source: `WeeklySummaryDto.ByDayOfWeek` (aggregated across the selected period — may need a period-aware variant).
+- Visualization: Horizontal bars per weekday, green (positive score) or red (negative).
+
+**Card 7 — Next day effect**
+- Type badge: "Next day effect" (blue)
+- Shows: Average day score the day AFTER events with a specific tag. "After 'argument', next day averages -4.1. After 'gym', next day averages +1.8."
+- Data source: **New method needed** — `GetNextDayEffectsAsync(userId, from, to)`
+- Logic: For each tag that appears 3+ times in the period, compute average dayScore of the following calendar day. Compare to overall average dayScore.
+- Returns: `IReadOnlyList<NextDayEffectDto>` where `NextDayEffectDto(string TagName, double NextDayAvgScore, int Occurrences)`
+- Visualization: Bars showing next-day score, sorted by absolute impact.
+
+**Card 8 — Tag combinations**
+- Type badge: "Combos" (purple)
+- Shows: Pairs of tags that frequently appear together in the same day, and how the combination differs from each tag alone.
+- Data source: **New method needed** — `GetTagCombosAsync(userId, from, to)`
+- Logic: Find tag pairs that co-occur on the same day 3+ times. For each pair, compute average event intensity when both present vs when only one is present.
+- Returns: `IReadOnlyList<TagComboDto>` where `TagComboDto(string Tag1, string Tag2, double CombinedAvgIntensity, double Tag1AloneAvgIntensity, double Tag2AloneAvgIntensity, int CoOccurrences)`
+- Visualization: Paired bars showing combined vs alone intensity.
+
+**Card 9 — Tag trend over time**
+- Type badge: "Trends" (blue)
+- Shows: How a specific tag's frequency changes week over week. "Is 'argument' getting better or worse?"
+- Data source: **New method needed** — `GetTagTrendAsync(userId, Guid tagId, from, to, TrendGranularity period)`
+- Returns: `IReadOnlyList<TagTrendPointDto>` where `TagTrendPointDto(DateTime PeriodStart, int Count, double AvgIntensity)`
+- Note: The carousel auto-selects the top 3 most frequent negative tags and shows a trend line for each. User can also pick a tag manually.
+- Visualization: Small bar chart showing count per week.
+
+**Card 10 — Influenceability split**
+- Type badge: "Control" (teal)
+- Shows: What percentage of negative events are things the user can influence vs cannot. Uses the existing `Influenceability` field on Event.
+- Data source: **New method needed** — `GetInfluenceabilitySplitAsync(userId, from, to)`
+- Logic: Group negative events by Influenceability value. Show counts and average intensity per group.
+- Returns: `InfluenceabilitySplitDto(int CanInfluenceCount, double CanInfluenceAvgIntensity, int CannotInfluenceCount, double CannotInfluenceAvgIntensity)`
+- Visualization: Two-segment horizontal bar (like a stacked bar) + intensity comparison. The CBT angle: "60% of your negative events are things you can't control — focus energy on the 40% where you have influence."
+
+#### New DTOs needed
+
+```csharp
+// Add to Pdmt.Api.Dto.Analytics
+
+public record RepeatingTriggerDto(string TagName, int Count, double AvgIntensity);
+
+public record DiscountedPositiveDto(string TagName, double AvgIntensity, int Count);
+
+public record NextDayEffectDto(string TagName, double NextDayAvgScore, int Occurrences);
+
+public record TagComboDto(
+    string Tag1,
+    string Tag2,
+    double CombinedAvgIntensity,
+    double Tag1AloneAvgIntensity,
+    double Tag2AloneAvgIntensity,
+    int CoOccurrences);
+
+public record TagTrendPointDto(DateTime PeriodStart, int Count, double AvgIntensity);
+
+public record InfluenceabilitySplitDto(
+    int CanInfluenceCount,
+    double CanInfluenceAvgIntensity,
+    int CannotInfluenceCount,
+    double CannotInfluenceAvgIntensity);
+```
+
+#### New AnalyticsService methods
+
+```csharp
+Task<IReadOnlyList<RepeatingTriggerDto>> GetRepeatingTriggersAsync(Guid userId, DateTime from, DateTime to, int minCount = 3);
+Task<IReadOnlyList<DiscountedPositiveDto>> GetDiscountedPositivesAsync(Guid userId, DateTime from, DateTime to);
+Task<IReadOnlyList<NextDayEffectDto>> GetNextDayEffectsAsync(Guid userId, DateTime from, DateTime to);
+Task<IReadOnlyList<TagComboDto>> GetTagCombosAsync(Guid userId, DateTime from, DateTime to);
+Task<IReadOnlyList<TagTrendPointDto>> GetTagTrendAsync(Guid userId, Guid tagId, DateTime from, DateTime to, TrendGranularity period);
+Task<InfluenceabilitySplitDto> GetInfluenceabilitySplitAsync(Guid userId, DateTime from, DateTime to);
+```
+
+#### API endpoints for insights
+
+```
+GET /api/analytics/insights/repeating-triggers?from=...&to=...&minCount=3
+GET /api/analytics/insights/discounted-positives?from=...&to=...
+GET /api/analytics/insights/next-day-effects?from=...&to=...
+GET /api/analytics/insights/tag-combos?from=...&to=...
+GET /api/analytics/insights/tag-trend?tagId=...&from=...&to=...&period=week
+GET /api/analytics/insights/influenceability?from=...&to=...
+```
+
+Existing endpoints that also feed the carousel:
+```
+GET /api/analytics/weekly-summary?weekOf=...       → Cards 1, 3, 6
+GET /api/analytics/trends?from=...&to=...&groupBy=week  → Card 4
+GET /api/analytics/correlations?tagId=...          → supplementary data for Cards 1, 6
+```
+
+#### Implementation order
+
+1. Cards 1, 3, 4, 6 — already covered by existing API, frontend work only.
+2. Card 2 (repeating triggers) + Card 5 (blind spot) — simple GROUP BY queries.
+3. Card 10 (influenceability) — simple GROUP BY on existing field.
+4. Card 7 (next day effect) — self-join with date offset, moderate complexity.
+5. Card 8 (tag combos) — co-occurrence join, moderate complexity.
+6. Card 9 (tag trend) — variant of existing trends logic filtered by tag.
 
 ### 3.4 React SPA (Phase 3)
 
