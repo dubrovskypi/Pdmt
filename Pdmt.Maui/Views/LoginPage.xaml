@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="Pdmt.Maui.Views.LoginPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:conv="clr-namespace:Pdmt.Maui.Converters"
+    xmlns:vm="clr-namespace:Pdmt.Maui.ViewModels"
+    x:DataType="vm:LoginViewModel"
+    BackgroundColor="{StaticResource Surface}">
+
+    <ContentPage.Resources>
+        <conv:NotNullToBoolConverter x:Key="NotNullToBool" />
+        <conv:InvertBoolConverter x:Key="InvertBool" />
+    </ContentPage.Resources>
+
+    <VerticalStackLayout Padding="32,0" Spacing="16" VerticalOptions="Center">
+
+        <Label
+            Style="{StaticResource PageTitle}"
+            Text="Pdmt"
+            HorizontalOptions="Center"
+            Margin="0,0,0,24" />
+
+        <Label
+            Style="{StaticResource ErrorLabel}"
+            Text="{Binding ErrorMessage}"
+            IsVisible="{Binding ErrorMessage, Converter={StaticResource NotNullToBool}}"
+            HorizontalOptions="Center" />
+
+        <Entry
+            Placeholder="Email"
+            Text="{Binding Email}"
+            Keyboard="Email"
+            ReturnType="Next" />
+
+        <Entry
+            Placeholder="Пароль"
+            Text="{Binding Password}"
+            IsPassword="True"
+            ReturnType="Done"
+            ReturnCommand="{Binding LoginCommand}" />
+
+        <Button
+            Text="Войти"
+            Command="{Binding LoginCommand}"
+            IsEnabled="{Binding IsBusy, Converter={StaticResource InvertBool}}"
+            Margin="0,8,0,0" />
+
+        <ActivityIndicator
+            IsRunning="{Binding IsBusy}"
+            IsVisible="{Binding IsBusy}"
+            Color="{StaticResource Primary}"
+            HorizontalOptions="Center" />
+
+    </VerticalStackLayout>
+</ContentPage>

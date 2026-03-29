@@ -7,4 +7,5 @@
   </Folder>
   <Project Path="Pdmt.Api/Pdmt.Api.csproj" />
   <Project Path="Pdmt.Client/Pdmt.Client.csproj" />
+  <Project Path="Pdmt.Maui/Pdmt.Maui.csproj" />
 </Solution>

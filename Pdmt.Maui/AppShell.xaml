@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Shell
+    x:Class="Pdmt.Maui.AppShell"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:views="clr-namespace:Pdmt.Maui.Views"
+    FlyoutBehavior="Disabled">
+
+    <!-- Main app - default route -->
+    <ShellContent
+        Route="events"
+        Title="События"
+        ContentTemplate="{DataTemplate views:EventListPage}" />
+
+    <!-- Login: no nav bar, no tab bar -->
+    <ShellContent
+        Route="login"
+        ContentTemplate="{DataTemplate views:LoginPage}"
+        Shell.NavBarIsVisible="False"
+        Shell.TabBarIsVisible="False" />
+
+</Shell>

@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="Pdmt.Maui.Views.EventListPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:conv="clr-namespace:Pdmt.Maui.Converters"
+    xmlns:vm="clr-namespace:Pdmt.Maui.ViewModels"
+    x:DataType="vm:EventListViewModel"
+    Title="События"
+    BackgroundColor="{StaticResource Secondary}">
+
+    <ContentPage.Resources>
+        <conv:EventTypeToColorConverter x:Key="TypeToColor" />
+        <conv:EventTypeToLabelConverter x:Key="TypeToLabel" />
+        <conv:NotNullToBoolConverter x:Key="NotNullToBool" />
+        <conv:InvertBoolConverter x:Key="InvertBool" />
+    </ContentPage.Resources>
+
+    <ContentPage.ToolbarItems>
+        <ToolbarItem Text="+" Command="{Binding NavigateToAddCommand}" Order="Primary" Priority="0" />
+        <ToolbarItem Text="Выйти" Command="{Binding LogoutCommand}" Order="Secondary" />
+    </ContentPage.ToolbarItems>
+
+    <Grid RowDefinitions="Auto,Auto,*">
+
+        <!-- Error banner -->
+        <Label
+            Grid.Row="0"
+            Style="{StaticResource ErrorLabel}"
+            Text="{Binding ErrorMessage}"
+            IsVisible="{Binding ErrorMessage, Converter={StaticResource NotNullToBool}}"
+            Padding="16,8"
+            BackgroundColor="#FFEBEE" />
+
+        <!-- Filters -->
+        <Border Grid.Row="1" Margin="12,8,12,4" Padding="12">
+            <VerticalStackLayout Spacing="8">
+                <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+                    <VerticalStackLayout Grid.Column="0" Spacing="2">
+                        <Label Style="{StaticResource MutedLabel}" Text="От" />
+                        <DatePicker Date="{Binding FilterFrom, TargetNullValue={x:Null}}" Format="dd.MM.yy" />
+                    </VerticalStackLayout>
+                    <VerticalStackLayout Grid.Column="1" Spacing="2">
+                        <Label Style="{StaticResource MutedLabel}" Text="До" />
+                        <DatePicker Date="{Binding FilterTo, TargetNullValue={x:Null}}" Format="dd.MM.yy" />
+                    </VerticalStackLayout>
+                </Grid>
+
+                <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+                    <VerticalStackLayout Grid.Column="0" Spacing="2">
+                        <Label Style="{StaticResource MutedLabel}" Text="Тип" />
+                        <Picker
+                            ItemsSource="{Binding TypeFilters}"
+                            SelectedItem="{Binding SelectedTypeFilter}"
+                            ItemDisplayBinding="{Binding Label}" />
+                    </VerticalStackLayout>
+                    <VerticalStackLayout Grid.Column="1" Spacing="2">
+                        <Label Style="{StaticResource MutedLabel}" Text="Тег" />
+                        <Picker
+                            ItemsSource="{Binding AvailableTags}"
+                            SelectedItem="{Binding SelectedFilterTag}"
+                            ItemDisplayBinding="{Binding Name}"
+                            Title="Все теги" />
+                    </VerticalStackLayout>
+                </Grid>
+
+                <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+                    <Button
+                        Grid.Column="0"
+                        Text="Применить"
+                        Command="{Binding ApplyFiltersCommand}"
+                        Padding="8,8" />
+                    <Button
+                        Grid.Column="1"
+                        Text="Сбросить"
+                        Style="{StaticResource SecondaryButton}"
+                        Command="{Binding ResetFiltersCommand}"
+                        Padding="8,8" />
+                </Grid>
+            </VerticalStackLayout>
+        </Border>
+
+        <!-- Event list -->
+        <RefreshView
+            Grid.Row="2"
+            Command="{Binding RefreshCommand}"
+            IsRefreshing="{Binding IsRefreshing}"
+            RefreshColor="{StaticResource Primary}">
+
+            <CollectionView ItemsSource="{Binding Events}" Margin="12,0,12,12">
+                <CollectionView.EmptyView>
+                    <Label
+                        Style="{StaticResource MutedLabel}"
+                        Text="Событий нет. Нажмите + чтобы добавить."
+                        HorizontalOptions="Center"
+                        VerticalOptions="Center"
+                        Margin="0,32" />
+                </CollectionView.EmptyView>
+
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="vm:EventItemViewModel">
+                        <Border Margin="0,4" Padding="12">
+                            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
+
+                                <!-- Type indicator -->
+                                <Label
+                                    Grid.Column="0"
+                                    Text="{Binding Type, Converter={StaticResource TypeToLabel}}"
+                                    TextColor="{Binding Type, Converter={StaticResource TypeToColor}}"
+                                    FontSize="22"
+                                    FontAttributes="Bold"
+                                    VerticalOptions="Start" />
+
+                                <!-- Event info -->
+                                <VerticalStackLayout Grid.Column="1" Spacing="2">
+                                    <Label
+                                        Text="{Binding Title}"
+                                        FontAttributes="Bold"
+                                        FontSize="15" />
+                                    <Label
+                                        Text="{Binding Timestamp, StringFormat='{0:dd.MM.yy HH:mm}'}"
+                                        Style="{StaticResource MutedLabel}" />
+                                    <Label
+                                        IsVisible="{Binding HasTags}"
+                                        Text="{Binding TagsSummary}"
+                                        Style="{StaticResource MutedLabel}" />
+                                </VerticalStackLayout>
+
+                                <!-- Intensity + delete -->
+                                <VerticalStackLayout Grid.Column="2" Spacing="4" HorizontalOptions="End">
+                                    <Label
+                                        Text="{Binding Intensity, StringFormat='{0}/10'}"
+                                        FontAttributes="Bold"
+                                        FontSize="15"
+                                        HorizontalOptions="End" />
+                                    <Button
+                                        Text="✕"
+                                        Style="{StaticResource DangerButton}"
+                                        Command="{Binding Source={RelativeSource AncestorType={x:Type vm:EventListViewModel}}, Path=DeleteEventCommand}"
+                                        CommandParameter="{Binding Id}"
+                                        WidthRequest="36"
+                                        HeightRequest="32" />
+                                </VerticalStackLayout>
+
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </RefreshView>
+
+        <!-- Loading overlay -->
+        <ActivityIndicator
+            Grid.Row="2"
+            IsRunning="{Binding IsBusy}"
+            IsVisible="{Binding IsBusy}"
+            Color="{StaticResource Primary}"
+            VerticalOptions="Center"
+            HorizontalOptions="Center" />
+
+    </Grid>
+</ContentPage>
