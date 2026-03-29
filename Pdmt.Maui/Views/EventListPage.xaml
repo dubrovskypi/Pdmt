@@ -16,11 +16,6 @@
         <conv:InvertBoolConverter x:Key="InvertBool" />
     </ContentPage.Resources>
 
-    <ContentPage.ToolbarItems>
-        <ToolbarItem Text="+" Command="{Binding NavigateToAddCommand}" Order="Primary" Priority="0" />
-        <ToolbarItem Text="Выйти" Command="{Binding LogoutCommand}" Order="Secondary" />
-    </ContentPage.ToolbarItems>
-
     <Grid RowDefinitions="Auto,Auto,*">
 
         <!-- Error banner -->
@@ -157,6 +152,17 @@
             Color="{StaticResource Primary}"
             VerticalOptions="Center"
             HorizontalOptions="Center" />
+
+        <!-- FAB -->
+        <Button
+            Grid.Row="0"
+            Grid.RowSpan="3"
+            Text="+"
+            Command="{Binding NavigateToAddCommand}"
+            Style="{StaticResource FabButton}"
+            VerticalOptions="End"
+            HorizontalOptions="End"
+            Margin="0,0,16,16" />
 
     </Grid>
 </ContentPage>

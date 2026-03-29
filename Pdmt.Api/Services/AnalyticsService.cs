@@ -11,7 +11,7 @@ public class AnalyticsService(AppDbContext db) : IAnalyticsService
 
     public async Task<WeeklySummaryDto> GetWeeklySummaryAsync(Guid userId, DateTime weekOf)
     {
-        var monday = GetMonday(weekOf);
+        var monday = GetMonday(DateTime.SpecifyKind(weekOf, DateTimeKind.Utc));
 
         var events = await db.Events
             .AsNoTracking()
@@ -71,6 +71,8 @@ public class AnalyticsService(AppDbContext db) : IAnalyticsService
 
     public async Task<IReadOnlyList<TrendPeriodDto>> GetTrendsAsync(Guid userId, DateTime from, DateTime to, TrendGranularity period)
     {
+        from = DateTime.SpecifyKind(from, DateTimeKind.Utc);
+        to = DateTime.SpecifyKind(to, DateTimeKind.Utc);
         var raw = await db.Events
             .AsNoTracking()
             .Where(e => e.UserId == userId && e.Timestamp >= from && e.Timestamp < to.AddDays(1))
@@ -128,7 +130,7 @@ public class AnalyticsService(AppDbContext db) : IAnalyticsService
 
     public async Task<CalendarWeekDto> GetCalendarWeekAsync(Guid userId, DateTime weekOf)
     {
-        var monday = GetMonday(weekOf);
+        var monday = GetMonday(DateTime.SpecifyKind(weekOf, DateTimeKind.Utc));
 
         var events = await db.Events
             .AsNoTracking()
@@ -180,7 +182,7 @@ public class AnalyticsService(AppDbContext db) : IAnalyticsService
 
     public async Task<CalendarMonthDto> GetCalendarMonthAsync(Guid userId, int year, int month)
     {
-        var from = new DateTime(year, month, 1);
+        var from = DateTime.SpecifyKind(new DateTime(year, month, 1), DateTimeKind.Utc);
         var to = from.AddMonths(1);
 
         var raw = await db.Events

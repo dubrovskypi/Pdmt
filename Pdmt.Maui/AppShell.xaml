@@ -6,11 +6,18 @@
     xmlns:views="clr-namespace:Pdmt.Maui.Views"
     FlyoutBehavior="Disabled">
 
-    <!-- Main app - default route -->
-    <ShellContent
-        Route="events"
-        Title="События"
-        ContentTemplate="{DataTemplate views:EventListPage}" />
+    <!-- Main tabs -->
+    <TabBar>
+        <Tab Title="Events" Icon="tab_list.svg">
+            <ShellContent Route="events" ContentTemplate="{DataTemplate views:EventListPage}" />
+        </Tab>
+        <Tab Title="Calendar" Icon="tab_calendar.svg">
+            <ShellContent Route="calendar" ContentTemplate="{DataTemplate views:WeeklyCalendarPage}" />
+        </Tab>
+        <Tab Title="Account" Icon="tab_account.svg">
+            <ShellContent Route="account" ContentTemplate="{DataTemplate views:AccountPage}" />
+        </Tab>
+    </TabBar>
 
     <!-- Login: no nav bar, no tab bar -->
     <ShellContent

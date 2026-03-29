@@ -2,9 +2,9 @@ using Pdmt.Maui.ViewModels;
 
 namespace Pdmt.Maui.Views;
 
-public partial class AddEventPage : ContentPage
+public partial class NewEventPage : ContentPage
 {
-    public AddEventPage(AddEventViewModel viewModel)
+    public NewEventPage(NewEventViewModel viewModel)
     {
         InitializeComponent();
         BindingContext = viewModel;
@@ -13,6 +13,6 @@ public partial class AddEventPage : ContentPage
     protected override async void OnAppearing()
     {
         base.OnAppearing();
-        await ((AddEventViewModel)BindingContext).LoadTagsCommand.ExecuteAsync(null);
+        await ((NewEventViewModel)BindingContext).LoadTagsCommand.ExecuteAsync(null);
     }
 }

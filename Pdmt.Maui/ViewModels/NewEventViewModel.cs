@@ -6,7 +6,7 @@ using Pdmt.Maui.Services;
 
 namespace Pdmt.Maui.ViewModels;
 
-public partial class AddEventViewModel(EventService eventService, TagService tagService) : ObservableObject
+public partial class NewEventViewModel(EventService eventService, TagService tagService) : ObservableObject
 {
     private List<string> _allTagNames = [];
 

@@ -42,11 +42,12 @@ public static class MauiProgram
             builder.Configuration.GetSection(PdmtApiOptions.SectionName));
 
         // Services
-        builder.Services.AddSingleton<ITokenService, TokenService>();
         builder.Services.AddTransient<AuthHeaderHandler>();
+        builder.Services.AddSingleton<ITokenService, TokenService>();      
         builder.Services.AddSingleton<AuthService>();
         builder.Services.AddSingleton<EventService>();
         builder.Services.AddSingleton<TagService>();
+        builder.Services.AddSingleton<AnalyticsService>();
 
         // HttpClient
         builder.Services.AddHttpClient("PdmtApi", (sp, client) =>
@@ -64,13 +65,17 @@ public static class MauiProgram
 
         // ViewModels
         builder.Services.AddTransient<LoginViewModel>();
-        builder.Services.AddTransient<AddEventViewModel>();
+        builder.Services.AddTransient<NewEventViewModel>();
         builder.Services.AddTransient<EventListViewModel>();
+        builder.Services.AddTransient<WeeklyCalendarViewModel>();
+        builder.Services.AddTransient<AccountViewModel>();
 
         // Pages
         builder.Services.AddTransient<LoginPage>();
-        builder.Services.AddTransient<AddEventPage>();
+        builder.Services.AddTransient<NewEventPage>();
         builder.Services.AddTransient<EventListPage>();
+        builder.Services.AddTransient<WeeklyCalendarPage>();
+        builder.Services.AddTransient<AccountPage>();
 
         // Shell
         builder.Services.AddSingleton<AppShell>();

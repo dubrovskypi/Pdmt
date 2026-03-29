@@ -123,6 +123,7 @@ Integration tests in `EventControllerTests.cs` cover auth enforcement, CRUD, fil
 - No lazy loading — always explicit `.Include()`
 - Never edit migration files manually; generate via `dotnet ef migrations add`
 - Custom C# methods cannot be used inside EF Core queries (`IQueryable`) — EF cannot translate them to SQL. Materialize with `ToListAsync()` first, then apply custom logic in-memory.
+- **DateTime + PostgreSQL**: Npgsql requires `Kind=Utc` for `timestamp with time zone` columns. ASP.NET Core model binding parses `DateTime` from query strings as `Kind=Unspecified`. Always normalize at the top of service methods: `param = DateTime.SpecifyKind(param, DateTimeKind.Utc)`. Same applies to `new DateTime(year, month, day)` — wrap with `SpecifyKind`.
  
 ## What NOT to do
  
@@ -134,10 +135,12 @@ Integration tests in `EventControllerTests.cs` cover auth enforcement, CRUD, fil
  
 ## Pdmt.Maui Conventions
 
+- Navigation: Shell TabBar with three tabs (`events`, `calendar`, `account`) + `login` ShellContent; push pages registered via `Routing.RegisterRoute` in `AppShell.xaml.cs`
 - Singleton HTTP services: inject `IHttpClientFactory`, call `factory.CreateClient(...)` per method — never store `HttpClient` as a field
 - No display logic in DTOs — use ViewModel wrappers (e.g. `EventItemViewModel` over `EventResponseDto`)
 - Filters with nullable enum values: use `ItemsSource` + `SelectedItem` bound to a `record` type, not `SelectedIndex` (index binding sets value to 0 on init, breaking "все" option)
 - `DatePicker` returns `DateTime` with `Kind=Unspecified` — use `DateTime.SpecifyKind(value, DateTimeKind.Utc)` before sending to PostgreSQL API
+- Same for `DateTime.Date` property — it preserves `Kind`, so if the source was `Unspecified`, the result is too
 
 ## Pdmt.Client Conventions
  
@@ -150,4 +153,9 @@ Integration tests in `EventControllerTests.cs` cover auth enforcement, CRUD, fil
 - Conventional commits: `feat:`, `fix:`, `refactor:`, `test:`, `chore:`, `docs:`, `style:`, `perf:`, `ci:`, `build:`, `revert:`
 - One logical change per commit
 - Message: single concise line, imperative mood, no period at the end (e.g. `feat: add tag filtering`)
+- Multiple types in one commit: join on the summary line with `; ` + newline per entry:
+  ```
+  feat: add weekly calendar
+  fix: DateTime Kind in analytics
+  ```
 - No co-authorship lines — do not add `Co-Authored-By` to commits

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="Pdmt.Maui.Views.AccountPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:Pdmt.Maui.ViewModels"
+    x:DataType="vm:AccountViewModel"
+    Title="Аккаунт"
+    BackgroundColor="{StaticResource Secondary}">
+
+    <VerticalStackLayout VerticalOptions="Center" Padding="32" Spacing="12">
+
+        <Label
+            Text="Pdmt"
+            FontSize="40"
+            FontAttributes="Bold"
+            HorizontalOptions="Center"
+            TextColor="{StaticResource Primary}" />
+
+        <Label
+            Text="Личный трекер событий"
+            FontSize="14"
+            TextColor="{StaticResource Muted}"
+            HorizontalOptions="Center" />
+
+        <BoxView
+            HeightRequest="1"
+            Color="{StaticResource Border}"
+            Margin="0,32,0,24" />
+
+        <Button
+            Text="Выйти из аккаунта"
+            Command="{Binding LogoutCommand}"
+            Style="{StaticResource DangerButton}"
+            FontSize="16"
+            Padding="16,14" />
+
+    </VerticalStackLayout>
+
+</ContentPage>

@@ -8,9 +8,7 @@ namespace Pdmt.Maui.ViewModels;
 
 public partial class EventListViewModel(
     EventService eventService,
-    TagService tagService,
-    AuthService authService,
-    ITokenService tokenService) : ObservableObject
+    TagService tagService) : ObservableObject
 {
     public record EventTypeFilter(string Label, int? Value);
     public record TagFilter(string Name, Guid? Id);
@@ -128,14 +126,4 @@ public partial class EventListViewModel(
     [RelayCommand]
     private static async Task NavigateToAddAsync() =>
         await Shell.Current.GoToAsync("addEvent");
-
-    [RelayCommand]
-    private async Task LogoutAsync()
-    {
-        try { await authService.LogoutAsync(); }
-        catch { /* Ignore — clear tokens anyway */ }
-
-        await tokenService.ClearAsync();
-        await Shell.Current.GoToAsync("//login");
-    }
 }

@@ -16,6 +16,7 @@ try
     builder.Services.AddScoped<AuthService>();
     builder.Services.AddScoped<EventService>();
     builder.Services.AddScoped<TagService>();
+    builder.Services.AddScoped<AnalyticsService>();
     //http client
     var apiOptions = builder.Configuration.GetSection(PdmtApiOptions.SectionName).Get<PdmtApiOptions>()!;
     builder.Services.AddHttpClient(apiOptions.ClientName, client =>
