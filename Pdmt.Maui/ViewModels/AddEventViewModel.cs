@@ -36,6 +36,7 @@ public partial class AddEventViewModel(EventService eventService, TagService tag
 
     public ObservableCollection<string> SelectedTags { get; } = [];
     public ObservableCollection<string> TagSuggestions { get; } = [];
+    public bool HasSuggestions => TagSuggestions.Count > 0;
 
     [RelayCommand]
     private async Task LoadTagsAsync()
@@ -48,7 +49,10 @@ public partial class AddEventViewModel(EventService eventService, TagService tag
     {
         TagSuggestions.Clear();
         if (string.IsNullOrWhiteSpace(value))
+        {
+            OnPropertyChanged(nameof(HasSuggestions));
             return;
+        }
 
         var matches = _allTagNames
             .Where(n => n.Contains(value, StringComparison.OrdinalIgnoreCase)
@@ -57,6 +61,8 @@ public partial class AddEventViewModel(EventService eventService, TagService tag
 
         foreach (var match in matches)
             TagSuggestions.Add(match);
+
+        OnPropertyChanged(nameof(HasSuggestions));
     }
 
     [RelayCommand]
@@ -66,6 +72,7 @@ public partial class AddEventViewModel(EventService eventService, TagService tag
             SelectedTags.Add(name);
         TagInput = "";
         TagSuggestions.Clear();
+        OnPropertyChanged(nameof(HasSuggestions));
     }
 
     [RelayCommand]
@@ -76,6 +83,7 @@ public partial class AddEventViewModel(EventService eventService, TagService tag
             SelectedTags.Add(name);
         TagInput = "";
         TagSuggestions.Clear();
+        OnPropertyChanged(nameof(HasSuggestions));
     }
 
     [RelayCommand]

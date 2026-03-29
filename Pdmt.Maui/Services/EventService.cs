@@ -6,8 +6,6 @@ namespace Pdmt.Maui.Services;
 
 public class EventService(IHttpClientFactory factory)
 {
-    private readonly HttpClient _http = factory.CreateClient("PdmtApi");
-
     public async Task<List<EventResponseDto>> GetEventsAsync(
         DateTime? from = null,
         DateTime? to = null,
@@ -24,20 +22,23 @@ public class EventService(IHttpClientFactory factory)
         if (minIntensity.HasValue) query.Append($"minIntensity={minIntensity.Value}&");
         if (maxIntensity.HasValue) query.Append($"maxIntensity={maxIntensity.Value}&");
 
-        var result = await _http.GetFromJsonAsync<List<EventResponseDto>>(query.ToString());
+        var http = factory.CreateClient("PdmtApi");
+        var result = await http.GetFromJsonAsync<List<EventResponseDto>>(query.ToString());
         return result ?? [];
     }
 
     public async Task<EventResponseDto> CreateEventAsync(CreateEventDto dto)
     {
-        var response = await _http.PostAsJsonAsync("api/events", dto);
+        var http = factory.CreateClient("PdmtApi");
+        var response = await http.PostAsJsonAsync("api/events", dto);
         response.EnsureSuccessStatusCode();
         return (await response.Content.ReadFromJsonAsync<EventResponseDto>())!;
     }
 
     public async Task DeleteEventAsync(Guid id)
     {
-        var response = await _http.DeleteAsync($"api/events/{id}");
+        var http = factory.CreateClient("PdmtApi");
+        var response = await http.DeleteAsync($"api/events/{id}");
         response.EnsureSuccessStatusCode();
     }
 }

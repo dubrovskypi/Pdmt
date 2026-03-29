@@ -12,8 +12,18 @@ public partial class EventListViewModel(
     AuthService authService,
     ITokenService tokenService) : ObservableObject
 {
+    public record EventTypeFilter(string Label, int? Value);
+    public record TagFilter(string Name, Guid? Id);
+
     public ObservableCollection<EventItemViewModel> Events { get; } = [];
-    public ObservableCollection<TagResponseDto> AvailableTags { get; } = [];
+
+    public IReadOnlyList<EventTypeFilter> EventTypeFilters { get; } = [
+        new("Все", null),
+        new("Положительные", 1),
+        new("Отрицательные", 0),
+    ];
+
+    public ObservableCollection<TagFilter> TagFilters { get; } = [];
 
     [ObservableProperty]
     private DateTime? _filterFrom;
@@ -21,19 +31,11 @@ public partial class EventListViewModel(
     [ObservableProperty]
     private DateTime? _filterTo;
 
-    public record EventTypeFilter(string Label, int? Value);
-
-    public IReadOnlyList<EventTypeFilter> TypeFilters { get; } = [
-        new("Все", null),
-        new("Положительные", 1),
-        new("Отрицательные", 0),
-    ];
-
     [ObservableProperty]
     private EventTypeFilter _selectedTypeFilter = new("Все", null);
 
     [ObservableProperty]
-    private TagResponseDto? _selectedFilterTag;
+    private TagFilter? _selectedTagFilter;
 
     [ObservableProperty]
     private bool _isRefreshing;
@@ -52,10 +54,9 @@ public partial class EventListViewModel(
         try
         {
             var tags = await tagService.GetTagsAsync();
-            AvailableTags.Clear();
-            AvailableTags.Add(new TagResponseDto { Id = Guid.Empty, Name = "Все теги" });
+            TagFilters.Clear();
             foreach (var tag in tags)
-                AvailableTags.Add(tag);
+                TagFilters.Add(new TagFilter(tag.Name, tag.Id));
 
             await ApplyFiltersAsync();
         }
@@ -86,7 +87,7 @@ public partial class EventListViewModel(
     [RelayCommand]
     private async Task ApplyFiltersAsync()
     {
-        var tagIds = SelectedFilterTag is { Id: var id } && id != Guid.Empty
+        var tagIds = SelectedTagFilter?.Id is Guid id
             ? (IReadOnlyList<Guid>)[id]
             : null;
 
@@ -103,8 +104,8 @@ public partial class EventListViewModel(
     {
         FilterFrom = null;
         FilterTo = null;
-        SelectedTypeFilter = TypeFilters[0];
-        SelectedFilterTag = null;
+        SelectedTypeFilter = EventTypeFilters[0];
+        SelectedTagFilter = null;
         await ApplyFiltersAsync();
     }
 

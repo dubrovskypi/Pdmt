@@ -116,7 +116,7 @@
 
                     <!-- Suggestions dropdown -->
                     <Border
-                        IsVisible="{Binding TagSuggestions.Count, Converter={StaticResource NotNullToBool}}"
+                        IsVisible="{Binding HasSuggestions}"
                         Padding="0">
                         <CollectionView ItemsSource="{Binding TagSuggestions}">
                             <CollectionView.ItemTemplate>

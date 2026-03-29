@@ -5,11 +5,10 @@ namespace Pdmt.Maui.Services;
 
 public class TagService(IHttpClientFactory factory)
 {
-    private readonly HttpClient _http = factory.CreateClient("PdmtApi");
-
     public async Task<List<TagResponseDto>> GetTagsAsync()
     {
-        var result = await _http.GetFromJsonAsync<List<TagResponseDto>>("api/tags");
+        var http = factory.CreateClient("PdmtApi");
+        var result = await http.GetFromJsonAsync<List<TagResponseDto>>("api/tags");
         return result ?? [];
     }
 }

@@ -25,6 +25,9 @@ dotnet ef migrations add <MigrationName> --project Pdmt.Api
 
 # Apply EF migrations
 dotnet ef database update --project Pdmt.Api
+
+# Build MAUI project (Pdmt.slnx is not supported by msbuild directly)
+dotnet build Pdmt.Maui/Pdmt.Maui.csproj
 ```
  
 ## Code Style (.NET 8 / C# 12)
@@ -48,6 +51,7 @@ dotnet ef database update --project Pdmt.Api
 - **Pdmt.Api** — ASP.NET Core 8 REST API (backend)
 - **Pdmt.Api.Tests** — xUnit tests using `Microsoft.AspNetCore.Mvc.Testing` with an in-memory EF database
 - **Pdmt.Client** — Blazor WebAssembly frontend with MudBlazor UI
+- **Pdmt.Maui** — .NET MAUI Android client
  
 ### API Layers
  
@@ -114,6 +118,13 @@ Integration tests in `EventControllerTests.cs` cover auth enforcement, CRUD, fil
 - No `.Result` / `.Wait()` on async code
 - No direct `AppDbContext` access outside of services
  
+## Pdmt.Maui Conventions
+
+- Singleton HTTP services: inject `IHttpClientFactory`, call `factory.CreateClient(...)` per method — never store `HttpClient` as a field
+- No display logic in DTOs — use ViewModel wrappers (e.g. `EventItemViewModel` over `EventResponseDto`)
+- Filters with nullable enum values: use `ItemsSource` + `SelectedItem` bound to a `record` type, not `SelectedIndex` (index binding sets value to 0 on init, breaking "все" option)
+- `DatePicker` returns `DateTime` with `Kind=Unspecified` — use `DateTime.SpecifyKind(value, DateTimeKind.Utc)` before sending to PostgreSQL API
+
 ## Pdmt.Client Conventions
  
 - Components in PascalCase, one component per file

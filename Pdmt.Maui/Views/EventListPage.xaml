@@ -50,15 +50,15 @@
                     <VerticalStackLayout Grid.Column="0" Spacing="2">
                         <Label Style="{StaticResource MutedLabel}" Text="Тип" />
                         <Picker
-                            ItemsSource="{Binding TypeFilters}"
+                            ItemsSource="{Binding EventTypeFilters}"
                             SelectedItem="{Binding SelectedTypeFilter}"
                             ItemDisplayBinding="{Binding Label}" />
                     </VerticalStackLayout>
                     <VerticalStackLayout Grid.Column="1" Spacing="2">
                         <Label Style="{StaticResource MutedLabel}" Text="Тег" />
                         <Picker
-                            ItemsSource="{Binding AvailableTags}"
-                            SelectedItem="{Binding SelectedFilterTag}"
+                            ItemsSource="{Binding TagFilters}"
+                            SelectedItem="{Binding SelectedTagFilter}"
                             ItemDisplayBinding="{Binding Name}"
                             Title="Все теги" />
                     </VerticalStackLayout>

@@ -2,7 +2,7 @@ namespace Pdmt.Maui.Models;
 
 public class AuthResultDto
 {
-    public string AccessToken { get; set; } = null!;
+    public required string AccessToken { get; set; }
     public DateTime AccessTokenExpiresAt { get; set; }
-    public string RefreshToken { get; set; } = null!;
+    public required string RefreshToken { get; set; }
 }

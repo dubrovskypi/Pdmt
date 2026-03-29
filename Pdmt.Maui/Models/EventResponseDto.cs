@@ -6,9 +6,9 @@ public class EventResponseDto
     public DateTime Timestamp { get; set; }
     public int Type { get; set; }
     public int Intensity { get; set; }
-    public string Title { get; set; } = null!;
+    public required string Title { get; set; }
     public string? Description { get; set; }
     public string? Context { get; set; }
     public bool CanInfluence { get; set; }
-    public List<TagResponseDto> Tags { get; set; } = [];
+    public IReadOnlyList<TagResponseDto> Tags { get; set; } = [];
 }

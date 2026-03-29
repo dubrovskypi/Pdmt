@@ -5,11 +5,10 @@ namespace Pdmt.Maui.Services;
 
 public class AuthService(IHttpClientFactory factory, ITokenService tokenService)
 {
-    private readonly HttpClient _http = factory.CreateClient("PdmtApi");
-
     public async Task<AuthResultDto> LoginAsync(string email, string password)
     {
-        var response = await _http.PostAsJsonAsync("api/auth/login", new { email, password });
+        var http = factory.CreateClient("PdmtApi");
+        var response = await http.PostAsJsonAsync("api/auth/login", new { email, password });
         response.EnsureSuccessStatusCode();
         var result = await response.Content.ReadFromJsonAsync<AuthResultDto>();
         return result!;
@@ -17,7 +16,8 @@ public class AuthService(IHttpClientFactory factory, ITokenService tokenService)
 
     public async Task LogoutAsync()
     {
-        await _http.PostAsync("api/auth/logout", null);
+        var http = factory.CreateClient("PdmtApi");
+        await http.PostAsync("api/auth/logout", null);
         await tokenService.ClearAsync();
     }
 }
