@@ -153,9 +153,5 @@ Integration tests in `EventControllerTests.cs` cover auth enforcement, CRUD, fil
 - Conventional commits: `feat:`, `fix:`, `refactor:`, `test:`, `chore:`, `docs:`, `style:`, `perf:`, `ci:`, `build:`, `revert:`
 - One logical change per commit
 - Message: single concise line, imperative mood, no period at the end (e.g. `feat: add tag filtering`)
-- Multiple types in one commit: join on the summary line with `; ` + newline per entry:
-  ```
-  feat: add weekly calendar
-  fix: DateTime Kind in analytics
-  ```
+- Multiple types in one commit: join with `; ` on the summary line
 - No co-authorship lines — do not add `Co-Authored-By` to commits

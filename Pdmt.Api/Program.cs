@@ -2,14 +2,26 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using OpenTelemetry;
+using OpenTelemetry.Exporter;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 using Pdmt.Api.Data;
 using Pdmt.Api.Infrastructure;
 using Pdmt.Api.Middleware;
 using Pdmt.Api.Services;
 using StackExchange.Redis;
+using System.Reflection;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Logging.AddOpenTelemetry(options =>
+{
+    options.IncludeScopes = true;
+    options.IncludeFormattedMessage = true;
+});
 
 // Fail fast if required secrets are not configured
 var jwtSecret = builder.Configuration["Jwt:Secret"];
@@ -28,7 +40,7 @@ builder.Services.AddSwaggerGen(options =>
         Name = "Authorization",
         Scheme = "Bearer",
         In = ParameterLocation.Header,
-        Description = "Enter 'Bearer {token}'"  
+        Description = "Enter 'Bearer {token}'"
     });
     options.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
@@ -114,6 +126,29 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
     return ConnectionMultiplexer.Connect(config);
 });
 builder.Services.AddHealthChecks().AddRedis(builder.Configuration.GetValue<string>("Redis:ConnectionString"));
+var otelEndpoint = builder.Configuration["OpenTelemetry:Endpoint"]
+    ?? throw new InvalidOperationException(
+        "OpenTelemetry:Endpoint is not configured. " +
+        "Dev: add to appsettings.Development.json  " +
+        "Prod: set env var OpenTelemetry__Endpoint");
+
+var assembly = Assembly.GetEntryAssembly()!;
+var assemblyName = assembly.GetName().Name ?? "Pdmt.Api";
+var assemblyVersion = assembly.GetName().Version?.ToString(3) ?? "0.0.0";
+
+builder.Services.AddOpenTelemetry()
+    .ConfigureResource(r => r.AddService(serviceName: assemblyName, serviceVersion: assemblyVersion))
+    .UseOtlpExporter(OtlpExportProtocol.HttpProtobuf, new Uri(otelEndpoint))
+    .WithTracing(tracing => tracing
+        .AddAspNetCoreInstrumentation(options => options.RecordException = true)
+        .AddHttpClientInstrumentation()
+        .AddEntityFrameworkCoreInstrumentation()
+        .AddRedisInstrumentation())
+    .WithMetrics(metrics => metrics
+        .AddAspNetCoreInstrumentation()
+        .AddHttpClientInstrumentation()
+        .AddRuntimeInstrumentation())
+    .WithLogging(_ => { });
 // Register application services
 builder.Services.AddScoped<IEventService, EventService>();
 builder.Services.AddScoped<ITagService, TagService>();

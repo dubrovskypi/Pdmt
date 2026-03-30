@@ -16,5 +16,13 @@ services:
     ports:
       - "6379:6379"
 
+  seq:
+    image: datalust/seq:latest
+    environment:
+      ACCEPT_EULA: Y
+      SEQ_FIRSTRUN_NOAUTHENTICATION: true
+    ports:
+      - "5080:80"
+
 volumes:
   pgdata:
