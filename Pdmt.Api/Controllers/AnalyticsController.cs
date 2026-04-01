@@ -68,4 +68,92 @@ public class AnalyticsController(IAnalyticsService analyticsService) : Controlle
         var userId = User.GetUserId();
         return Ok(await analyticsService.GetCalendarMonthAsync(userId, parsed.Year, parsed.Month));
     }
+
+    [HttpGet("insights/repeating-triggers")]
+    [ProducesResponseType(typeof(IReadOnlyList<RepeatingTriggerDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<IReadOnlyList<RepeatingTriggerDto>>> GetRepeatingTriggers(
+        [FromQuery] DateTime from,
+        [FromQuery] DateTime to,
+        [FromQuery] int minCount = 3)
+    {
+        if (from > to)
+            return BadRequest("'from' must be earlier than 'to'.");
+
+        var userId = User.GetUserId();
+        return Ok(await analyticsService.GetRepeatingTriggersAsync(userId, from, to, minCount));
+    }
+
+    [HttpGet("insights/discounted-positives")]
+    [ProducesResponseType(typeof(IReadOnlyList<DiscountedPositiveDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<IReadOnlyList<DiscountedPositiveDto>>> GetDiscountedPositives(
+        [FromQuery] DateTime from,
+        [FromQuery] DateTime to)
+    {
+        if (from > to)
+            return BadRequest("'from' must be earlier than 'to'.");
+
+        var userId = User.GetUserId();
+        return Ok(await analyticsService.GetDiscountedPositivesAsync(userId, from, to));
+    }
+
+    [HttpGet("insights/next-day-effects")]
+    [ProducesResponseType(typeof(IReadOnlyList<NextDayEffectDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<IReadOnlyList<NextDayEffectDto>>> GetNextDayEffects(
+        [FromQuery] DateTime from,
+        [FromQuery] DateTime to)
+    {
+        if (from > to)
+            return BadRequest("'from' must be earlier than 'to'.");
+
+        var userId = User.GetUserId();
+        return Ok(await analyticsService.GetNextDayEffectsAsync(userId, from, to));
+    }
+
+    [HttpGet("insights/tag-combos")]
+    [ProducesResponseType(typeof(IReadOnlyList<TagComboDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<IReadOnlyList<TagComboDto>>> GetTagCombos(
+        [FromQuery] DateTime from,
+        [FromQuery] DateTime to)
+    {
+        if (from > to)
+            return BadRequest("'from' must be earlier than 'to'.");
+
+        var userId = User.GetUserId();
+        return Ok(await analyticsService.GetTagCombosAsync(userId, from, to));
+    }
+
+    [HttpGet("insights/tag-trend")]
+    [ProducesResponseType(typeof(IReadOnlyList<TagTrendPointDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<IReadOnlyList<TagTrendPointDto>>> GetTagTrend(
+        [FromQuery] Guid tagId,
+        [FromQuery] DateTime from,
+        [FromQuery] DateTime to,
+        [FromQuery] TrendGranularity period = TrendGranularity.Week)
+    {
+        if (from > to)
+            return BadRequest("'from' must be earlier than 'to'.");
+
+        var userId = User.GetUserId();
+        return Ok(await analyticsService.GetTagTrendAsync(userId, tagId, from, to, period));
+    }
+
+    [HttpGet("insights/influenceability")]
+    [ProducesResponseType(typeof(InfluenceabilitySplitDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<InfluenceabilitySplitDto>> GetInfluenceabilitySplit(
+        [FromQuery] DateTime from,
+        [FromQuery] DateTime to)
+    {
+        if (from > to)
+            return BadRequest("'from' must be earlier than 'to'.");
+
+        var userId = User.GetUserId();
+        return Ok(await analyticsService.GetInfluenceabilitySplitAsync(userId, from, to));
+    }
 }

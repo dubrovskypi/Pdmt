@@ -9,7 +9,7 @@
     <Version>0.1.0</Version>
   </PropertyGroup>
 
-  <Target Name="DockerComposeUp" BeforeTargets="Build">
+  <Target Name="DockerComposeUp" BeforeTargets="PrepareForRun">
     <Exec Command="docker compose up -d" WorkingDirectory="$(MSBuildProjectDirectory)\.." ContinueOnError="true" />
   </Target>
 
