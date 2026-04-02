@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="Pdmt.Maui.Views.InsightsPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:cards="clr-namespace:Pdmt.Maui.ViewModels.Cards"
+    xmlns:ic="clr-namespace:Pdmt.Maui.Views.InsightCards"
+    xmlns:vm="clr-namespace:Pdmt.Maui.ViewModels"
+    xmlns:views="clr-namespace:Pdmt.Maui.Views"
+    x:DataType="vm:InsightsViewModel"
+    Title="Инсайты"
+    BackgroundColor="{StaticResource Secondary}">
+
+    <ContentPage.Resources>
+
+        <DataTemplate x:Key="Card01Template" x:DataType="cards:Card01TriggersViewModel">
+            <ic:Card01TriggersView />
+        </DataTemplate>
+        <DataTemplate x:Key="Card02Template" x:DataType="cards:Card02RepeatingViewModel">
+            <ic:Card02RepeatingView />
+        </DataTemplate>
+        <DataTemplate x:Key="Card03Template" x:DataType="cards:Card03BalanceViewModel">
+            <ic:Card03BalanceView />
+        </DataTemplate>
+        <DataTemplate x:Key="Card04Template" x:DataType="cards:Card04TrendRatioViewModel">
+            <ic:Card04TrendRatioView />
+        </DataTemplate>
+        <DataTemplate x:Key="Card05Template" x:DataType="cards:Card05BlindSpotViewModel">
+            <ic:Card05BlindSpotView />
+        </DataTemplate>
+        <DataTemplate x:Key="Card06Template" x:DataType="cards:Card06DayOfWeekViewModel">
+            <ic:Card06DayOfWeekView />
+        </DataTemplate>
+        <DataTemplate x:Key="Card07Template" x:DataType="cards:Card07NextDayViewModel">
+            <ic:Card07NextDayView />
+        </DataTemplate>
+        <DataTemplate x:Key="Card08Template" x:DataType="cards:Card08CombosViewModel">
+            <ic:Card08CombosView />
+        </DataTemplate>
+        <DataTemplate x:Key="Card09Template" x:DataType="cards:Card09TagTrendViewModel">
+            <ic:Card09TagTrendView />
+        </DataTemplate>
+        <DataTemplate x:Key="Card10Template" x:DataType="cards:Card10InfluenceViewModel">
+            <ic:Card10InfluenceView />
+        </DataTemplate>
+
+        <views:InsightCardTemplateSelector x:Key="CardSelector"
+            Card01Template="{StaticResource Card01Template}"
+            Card02Template="{StaticResource Card02Template}"
+            Card03Template="{StaticResource Card03Template}"
+            Card04Template="{StaticResource Card04Template}"
+            Card05Template="{StaticResource Card05Template}"
+            Card06Template="{StaticResource Card06Template}"
+            Card07Template="{StaticResource Card07Template}"
+            Card08Template="{StaticResource Card08Template}"
+            Card09Template="{StaticResource Card09Template}"
+            Card10Template="{StaticResource Card10Template}" />
+
+    </ContentPage.Resources>
+
+    <Grid RowDefinitions="Auto,Auto,*,Auto">
+
+        <!-- Row 0: Title -->
+        <Label Grid.Row="0"
+               Style="{StaticResource PageTitle}"
+               Text="Инсайты"
+               Margin="16,16,16,4" />
+
+        <!-- Row 1: Period selector -->
+        <Grid Grid.Row="1" ColumnDefinitions="*,*,*" ColumnSpacing="8" Margin="16,4,16,8">
+
+            <Button Grid.Column="0"
+                    Text="Неделя"
+                    Style="{StaticResource SecondaryButton}"
+                    Command="{Binding SelectPeriodCommand}"
+                    CommandParameter="{Binding PeriodOptions[0]}">
+                <Button.Triggers>
+                    <DataTrigger TargetType="Button" Binding="{Binding IsWeekSelected}" Value="True">
+                        <Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
+                        <Setter Property="TextColor" Value="White" />
+                        <Setter Property="BorderColor" Value="{StaticResource Primary}" />
+                    </DataTrigger>
+                </Button.Triggers>
+            </Button>
+
+            <Button Grid.Column="1"
+                    Text="2 недели"
+                    Style="{StaticResource SecondaryButton}"
+                    Command="{Binding SelectPeriodCommand}"
+                    CommandParameter="{Binding PeriodOptions[1]}">
+                <Button.Triggers>
+                    <DataTrigger TargetType="Button" Binding="{Binding IsTwoWeeksSelected}" Value="True">
+                        <Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
+                        <Setter Property="TextColor" Value="White" />
+                        <Setter Property="BorderColor" Value="{StaticResource Primary}" />
+                    </DataTrigger>
+                </Button.Triggers>
+            </Button>
+
+            <Button Grid.Column="2"
+                    Text="Месяц"
+                    Style="{StaticResource SecondaryButton}"
+                    Command="{Binding SelectPeriodCommand}"
+                    CommandParameter="{Binding PeriodOptions[2]}">
+                <Button.Triggers>
+                    <DataTrigger TargetType="Button" Binding="{Binding IsMonthSelected}" Value="True">
+                        <Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
+                        <Setter Property="TextColor" Value="White" />
+                        <Setter Property="BorderColor" Value="{StaticResource Primary}" />
+                    </DataTrigger>
+                </Button.Triggers>
+            </Button>
+
+        </Grid>
+
+        <!-- Row 2: Carousel -->
+        <CarouselView
+            Grid.Row="2"
+            x:Name="InsightsCarousel"
+            ItemsSource="{Binding Cards}"
+            ItemTemplate="{StaticResource CardSelector}"
+            PeekAreaInsets="20"
+            Loop="False"
+            IndicatorView="CardIndicator">
+            <CarouselView.ItemsLayout>
+                <LinearItemsLayout Orientation="Horizontal" ItemSpacing="8" />
+            </CarouselView.ItemsLayout>
+        </CarouselView>
+
+        <!-- Page-level loading overlay -->
+        <ActivityIndicator
+            Grid.Row="2"
+            IsRunning="{Binding IsPageLoading}"
+            IsVisible="{Binding IsPageLoading}"
+            Color="{StaticResource Primary}"
+            VerticalOptions="Center"
+            HorizontalOptions="Center" />
+
+        <!-- Row 3: Dot indicators -->
+        <IndicatorView
+            Grid.Row="3"
+            x:Name="CardIndicator"
+            IndicatorColor="{StaticResource Border}"
+            SelectedIndicatorColor="{StaticResource Primary}"
+            HorizontalOptions="Center"
+            Margin="0,4,0,12" />
+
+    </Grid>
+</ContentPage>

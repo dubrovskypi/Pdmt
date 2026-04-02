@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView
+    x:Class="Pdmt.Maui.Views.InsightCards.Card03BalanceView"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:cards="clr-namespace:Pdmt.Maui.ViewModels.Cards"
+    x:DataType="cards:Card03BalanceViewModel">
+
+    <Border Margin="4,0" Padding="16" BackgroundColor="{StaticResource Surface}">
+        <Grid RowDefinitions="Auto,Auto,Auto,*,Auto" RowSpacing="0">
+            <Border Grid.Row="0" BackgroundColor="#ccfbf1" Stroke="Transparent" StrokeThickness="0"
+                    Padding="8,3" HorizontalOptions="Start">
+                <Border.StrokeShape><RoundRectangle CornerRadius="10" /></Border.StrokeShape>
+                <Label Text="Баланс" TextColor="#134e4a" FontSize="12" FontAttributes="Bold" />
+            </Border>
+            <Label Grid.Row="1" Text="Позитив vs негатив"
+                   FontAttributes="Bold" FontSize="16" Margin="0,8,0,2" />
+            <VerticalStackLayout Grid.Row="2" Spacing="2" Margin="0,0,0,10">
+                <Label Text="Соотношение и средняя интенсивность"
+                       Style="{StaticResource MutedLabel}" />
+                <Label Text="⚠ Только недельный период" FontSize="11" TextColor="#f59e0b" />
+            </VerticalStackLayout>
+            <VerticalStackLayout Grid.Row="3" Spacing="16">
+                <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                    <VerticalStackLayout Grid.Column="0" HorizontalOptions="Center" Spacing="2">
+                        <Label Text="{Binding PosCount}" FontSize="40" FontAttributes="Bold"
+                               TextColor="{StaticResource Positive}" HorizontalOptions="Center" />
+                        <Label Text="позитивных" Style="{StaticResource MutedLabel}" HorizontalOptions="Center" />
+                    </VerticalStackLayout>
+                    <VerticalStackLayout Grid.Column="1" HorizontalOptions="Center" Spacing="2">
+                        <Label Text="{Binding NegCount}" FontSize="40" FontAttributes="Bold"
+                               TextColor="{StaticResource Negative}" HorizontalOptions="Center" />
+                        <Label Text="негативных" Style="{StaticResource MutedLabel}" HorizontalOptions="Center" />
+                    </VerticalStackLayout>
+                </Grid>
+                <VerticalStackLayout Spacing="6">
+                    <Label Text="Средняя интенсивность" Style="{StaticResource MutedLabel}" />
+                    <Grid ColumnDefinitions="70,*,36" ColumnSpacing="8">
+                        <Label Grid.Column="0" Text="Позитивные" FontSize="12" VerticalOptions="Center" />
+                        <BoxView Grid.Column="1" WidthRequest="{Binding PosBarWidth}" HeightRequest="12"
+                                 Color="#4ade80" CornerRadius="2"
+                                 HorizontalOptions="Start" VerticalOptions="Center" />
+                        <Label Grid.Column="2"
+                               Text="{Binding AvgPosIntensity, StringFormat='{0:0.1}'}"
+                               FontSize="12" TextColor="{StaticResource Muted}" VerticalOptions="Center" />
+                    </Grid>
+                    <Grid ColumnDefinitions="70,*,36" ColumnSpacing="8">
+                        <Label Grid.Column="0" Text="Негативные" FontSize="12" VerticalOptions="Center" />
+                        <BoxView Grid.Column="1" WidthRequest="{Binding NegBarWidth}" HeightRequest="12"
+                                 Color="#f87171" CornerRadius="2"
+                                 HorizontalOptions="Start" VerticalOptions="Center" />
+                        <Label Grid.Column="2"
+                               Text="{Binding AvgNegIntensity, StringFormat='{0:0.1}'}"
+                               FontSize="12" TextColor="{StaticResource Muted}" VerticalOptions="Center" />
+                    </Grid>
+                </VerticalStackLayout>
+            </VerticalStackLayout>
+            <ActivityIndicator Grid.Row="4" IsRunning="{Binding IsLoading}" IsVisible="{Binding IsLoading}"
+                               Color="{StaticResource Primary}" HorizontalOptions="Center" Margin="0,8" />
+            <Label Grid.Row="4" Style="{StaticResource ErrorLabel}" Text="{Binding ErrorMessage}"
+                   IsVisible="{Binding HasError}" HorizontalOptions="Center" Margin="0,8" />
+        </Grid>
+    </Border>
+
+</ContentView>

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView
+    x:Class="Pdmt.Maui.Views.InsightCards.Card06DayOfWeekView"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:cards="clr-namespace:Pdmt.Maui.ViewModels.Cards"
+    x:DataType="cards:Card06DayOfWeekViewModel">
+
+    <Border Margin="4,0" Padding="16" BackgroundColor="{StaticResource Surface}">
+        <Grid RowDefinitions="Auto,Auto,Auto,*,Auto" RowSpacing="0">
+            <Border Grid.Row="0" BackgroundColor="#f3e8ff" Stroke="Transparent" StrokeThickness="0"
+                    Padding="8,3" HorizontalOptions="Start">
+                <Border.StrokeShape><RoundRectangle CornerRadius="10" /></Border.StrokeShape>
+                <Label Text="Паттерны" TextColor="#6b21a8" FontSize="12" FontAttributes="Bold" />
+            </Border>
+            <Label Grid.Row="1" Text="Паттерн по дням недели"
+                   FontAttributes="Bold" FontSize="16" Margin="0,8,0,2" />
+            <VerticalStackLayout Grid.Row="2" Spacing="2" Margin="0,0,0,10">
+                <Label Text="В какие дни чаще случается позитивное и негативное"
+                       Style="{StaticResource MutedLabel}" />
+                <Label Text="⚠ Только недельный период" FontSize="11" TextColor="#f59e0b" />
+            </VerticalStackLayout>
+            <CollectionView Grid.Row="3" ItemsSource="{Binding Days}">
+                <CollectionView.ItemsLayout>
+                    <LinearItemsLayout Orientation="Vertical" ItemSpacing="6" />
+                </CollectionView.ItemsLayout>
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="cards:DayBarItem">
+                        <Grid ColumnDefinitions="36,*" ColumnSpacing="8">
+                            <Label Grid.Column="0" Text="{Binding DayLabel}"
+                                   FontSize="12" TextColor="{StaticResource Muted}" VerticalOptions="Center" />
+                            <BoxView Grid.Column="1" WidthRequest="{Binding BarWidth}" HeightRequest="14"
+                                     CornerRadius="2" HorizontalOptions="Start" VerticalOptions="Center">
+                                <BoxView.Triggers>
+                                    <DataTrigger TargetType="BoxView" Binding="{Binding IsPositive}" Value="True">
+                                        <Setter Property="Color" Value="#4ade80" />
+                                    </DataTrigger>
+                                    <DataTrigger TargetType="BoxView" Binding="{Binding IsPositive}" Value="False">
+                                        <Setter Property="Color" Value="#f87171" />
+                                    </DataTrigger>
+                                </BoxView.Triggers>
+                            </BoxView>
+                        </Grid>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+            <ActivityIndicator Grid.Row="4" IsRunning="{Binding IsLoading}" IsVisible="{Binding IsLoading}"
+                               Color="{StaticResource Primary}" HorizontalOptions="Center" Margin="0,8" />
+            <Label Grid.Row="4" Style="{StaticResource ErrorLabel}" Text="{Binding ErrorMessage}"
+                   IsVisible="{Binding HasError}" HorizontalOptions="Center" Margin="0,8" />
+        </Grid>
+    </Border>
+
+</ContentView>

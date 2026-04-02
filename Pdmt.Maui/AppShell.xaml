@@ -14,6 +14,9 @@
         <Tab Title="Calendar" Icon="tab_calendar.svg">
             <ShellContent Route="calendar" ContentTemplate="{DataTemplate views:WeeklyCalendarPage}" />
         </Tab>
+        <Tab Title="Insights" Icon="tab_insights.svg">
+            <ShellContent Route="insights" ContentTemplate="{DataTemplate views:InsightsPage}" />
+        </Tab>
         <Tab Title="Account" Icon="tab_account.svg">
             <ShellContent Route="account" ContentTemplate="{DataTemplate views:AccountPage}" />
         </Tab>

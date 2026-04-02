@@ -48,6 +48,7 @@ public static class MauiProgram
         builder.Services.AddSingleton<EventService>();
         builder.Services.AddSingleton<TagService>();
         builder.Services.AddSingleton<AnalyticsService>();
+        builder.Services.AddSingleton<InsightsService>();
 
         // HttpClient
         builder.Services.AddHttpClient("PdmtApi", (sp, client) =>
@@ -69,6 +70,7 @@ public static class MauiProgram
         builder.Services.AddTransient<EventListViewModel>();
         builder.Services.AddTransient<WeeklyCalendarViewModel>();
         builder.Services.AddTransient<AccountViewModel>();
+        builder.Services.AddTransient<InsightsViewModel>();
 
         // Pages
         builder.Services.AddTransient<LoginPage>();
@@ -76,6 +78,7 @@ public static class MauiProgram
         builder.Services.AddTransient<EventListPage>();
         builder.Services.AddTransient<WeeklyCalendarPage>();
         builder.Services.AddTransient<AccountPage>();
+        builder.Services.AddTransient<InsightsPage>();
 
         // Shell
         builder.Services.AddSingleton<AppShell>();

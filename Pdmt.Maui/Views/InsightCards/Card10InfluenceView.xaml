@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView
+    x:Class="Pdmt.Maui.Views.InsightCards.Card10InfluenceView"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:cards="clr-namespace:Pdmt.Maui.ViewModels.Cards"
+    x:DataType="cards:Card10InfluenceViewModel">
+
+    <Border Margin="4,0" Padding="16" BackgroundColor="{StaticResource Surface}">
+        <Grid RowDefinitions="Auto,Auto,Auto,*,Auto" RowSpacing="0">
+            <Border Grid.Row="0" BackgroundColor="#ccfbf1" Stroke="Transparent" StrokeThickness="0"
+                    Padding="8,3" HorizontalOptions="Start">
+                <Border.StrokeShape><RoundRectangle CornerRadius="10" /></Border.StrokeShape>
+                <Label Text="Контроль" TextColor="#134e4a" FontSize="12" FontAttributes="Bold" />
+            </Border>
+            <Label Grid.Row="1" Text="Что в ваших силах"
+                   FontAttributes="Bold" FontSize="16" Margin="0,8,0,2" />
+            <Label Grid.Row="2" Text="Разбивка негативных событий по возможности повлиять"
+                   Style="{StaticResource MutedLabel}" Margin="0,0,0,10" />
+            <VerticalStackLayout Grid.Row="3" Spacing="16">
+                <Grid ColumnDefinitions="Auto,Auto" ColumnSpacing="0" HeightRequest="28">
+                    <BoxView Grid.Column="0" WidthRequest="{Binding CanBarWidth}" HeightRequest="28"
+                             Color="#4ade80" CornerRadius="4,0,0,4" />
+                    <BoxView Grid.Column="1" WidthRequest="{Binding CannotBarWidth}" HeightRequest="28"
+                             Color="#f87171" CornerRadius="0,4,4,0" />
+                </Grid>
+                <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                    <VerticalStackLayout Grid.Column="0" Spacing="2">
+                        <HorizontalStackLayout Spacing="6">
+                            <BoxView WidthRequest="12" HeightRequest="12" Color="#4ade80"
+                                     CornerRadius="2" VerticalOptions="Center" />
+                            <Label Text="Могу влиять" FontSize="13" VerticalOptions="Center" />
+                        </HorizontalStackLayout>
+                        <Label Text="{Binding CanInfluenceCount, StringFormat='{0} событий'}"
+                               Style="{StaticResource MutedLabel}" />
+                        <Label Text="{Binding CanInfluenceAvgIntensity, StringFormat='Интенс. {0:0.1}'}"
+                               Style="{StaticResource MutedLabel}" />
+                    </VerticalStackLayout>
+                    <VerticalStackLayout Grid.Column="1" Spacing="2">
+                        <HorizontalStackLayout Spacing="6">
+                            <BoxView WidthRequest="12" HeightRequest="12" Color="#f87171"
+                                     CornerRadius="2" VerticalOptions="Center" />
+                            <Label Text="Не могу влиять" FontSize="13" VerticalOptions="Center" />
+                        </HorizontalStackLayout>
+                        <Label Text="{Binding CannotInfluenceCount, StringFormat='{0} событий'}"
+                               Style="{StaticResource MutedLabel}" />
+                        <Label Text="{Binding CannotInfluenceAvgIntensity, StringFormat='Интенс. {0:0.1}'}"
+                               Style="{StaticResource MutedLabel}" />
+                    </VerticalStackLayout>
+                </Grid>
+            </VerticalStackLayout>
+            <ActivityIndicator Grid.Row="4" IsRunning="{Binding IsLoading}" IsVisible="{Binding IsLoading}"
+                               Color="{StaticResource Primary}" HorizontalOptions="Center" Margin="0,8" />
+            <Label Grid.Row="4" Style="{StaticResource ErrorLabel}" Text="{Binding ErrorMessage}"
+                   IsVisible="{Binding HasError}" HorizontalOptions="Center" Margin="0,8" />
+        </Grid>
+    </Border>
+
+</ContentView>

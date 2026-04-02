@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView
+    x:Class="Pdmt.Maui.Views.InsightCards.Card09TagTrendView"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:cards="clr-namespace:Pdmt.Maui.ViewModels.Cards"
+    x:DataType="cards:Card09TagTrendViewModel">
+
+    <Border Margin="4,0" Padding="16" BackgroundColor="{StaticResource Surface}">
+        <Grid RowDefinitions="Auto,Auto,Auto,*,Auto" RowSpacing="0">
+            <Border Grid.Row="0" BackgroundColor="#dbeafe" Stroke="Transparent" StrokeThickness="0"
+                    Padding="8,3" HorizontalOptions="Start">
+                <Border.StrokeShape><RoundRectangle CornerRadius="10" /></Border.StrokeShape>
+                <Label Text="Тренды" TextColor="#1e40af" FontSize="12" FontAttributes="Bold" />
+            </Border>
+            <Label Grid.Row="1" Text="Тренд тега"
+                   FontAttributes="Bold" FontSize="16" Margin="0,8,0,2" />
+            <Label Grid.Row="2" Text="{Binding TagName, StringFormat='Динамика частоты: {0}'}"
+                   Style="{StaticResource MutedLabel}" Margin="0,0,0,10" />
+            <CollectionView Grid.Row="3" ItemsSource="{Binding Points}"
+                            VerticalOptions="End" HorizontalOptions="Start">
+                <CollectionView.ItemsLayout>
+                    <LinearItemsLayout Orientation="Horizontal" ItemSpacing="6" />
+                </CollectionView.ItemsLayout>
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="cards:TagTrendBarItem">
+                        <VerticalStackLayout Spacing="3" HorizontalOptions="Center" WidthRequest="40">
+                            <Label Text="{Binding Count}" FontSize="11"
+                                   TextColor="{StaticResource Muted}" HorizontalOptions="Center" />
+                            <BoxView WidthRequest="28" HeightRequest="{Binding BarHeight}"
+                                     Color="#c084fc" CornerRadius="3,3,0,0"
+                                     HorizontalOptions="Center" VerticalOptions="End" />
+                            <Label Text="{Binding PeriodLabel}" FontSize="10"
+                                   TextColor="{StaticResource Muted}"
+                                   HorizontalOptions="Center" HorizontalTextAlignment="Center" />
+                        </VerticalStackLayout>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+            <ActivityIndicator Grid.Row="4" IsRunning="{Binding IsLoading}" IsVisible="{Binding IsLoading}"
+                               Color="{StaticResource Primary}" HorizontalOptions="Center" Margin="0,8" />
+            <Label Grid.Row="4" Style="{StaticResource ErrorLabel}" Text="{Binding ErrorMessage}"
+                   IsVisible="{Binding HasError}" HorizontalOptions="Center" Margin="0,8" />
+        </Grid>
+    </Border>
+
+</ContentView>
