@@ -219,7 +219,7 @@ Ideas for monthly UI (discuss and implement later):
 - Monthly grid, each day colored by dominant mood (green → yellow → red gradient)
 - Tap day → see events for that day
 - Swipe between months
-- 
+
 ### 3.3 Correlation insights (carousel)
 
 **Why**: The main "awareness engine" of the app. A dedicated screen with swipeable insight cards — each card answers one specific question about the user's data. No AI, no ML — just SQL aggregations rendered as clear visual statements.
@@ -374,12 +374,202 @@ GET /api/analytics/correlations?tagId=...          → supplementary data for Ca
 5. Card 8 (tag combos) — co-occurrence join, moderate complexity.
 6. Card 9 (tag trend) — variant of existing trends logic filtered by tag.
 
-### 3.4 React SPA (Phase 3)
+### 3.4 React SPA
 
-- Separate project or separate repo
-- Consumes same REST API — no backend changes needed
-- Start with: login, event list, add event form, analytics dashboard
-- Stack: React + TypeScript + fetch (no Redux initially, use React context/state)
+**Why**: The primary web client for desktop use. Blazor WASM served as the test UI during API development; React replaces it as the production web frontend with richer interactivity, a larger ecosystem, and better long-term maintainability. This is also a learning opportunity for React + TypeScript.
+
+**Scope**: Full feature parity with what Blazor + MAUI clients offer, plus analytics visualizations that benefit from a wider screen.
+
+#### Project setup
+
+- **Location**: `pdmt-web/` at solution root — monorepo (same git repo as .NET projects, but not inside the .NET solution — React has its own toolchain)
+- **Stack**: React 18+ with TypeScript, Vite as bundler
+- **UI components**: Shadcn/ui (copies into project as source code, built on Radix + Tailwind — industry standard for new React projects; provides Button, Card, Dialog, Select, DatePicker, Slider, Tabs, Toast and 30+ more accessible components out of the box)
+- **Styling**: Tailwind CSS (used by Shadcn/ui, utility-first)
+- **Routing**: React Router v6
+- **HTTP**: plain `fetch` wrapped in a typed API client module — no axios, no generated SDK
+- **State management**: React Context + `useReducer` for auth state; local component state (`useState`) for everything else. No Redux, no Zustand — the app is single-user and not complex enough to justify a state library
+- **Charts**: Recharts (React-native charting, works well with TypeScript, simple API)
+- **No SSR**: Static SPA, served from a CDN or static file host. No Next.js, no Remix — unnecessary complexity for a personal app
+
+#### Auth flow in React
+
+1. Login form → `POST /api/auth/login` → receive `accessToken` in response body + `refreshToken` set as `httpOnly` cookie by the API
+2. Store `accessToken` in memory (React Context) — never in localStorage
+3. `apiClient` module adds `Authorization: Bearer {accessToken}` to every request
+4. On 401 response → attempt `POST /api/auth/refresh` (browser auto-sends the httpOnly cookie) → if success, update accessToken in memory and retry original request; if fail, redirect to login
+5. Logout → `POST /api/auth/logout` → API clears the cookie + revokes token → clear memory state → redirect to login
+6. Page refresh → accessToken is lost from memory → immediately call `POST /api/auth/refresh` (cookie is still present) → if valid, restore session seamlessly; if expired, redirect to login
+
+**API-side changes required**: Modify `AuthController.Login` and `AuthController.Refresh` to set the refresh token as an `httpOnly`, `Secure`, `SameSite=Strict` cookie instead of (or in addition to) returning it in the response body. This is a small change and improves security for all web clients.
+
+**Navigation**: Classic top navigation bar with 4 tabs: Events (home), Calendar, Insights, Analytics. Active tab highlighted. User menu (logout) on the right.
+
+#### Screens and components
+
+**Screen 1 — Login**
+- Email + password form
+- Calls `POST /api/auth/login`
+- On success → navigate to event list
+- Simple, no registration (single user)
+
+**Screen 2 — Event list (home)**
+- Default view: today's events, newest first
+- Filter bar: date range picker, tag multi-select, type toggle (pos/neg/all), intensity range
+- Each event card shows: type badge, timestamp, intensity, tags (as pills), context snippet
+- Actions: edit (inline or modal), delete (with confirmation)
+- FAB or top button: "Add event" → opens add/edit form
+
+**Screen 3 — Add / edit event**
+- Can be a modal over the event list or a separate page
+- Fields: type toggle (positive/negative), intensity slider (0–10), tag selector (multi-select with autocomplete + "create new" option), context/description textarea, timestamp (default: now, editable)
+- On save: `POST /api/events` or `PUT /api/events/{id}`
+- Tag creation: if user types a new tag name → `POST /api/tags` (or inline upsert via event creation endpoint)
+
+**Screen 4 — Weekly calendar**
+- Horizontal day cards as designed in §3.2 (histogram bars, tags, day score)
+- Previous/Next week navigation
+- Click day → expand to show event list for that day
+- Data source: `GET /api/analytics/calendar/week?weekOf=...`
+
+**Screen 5 — Insights carousel**
+- Full implementation of §3.3 (10 insight cards)
+- Period selector at top (last week / 2 weeks / month)
+- Swipeable cards with dots/arrows navigation
+- Each card fetches its own data endpoint on demand (lazy loading — don't fetch all 10 at once)
+- Data sources: existing analytics endpoints + new insight endpoints from §3.3
+
+**Screen 6 — Analytics dashboard**
+- Weekly summary stats (from `GET /api/analytics/weekly-summary`)
+- Trend chart: pos/neg ratio over time (from `GET /api/analytics/trends`)
+- This is a lighter overview; the deep insights live in the carousel (Screen 5)
+
+#### Folder structure
+
+```
+pdmt-web/
+  src/
+    api/
+      client.ts          — fetch wrapper with auth header injection + token refresh
+      types.ts           — TypeScript interfaces matching API DTOs
+      events.ts          — getEvents(), createEvent(), updateEvent(), deleteEvent()
+      tags.ts            — getTags(), createTag(), deleteTag()
+      analytics.ts       — getWeeklySummary(), getTrends(), getCorrelations(), ...
+      auth.ts            — login(), refresh(), logout()
+    auth/
+      AuthContext.tsx     — React context for auth state (tokens, user, isAuthenticated)
+      AuthProvider.tsx    — provider component wrapping the app
+      useAuth.ts         — hook for consuming auth context
+    components/
+      ui/                — Shadcn/ui components (auto-generated, editable source)
+        button.tsx
+        card.tsx
+        dialog.tsx
+        select.tsx
+        slider.tsx
+        tabs.tsx
+        ...
+      EventCard.tsx
+      EventForm.tsx
+      TagSelector.tsx
+      InsightCard.tsx
+      WeeklyCalendarDay.tsx
+      TrendChart.tsx
+      FilterBar.tsx
+      NavBar.tsx          — top navigation: Events | Calendar | Insights | Analytics + user menu
+      Layout.tsx          — NavBar + main content area wrapper
+    pages/
+      LoginPage.tsx
+      EventListPage.tsx
+      CalendarPage.tsx
+      InsightsPage.tsx
+      AnalyticsPage.tsx
+    App.tsx
+    main.tsx
+  index.html
+  components.json         — Shadcn/ui config (paths, style, aliases)
+  vite.config.ts
+  tsconfig.json
+  tailwind.config.js
+  package.json
+```
+
+#### API client module (`api/client.ts`)
+
+Core responsibilities:
+- Base URL from environment variable (`VITE_API_URL`)
+- Auto-attach `Authorization` header from auth context
+- Intercept 401 → attempt token refresh → retry
+- Typed response parsing: `async function get<T>(path: string): Promise<T>`
+- Error handling: throw typed errors that components can catch
+
+#### TypeScript types (`api/types.ts`)
+
+Mirror the C# DTOs exactly. For example:
+
+```typescript
+interface EventResponseDto {
+  id: string;
+  timestamp: string;
+  type: 'Positive' | 'Negative';
+  intensity: number;
+  context: string | null;
+  tags: TagDto[];
+  influenceability: number;
+}
+
+interface WeeklySummaryDto {
+  posCount: number;
+  negCount: number;
+  posToNegRatio: number;
+  avgNegIntensity: number;
+  avgPosIntensity: number;
+  topTags: TagSummaryDto[];
+  byDayOfWeek: DayOfWeekBreakdownDto[];
+}
+```
+
+Note: C# PascalCase properties become camelCase in JSON (ASP.NET Core default serialization). TypeScript types must use camelCase.
+
+#### Dev workflow
+
+```bash
+# Start backend (from solution root)
+docker compose up -d          # PostgreSQL + Redis
+dotnet run --project Pdmt.Api # API on https://localhost:5001
+
+# Start React dev server (from pdmt-web/)
+npm run dev
+```
+
+Vite config proxies `/api/*` to the backend to avoid CORS during development.
+
+#### Production deployment
+
+- Build: `npm run build` → produces static files in `dist/`
+- Host on any static file host: Netlify, Vercel, Cloudflare Pages, GitHub Pages (all free)
+- API URL configured via environment variable at build time
+- CORS: API must allow the React app's domain in production (`AllowedOrigins` in `appsettings.Production.json`)
+
+#### Implementation order
+
+**Phase A — foundation (must work before anything else)**:
+1. Project scaffolding: `npm create vite@latest pdmt-web -- --template react-ts` + Tailwind + Shadcn/ui init + React Router
+2. API client module (`client.ts`) + TypeScript types (`types.ts`) mirroring all existing C# DTOs
+3. Auth flow: login page, AuthContext, httpOnly cookie refresh, 401 interceptor
+4. Layout + NavBar (4 tabs: Events, Calendar, Insights, Analytics)
+
+**Phase B — core functionality**:
+5. Event list page with filters (date range, tags, type, intensity)
+6. Add/edit event form with tag selector (Shadcn Combobox for tag autocomplete + creation)
+7. Delete event with confirmation dialog
+
+**Phase C — analytics views**:
+8. Weekly calendar view (§3.2 design — histogram bars, tags, day score)
+9. Analytics dashboard with weekly summary + trend chart (Recharts)
+
+**Phase D — insights (last)**:
+10. Insights carousel with all 10 cards (§3.3)
 
 ---
 

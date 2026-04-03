@@ -61,12 +61,13 @@ builder.Services.AddSwaggerGen(options =>
 builder.Services.AddControllers();
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("BlazorClient", policy =>
+    options.AddPolicy("WebClients", policy =>
     {
         var origins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()!;
         policy.WithOrigins(origins)
               .AllowAnyHeader()
-              .AllowAnyMethod();
+              .AllowAnyMethod()
+              .AllowCredentials();
     });
 });
 // Register DbContext
@@ -176,7 +177,7 @@ app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseMiddleware<HttpLoggingMiddleware>();
 // Configure the HTTP request pipeline.
-app.UseCors("BlazorClient");
+app.UseCors("WebClients");
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
