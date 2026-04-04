@@ -1,0 +1,145 @@
+# ========================================
+# 1. СОЗДАНИЕ BOILERPLATE
+# ========================================
+
+npm create vite@latest pdmt-web -- --template react-ts
+cd pdmt-web
+
+# ========================================
+# 2. УСТАНОВКА ОСНОВНЫХ ЗАВИСИМОСТЕЙ
+# ========================================
+
+npm install react-router-dom
+
+# ========================================
+# 3. УСТАНОВКА UI КОМПОНЕНТОВ (Radix)
+# ========================================
+
+npm install @radix-ui/react-dialog
+npm install @radix-ui/react-label
+npm install @radix-ui/react-select
+npm install @radix-ui/react-separator
+npm install @radix-ui/react-slider
+npm install @radix-ui/react-slot
+
+# ========================================
+# 4. УСТАНОВКА УТИЛИТ ДЛЯ СТИЛЕЙ
+# ========================================
+
+npm install class-variance-authority
+npm install clsx
+npm install tailwind-merge
+npm install lucide-react
+
+# ========================================
+# 5. УСТАНОВКА CSS FRAMEWORK
+# ========================================
+
+npm install -D tailwindcss@3 postcss autoprefixer
+
+# ========================================
+# 6. УСТАНОВКА DEVELOPER TOOLS
+# ========================================
+
+npm install -D @vitejs/plugin-basic-ssl
+npm install -D eslint @eslint/js typescript-eslint
+
+# ========================================
+# 7. СОЗДАНИЕ ФАЙЛОВ КОНФИГОВ
+# ========================================
+
+# Созданы автоматически:
+# - vite.config.js — подключает плагин react (создан в шаге 1)
+# - eslint.config.js — правила линтера (создан в шаге 1)
+# - index.html — HTML вход (создан в шаге 1)
+# - .gitignore — исключения git (создан в шаге 1)
+
+# Созданы через CLI:
+npx tailwindcss init -p
+# tailwind.config.js — палитра цветов 
+# postcss.config.js — обработка CSS
+
+npx shadcn@latest init
+# components.json — Shadcn CLI конфиг (может не понадобиться)
+
+# ручное редактирование файлов (может не понадобиться):
+# vite.config.ts — добавить плагин (react, basicSsl), alias @/ 
+# tsconfig.json — пути, версии
+# tsconfig.app.json — конфиг приложения
+# tsconfig.node.json — конфиг для конфигов Vite
+
+# ========================================
+# 8. СОЗДАНИЕ СТРУКТУРЫ SRC/ (вручную)
+# ========================================
+
+# src/main.tsx — React.createRoot
+# src/App.tsx — роутинг
+# src/index.css — Tailwind глобальные стили
+# src/App.css — доп. стили
+# src/lib/utils.ts — утилиты (cn())
+# src/auth/ — контекст, провайдер, хук
+# src/api/ — HTTP клиент и эндпоинты
+# src/components/ — бизнес компоненты + Shadcn UI kit
+# src/pages/ — страницы приложения
+
+# ========================================
+# 9. СОЗДАНИЕ КОНФИГУРАЦИИ API
+# ========================================
+
+# Создать файлы:
+touch .env
+touch .env.example
+touch .env.production
+touch src/config.ts
+
+# Заполнить .env:
+# VITE_PDMT_API_BASE_URL=https://localhost:7031
+
+# Заполнить .env.example:
+# VITE_PDMT_API_BASE_URL=https://your-api.example.com
+
+# Заполнить .env.production:
+# VITE_PDMT_API_BASE_URL=https://your-prod-api.example.com
+
+# Написать src/config.ts:
+# export const config = { api: { baseUrl: ... } }
+
+# ========================================
+# 10. ОБНОВЛЕНИЕ API КЛИЕНТОВ
+# ========================================
+
+# src/api/client.ts — добавить import config, использовать baseUrl
+# src/api/auth.ts — добавить import config, использовать baseUrl
+
+# ========================================
+# 11. VS CODE КОНФИГУРАЦИЯ
+# ========================================
+
+# Создать .vscode/settings.json:
+# - Скрыть node_modules, dist, package-lock.json
+# - Настроить TypeScript SDK пути
+# - Включить auto-format для TypeScript/TSX
+# - Prettier как default formatter
+
+# ========================================
+# 12. ГОТОВО К РАБОТЕ
+# ========================================
+
+npm install          # Финальная установка всех зависимостей
+npm run dev          # Запустить dev сервер на https://localhost:5173
+
+# ========================================
+# 13. ДОБАВЛЕНИЕ КОМПОНЕНТОВ SHADCN
+# ========================================
+
+# Команды для добавления нужных компонентов (по мере разработки):
+npx shadcn@latest add button
+npx shadcn@latest add card
+npx shadcn@latest add dialog
+npx shadcn@latest add input
+npx shadcn@latest add label
+npx shadcn@latest add select
+npx shadcn@latest add separator
+npx shadcn@latest add slider
+
+# Компоненты скопируются в src/components/ui/ и будут готовы к использованию

@@ -5,7 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Build & Run
  
 ```bash
-# Build entire solution
+# Build entire solution (.NET only)
 dotnet build Pdmt.slnx
  
 # Run API (development)
@@ -20,7 +20,7 @@ dotnet test Pdmt.Api.Tests/Pdmt.Api.Tests.csproj
 # Run a single test by name
 dotnet test Pdmt.Api.Tests/Pdmt.Api.Tests.csproj --filter "FullyQualifiedName~TestMethodName"
  
-# Start dev infrastructure (PostgreSQL + Redis)
+# Start dev infrastructure (PostgreSQL + Redis + Seq)
 docker compose up -d
 
 # Add a new EF migration
@@ -31,6 +31,9 @@ dotnet ef database update --project Pdmt.Api
 
 # Build MAUI project (Pdmt.slnx is not supported by msbuild directly)
 dotnet build Pdmt.Maui/Pdmt.Maui.csproj
+
+# Run React SPA dev server (from pdmt-web/)
+npm run dev   # https://localhost:5173 (HTTPS via @vitejs/plugin-basic-ssl)
 ```
  
 ## Code Style (.NET 8 / C# 12)
@@ -47,20 +50,22 @@ dotnet build Pdmt.Maui/Pdmt.Maui.csproj
  
 ## Architecture
  
-**Pdmt** is a personal event tracking app. Users log events (positive/negative experiences) with metadata: type, category, intensity, context, relationship flag, and influenceability.
+**Pdmt** is a personal event tracking app. Users log events (positive/negative experiences) with metadata: type, intensity, context, tags, and influenceability.
  
 ### Projects
  
 - **Pdmt.Api** — ASP.NET Core 8 REST API (backend)
 - **Pdmt.Api.Tests** — xUnit tests using `Microsoft.AspNetCore.Mvc.Testing` with an in-memory EF database
-- **Pdmt.Client** — Blazor WebAssembly frontend with MudBlazor UI
+- **Pdmt.Client** — Blazor WebAssembly frontend with MudBlazor UI (test UI, not production)
 - **Pdmt.Maui** — .NET MAUI Android client
+- **pdmt-web** — React 18 + TypeScript + Vite SPA (production web frontend); located at `pdmt-web/` in solution root, not part of `.slnx`
  
 ### API Layers
  
 - **Controllers** → **Services** → **AppDbContext** (EF Core)
-- Services (`AuthService`, `EventService`, `TagService`, `AnalyticsService`, `UserService`) contain all business logic; controllers are thin
-- Controllers: `AuthController`, `EventsController`, `TagsController`, `AnalyticsController`
+- Services (`AuthService`, `EventService`, `TagService`, `AnalyticsService`) contain all business logic; controllers are thin
+- Controllers: `AuthController`, `WebAuthController`, `EventsController`, `TagsController`, `AnalyticsController`
+- `AnalyticsController` routes: `/weekly-summary`, `/trends`, `/correlations`, `/calendar/week`, `/calendar/month`, `/insights/*` (repeating-triggers, discounted-positives, next-day-effects, tag-combos, tag-trend, influenceability) — TODO: split insights into separate `InsightsController`
 - `TokenCleanupBgService` — background service that purges expired refresh tokens
 - Global exception handling via `ExceptionHandlingMiddleware` — do not add try/catch in controllers
 
@@ -77,7 +82,10 @@ dotnet build Pdmt.Maui/Pdmt.Maui.csproj
 - JWT Bearer tokens (60 min access token, 1 day refresh token)
 - Refresh tokens are SHA256-hashed before storage; never stored in plaintext
 - Token rotation: old refresh tokens are invalidated on login/refresh
-- `POST /api/auth/login` → `POST /api/auth/refresh` → `POST /api/auth/logout`
+- **Two auth endpoint groups** — same `IAuthService`, different response contracts:
+  - `AuthController` (`/api/auth/*`) — MAUI / Blazor: returns `AuthResultDto` with `refreshToken` in body
+  - `WebAuthController` (`/api/auth/web/*`) — React SPA: returns `WebAuthResultDto` (no `refreshToken`), sets httpOnly cookie (`SameSite=None; Secure`)
+- CORS policy `"WebClients"` covers all browser origins with `AllowCredentials()` — required for cookie to pass on cross-origin requests
  
 ### Tags
 
@@ -135,12 +143,14 @@ Integration tests in `EventControllerTests.cs` cover auth enforcement, CRUD, fil
  
 ## Pdmt.Maui Conventions
 
-- Navigation: Shell TabBar with three tabs (`events`, `calendar`, `account`) + `login` ShellContent; push pages registered via `Routing.RegisterRoute` in `AppShell.xaml.cs`
+- Navigation: Shell TabBar with four tabs (`events`, `calendar`, `insights`, `account`) + `login` ShellContent; push pages registered via `Routing.RegisterRoute` in `AppShell.xaml.cs`
+- Services: `AuthService`, `EventService`, `TagService`, `AnalyticsService`, `InsightsService`
 - Singleton HTTP services: inject `IHttpClientFactory`, call `factory.CreateClient(...)` per method — never store `HttpClient` as a field
 - No display logic in DTOs — use ViewModel wrappers (e.g. `EventItemViewModel` over `EventResponseDto`)
 - Filters with nullable enum values: use `ItemsSource` + `SelectedItem` bound to a `record` type, not `SelectedIndex` (index binding sets value to 0 on init, breaking "все" option)
 - `DatePicker` returns `DateTime` with `Kind=Unspecified` — use `DateTime.SpecifyKind(value, DateTimeKind.Utc)` before sending to PostgreSQL API
 - Same for `DateTime.Date` property — it preserves `Kind`, so if the source was `Unspecified`, the result is too
+- Heterogeneous `CarouselView`: use `DataTemplateSelector` (see `InsightCardTemplateSelector`) — subclass, expose one `DataTemplate` property per card type, dispatch via pattern-matching `switch`
 
 ## Pdmt.Client Conventions
  
@@ -148,6 +158,19 @@ Integration tests in `EventControllerTests.cs` cover auth enforcement, CRUD, fil
 - Use `@inject` over constructor injection in components
 - API calls only via typed HttpClient services, never raw `HttpClient`
  
+## pdmt-web Conventions (React SPA)
+
+- **Stack**: React 18 + TypeScript + Vite + Tailwind CSS + Shadcn/ui + React Router v6
+- **Config**: `src/config.ts` reads `VITE_PDMT_API_BASE_URL` env var (required in prod); dev defaults to `https://localhost:7031`; set via `.env` file (see `.env.example`)
+- **Auth**: `accessToken` in memory (React Context + `useRef`); `refreshToken` in httpOnly cookie — never in `localStorage`
+- **API client**: `src/api/client.ts` — `apiFetch` wrapper with Bearer header injection + 401 → silent refresh → retry
+- **Silent refresh on page load**: `AuthProvider` calls `POST /api/auth/web/refresh` on mount to restore session from cookie
+- **All API requests**: use `credentials: 'include'` (required for cookie to be sent cross-origin)
+- **Dates**: always `Date.toISOString()` before sending to API (UTC Z-suffix); `datetime-local` inputs are local time — `new Date(value).toISOString()` converts correctly
+- **Tag filter**: `GET /api/events?tags=` accepts comma-separated **Guid IDs**, not names
+- **Dev HTTPS**: Vite runs on `https://localhost:5173` via `@vitejs/plugin-basic-ssl` — no proxy, real cross-origin like prod
+- Pages in `src/pages/`, shared components in `src/components/`, API modules in `src/api/`, auth in `src/auth/`
+
 ## Commits
 
 - Conventional commits: `feat:`, `fix:`, `refactor:`, `test:`, `chore:`, `docs:`, `style:`, `perf:`, `ci:`, `build:`, `revert:`
