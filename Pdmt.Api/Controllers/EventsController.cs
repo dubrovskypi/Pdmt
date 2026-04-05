@@ -15,13 +15,16 @@ namespace Pdmt.Api.Controllers
         [HttpGet]
         [ProducesResponseType(typeof(IEnumerable<EventResponseDto>), StatusCodes.Status200OK)]
         public async Task<ActionResult<IEnumerable<EventResponseDto>>> GetEvents(
-            [FromQuery] DateTime? from = null,
-            [FromQuery] DateTime? to = null,
-            [FromQuery] int? type = null,
+            [FromQuery] DateTimeOffset? from = null,
+            [FromQuery] DateTimeOffset? to = null,
+            [FromQuery] DtoEventType? type = null,
             [FromQuery] string? tags = null,
             [FromQuery] int? minIntensity = null,
             [FromQuery] int? maxIntensity = null)
         {
+            if (from.HasValue) from = from.Value.ToUniversalTime();
+            if (to.HasValue) to = to.Value.ToUniversalTime();
+
             var userId = User.GetUserId();
 
             IReadOnlyList<Guid>? tagIds = null;

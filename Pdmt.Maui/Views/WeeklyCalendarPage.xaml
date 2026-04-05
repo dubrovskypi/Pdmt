@@ -11,8 +11,6 @@
     BackgroundColor="{StaticResource Secondary}">
 
     <ContentPage.Resources>
-        <conv:EventTypeToColorConverter x:Key="TypeToColor" />
-        <conv:EventTypeToLabelConverter x:Key="TypeToLabel" />
         <conv:NotNullToBoolConverter x:Key="NotNullToBool" />
         <conv:InvertBoolConverter x:Key="InvertBool" />
     </ContentPage.Resources>
@@ -300,8 +298,8 @@
                                                 <!-- Type indicator -->
                                                 <Label
                                                     Grid.Column="0"
-                                                    Text="{Binding Type, Converter={StaticResource TypeToLabel}}"
-                                                    TextColor="{Binding Type, Converter={StaticResource TypeToColor}}"
+                                                    Text="{Binding TypeLabel}"
+                                                    TextColor="{Binding TypeColor}"
                                                     FontSize="18"
                                                     FontAttributes="Bold"
                                                     VerticalOptions="Start" />
@@ -336,7 +334,7 @@
                                                         Text="{Binding IntensityText}"
                                                         FontSize="13"
                                                         FontAttributes="Bold"
-                                                        TextColor="{Binding Type, Converter={StaticResource TypeToColor}}"
+                                                        TextColor="{Binding TypeColor}"
                                                         HorizontalOptions="End" />
                                                 </VerticalStackLayout>
                                             </Grid>

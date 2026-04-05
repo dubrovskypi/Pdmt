@@ -11,7 +11,7 @@ public partial class Card04TrendRatioViewModel(InsightsService insightsService) 
 
     [ObservableProperty] private IReadOnlyList<WeekBarItem> _weeks = [];
 
-    public override async Task LoadAsync(DateTime from, DateTime to)
+    public override async Task LoadAsync(DateTimeOffset from, DateTimeOffset to)
     {
         IsLoading = true;
         ErrorMessage = null;

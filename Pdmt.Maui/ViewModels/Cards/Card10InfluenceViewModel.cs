@@ -14,7 +14,7 @@ public partial class Card10InfluenceViewModel(InsightsService insightsService) :
     [ObservableProperty] private double _canBarWidth;
     [ObservableProperty] private double _cannotBarWidth;
 
-    public override async Task LoadAsync(DateTime from, DateTime to)
+    public override async Task LoadAsync(DateTimeOffset from, DateTimeOffset to)
     {
         IsLoading = true;
         ErrorMessage = null;

@@ -66,7 +66,7 @@ export function EventListPage() {
     try {
       const filters: EventFilters = {
         from: from ? new Date(from).toISOString() : undefined,
-        to: to ? new Date(to + "T23:59:59").toISOString() : undefined,
+        to: to ? new Date(to + "T23:59:59.999Z").toISOString() : undefined,
         type:
           typeFilter === "pos"
             ? EventType.Positive
@@ -201,7 +201,7 @@ export function EventListPage() {
         </p>
       ) : (
         <div className="flex flex-col gap-2">
-          {events.map((ev) => (
+          {[...events].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()).map((ev) => (
             <div
               key={ev.id}
               className={`flex gap-3 p-3 rounded-lg border text-sm ${

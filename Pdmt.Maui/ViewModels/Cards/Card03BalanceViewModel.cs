@@ -14,7 +14,7 @@ public partial class Card03BalanceViewModel(InsightsService insightsService) : I
     [ObservableProperty] private double _posBarWidth;
     [ObservableProperty] private double _negBarWidth;
 
-    public override async Task LoadAsync(DateTime from, DateTime to)
+    public override async Task LoadAsync(DateTimeOffset from, DateTimeOffset to)
     {
         IsLoading = true;
         ErrorMessage = null;

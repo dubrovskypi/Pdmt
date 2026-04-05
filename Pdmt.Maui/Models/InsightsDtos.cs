@@ -16,7 +16,7 @@ public record TagComboDto(
     double Tag2AloneAvgIntensity,
     int CoOccurrences);
 
-public record TagTrendPointDto(DateTime PeriodStart, int Count, double AvgIntensity);
+public record TagTrendPointDto(DateTimeOffset PeriodStart, int Count, double AvgIntensity);
 
 public record InfluenceabilitySplitDto(
     int CanInfluenceCount,
@@ -53,7 +53,7 @@ public class DayOfWeekSummaryDto
 
 public class TrendPeriodDto
 {
-    public DateTime PeriodStart { get; set; }
+    public DateTimeOffset PeriodStart { get; set; }
     public int PosCount { get; set; }
     public int NegCount { get; set; }
     public double AvgIntensity { get; set; }

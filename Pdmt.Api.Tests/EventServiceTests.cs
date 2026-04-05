@@ -25,7 +25,7 @@ namespace Pdmt.Api.Tests
             var dto = new CreateEventDto
             {
                 Timestamp = DateTime.UtcNow,
-                Type = 1,
+                Type = DtoEventType.Positive,
                 Title = "Promotion",
                 Intensity = 8,
                 CanInfluence = true
@@ -52,7 +52,7 @@ namespace Pdmt.Api.Tests
                 Id = Guid.NewGuid(),
                 UserId = ownerId,
                 Timestamp = DateTime.UtcNow,
-                Type = 1,
+                Type = EventType.Positive,
                 Title = "Test",
                 Intensity = 5
             };
@@ -72,7 +72,7 @@ namespace Pdmt.Api.Tests
             var dto = new UpdateEventDto
             {
                 Timestamp = DateTime.UtcNow,
-                Type = 1,
+                Type = DtoEventType.Positive,
                 Title = "Updated",
                 Intensity = 5
             };
@@ -91,7 +91,7 @@ namespace Pdmt.Api.Tests
             var dto = new CreateEventDto
             {
                 Timestamp = DateTime.UtcNow,
-                Type = 1,
+                Type = DtoEventType.Positive,
                 Title = "Test",
                 Intensity = 5
             };
@@ -113,7 +113,7 @@ namespace Pdmt.Api.Tests
                 Id = eventId,
                 UserId = userId,
                 Timestamp = DateTime.UtcNow,
-                Type = 0,
+                Type = EventType.Negative,
                 Title = "Old Title",
                 Intensity = 3
             });
@@ -121,7 +121,7 @@ namespace Pdmt.Api.Tests
             var dto = new UpdateEventDto
             {
                 Timestamp = DateTime.UtcNow,
-                Type = 1,
+                Type = DtoEventType.Positive,
                 Title = "New Title",
                 Intensity = 9
             };
@@ -130,7 +130,7 @@ namespace Pdmt.Api.Tests
 
             var updated = await db.Events.FirstAsync();
             Assert.True(result);
-            Assert.Equal(1, updated.Type);
+            Assert.Equal(EventType.Positive, updated.Type);
             Assert.Equal("New Title", updated.Title);
             Assert.Equal(9, updated.Intensity);
         }
@@ -147,7 +147,7 @@ namespace Pdmt.Api.Tests
                 Id = eventId,
                 UserId = userId,
                 Timestamp = DateTime.UtcNow,
-                Type = 1,
+                Type = EventType.Positive,
                 Title = "Test",
                 Intensity = 5
             });
@@ -180,7 +180,7 @@ namespace Pdmt.Api.Tests
                 Id = Guid.NewGuid(),
                 UserId = userId,
                 Timestamp = DateTime.UtcNow,
-                Type = 1,
+                Type = EventType.Positive,
                 Title = "A",
                 Intensity = 5
             };
@@ -189,7 +189,7 @@ namespace Pdmt.Api.Tests
                 Id = Guid.NewGuid(),
                 UserId = userId,
                 Timestamp = DateTime.UtcNow,
-                Type = 1,
+                Type = EventType.Positive,
                 Title = "B",
                 Intensity = 5
             };

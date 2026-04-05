@@ -20,7 +20,6 @@ namespace Pdmt.Api.Controllers
             return StatusCode(StatusCodes.Status201Created, await auth.RegisterAsync(dto, ip));
         }
 
-        //TODO TLS everywhere
         [HttpPost("login")]
         [AllowAnonymous]
         [ProducesResponseType(typeof(AuthResultDto), StatusCodes.Status200OK)]

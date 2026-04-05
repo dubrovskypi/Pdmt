@@ -105,8 +105,8 @@ public partial class NewEventViewModel(EventService eventService, TagService tag
         {
             await eventService.CreateEventAsync(new CreateEventDto
             {
-                Timestamp = DateTime.UtcNow,
-                Type = IsPositive ? 1 : 0,
+                Timestamp = DateTimeOffset.UtcNow,
+                Type = IsPositive ? EventType.Positive : EventType.Negative,
                 Intensity = (int)Intensity,
                 Title = Title.Trim(),
                 Description = string.IsNullOrWhiteSpace(Description) ? null : Description.Trim(),

@@ -51,7 +51,7 @@ public partial class InsightsViewModel : ObservableObject
     [RelayCommand]
     private async Task LoadAsync()
     {
-        var to   = DateTime.UtcNow;
+        var to   = DateTimeOffset.UtcNow;
         var from = to.AddDays(-SelectedPeriod.Days);
 
         IsPageLoading = true;

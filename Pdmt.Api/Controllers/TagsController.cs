@@ -13,8 +13,8 @@ namespace Pdmt.Api.Controllers;
 public class TagsController(ITagService tagService) : ControllerBase
 {
     [HttpGet]
-    [ProducesResponseType(typeof(IEnumerable<TagResponseDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<IEnumerable<TagResponseDto>>> GetTags()
+    [ProducesResponseType(typeof(IReadOnlyCollection<TagResponseDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IReadOnlyCollection<TagResponseDto>>> GetTags()
     {
         var userId = User.GetUserId();
         var tags = await tagService.GetTagsAsync(userId);

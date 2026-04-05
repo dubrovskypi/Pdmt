@@ -11,12 +11,14 @@ public class TagService(AppDbContext db) : ITagService
     {
         return await db.Tags
             .AsNoTracking()
+            .Include(t => t.EventTags)
             .Where(t => t.UserId == userId)
             .Select(t => new TagResponseDto
             {
                 Id = t.Id,
                 Name = t.Name,
-                CreatedAt = t.CreatedAt
+                CreatedAt = t.CreatedAt,
+                EventCount = t.EventTags.Count
             })
             .OrderBy(t => t.Name)
             .ToListAsync();
@@ -27,6 +29,7 @@ public class TagService(AppDbContext db) : ITagService
         var normalizedName = dto.Name.Trim();
 
         var existing = await db.Tags
+            .Include(t => t.EventTags)
             .FirstOrDefaultAsync(t => t.UserId == userId && t.Name == normalizedName);
 
         if (existing is not null)
@@ -34,7 +37,8 @@ public class TagService(AppDbContext db) : ITagService
             {
                 Id = existing.Id,
                 Name = existing.Name,
-                CreatedAt = existing.CreatedAt
+                CreatedAt = existing.CreatedAt,
+                EventCount = existing.EventTags.Count
             };
 
         var tag = new Tag
@@ -42,7 +46,7 @@ public class TagService(AppDbContext db) : ITagService
             Id = Guid.NewGuid(),
             Name = normalizedName,
             UserId = userId,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTimeOffset.UtcNow
         };
         db.Tags.Add(tag);
         await db.SaveChangesAsync();
@@ -51,13 +55,16 @@ public class TagService(AppDbContext db) : ITagService
         {
             Id = tag.Id,
             Name = tag.Name,
-            CreatedAt = tag.CreatedAt
+            CreatedAt = tag.CreatedAt,
+            EventCount = 0
         };
     }
 
     public async Task<bool> DeleteTagAsync(Guid userId, Guid tagId)
     {
-        var tag = await db.Tags.Include(t => t.EventTags).FirstOrDefaultAsync(t => t.Id == tagId && t.UserId == userId);
+        var tag = await db.Tags
+            .Include(t => t.EventTags)
+            .FirstOrDefaultAsync(t => t.Id == tagId && t.UserId == userId);
         if (tag is null) return false;
         db.Tags.Remove(tag);
         await db.SaveChangesAsync();

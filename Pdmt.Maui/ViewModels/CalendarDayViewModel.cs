@@ -17,7 +17,7 @@ public partial class CalendarDayViewModel : ObservableObject
         _maxIntensitySum = maxIntensitySum;
     }
 
-    public DateTime Date => _dto.Date;
+    public DateTimeOffset Date => _dto.Date;
     public int PosCount => _dto.PosCount;
     public int NegCount => _dto.NegCount;
     public bool HasEvents => _dto.PosCount + _dto.NegCount > 0;

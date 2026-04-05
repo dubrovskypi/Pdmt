@@ -36,7 +36,7 @@ namespace Pdmt.Api.Services
                 Id = Guid.NewGuid(),
                 Email = normalizedEmail,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTimeOffset.UtcNow
             };
             _db.Users.Add(user);
             await _db.SaveChangesAsync();
@@ -69,7 +69,7 @@ namespace Pdmt.Api.Services
                 {
                     Email = normalizedEmail,
                     IpAddress = ip,
-                    OccurredAtUtc = DateTime.UtcNow,
+                    OccurredAtUtc = DateTimeOffset.UtcNow,
                     Reason = "Invalid credentials"
                 });
                 await _db.SaveChangesAsync();
@@ -104,7 +104,7 @@ namespace Pdmt.Api.Services
                 .FirstOrDefaultAsync(rt =>
                     rt.Token == hashedRefreshToken &&
                     !rt.IsRevoked &&
-                    rt.ExpiresAt > DateTime.UtcNow) ?? throw new UnauthorizedAccessException("Invalid refresh token");
+                    rt.ExpiresAt > DateTimeOffset.UtcNow) ?? throw new UnauthorizedAccessException("Invalid refresh token");
             token.IsRevoked = true;
 
             var (newRefreshTokenEntity, rawRefreshToken) = CreateRefreshToken(token.User);
@@ -137,7 +137,8 @@ namespace Pdmt.Api.Services
             var jwt = _config.GetSection("Jwt");
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt["Secret"]!));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-            var expires = DateTime.UtcNow.AddMinutes(int.Parse(jwt["TokenLifetimeMinutes"]!));
+            var expiresOffset = DateTimeOffset.UtcNow.AddMinutes(int.Parse(jwt["TokenLifetimeMinutes"]!));
+            var expires = expiresOffset.UtcDateTime;
             var claims = new[]
             {
             new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
@@ -149,7 +150,7 @@ namespace Pdmt.Api.Services
                 claims: claims,
                 expires: expires,
                 signingCredentials: creds);
-            return new AccessToken(new JwtSecurityTokenHandler().WriteToken(token), expires);
+            return new AccessToken(new JwtSecurityTokenHandler().WriteToken(token), expiresOffset);
         }
 
         private (RefreshToken entity, string rawToken) CreateRefreshToken(User user)
@@ -161,8 +162,8 @@ namespace Pdmt.Api.Services
                 Id = Guid.NewGuid(),
                 UserId = user.Id,
                 Token = HashToken(rawToken),
-                CreatedAt = DateTime.UtcNow,
-                ExpiresAt = DateTime.UtcNow.AddDays(days)
+                CreatedAt = DateTimeOffset.UtcNow,
+                ExpiresAt = DateTimeOffset.UtcNow.AddDays(days)
             };
             return (entity, rawToken);
         }
@@ -174,10 +175,10 @@ namespace Pdmt.Api.Services
             return Convert.ToBase64String(bytes);
         }
 
-        private class AccessToken(string token, DateTime expiresAt)
+        private class AccessToken(string token, DateTimeOffset expiresAt)
         {
             public string Token { get; set; } = token;
-            public DateTime ExpiresAt { get; set; } = expiresAt;
+            public DateTimeOffset ExpiresAt { get; set; } = expiresAt;
         }
     }
 }

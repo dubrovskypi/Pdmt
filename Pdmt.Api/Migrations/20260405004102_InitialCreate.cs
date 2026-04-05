@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace Pdmt.Api.Migrations.Postgres
+namespace Pdmt.Api.Migrations
 {
     /// <inheritdoc />
     public partial class InitialCreate : Migration
@@ -18,7 +18,7 @@ namespace Pdmt.Api.Migrations.Postgres
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     Email = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: false),
                     IpAddress = table.Column<string>(type: "text", nullable: false),
-                    OccurredAtUtc = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    OccurredAtUtc = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     Reason = table.Column<string>(type: "text", nullable: false)
                 },
                 constraints: table =>
@@ -33,7 +33,7 @@ namespace Pdmt.Api.Migrations.Postgres
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     Email = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: false),
                     PasswordHash = table.Column<string>(type: "text", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                    CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -46,15 +46,13 @@ namespace Pdmt.Api.Migrations.Postgres
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     UserId = table.Column<Guid>(type: "uuid", nullable: false),
-                    Timestamp = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    Timestamp = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     Type = table.Column<int>(type: "integer", nullable: false),
-                    Category = table.Column<string>(type: "text", nullable: false),
                     Intensity = table.Column<int>(type: "integer", nullable: false),
                     Title = table.Column<string>(type: "text", nullable: false),
                     Description = table.Column<string>(type: "text", nullable: true),
                     Context = table.Column<string>(type: "text", nullable: true),
-                    CanInfluence = table.Column<bool>(type: "boolean", nullable: false),
-                    IsRelationship = table.Column<bool>(type: "boolean", nullable: false)
+                    CanInfluence = table.Column<bool>(type: "boolean", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -74,8 +72,8 @@ namespace Pdmt.Api.Migrations.Postgres
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     UserId = table.Column<Guid>(type: "uuid", nullable: false),
                     Token = table.Column<string>(type: "text", nullable: false),
-                    ExpiresAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    ExpiresAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     IsRevoked = table.Column<bool>(type: "boolean", nullable: false)
                 },
                 constraints: table =>
@@ -111,6 +109,50 @@ namespace Pdmt.Api.Migrations.Postgres
                         onDelete: ReferentialAction.Cascade);
                 });
 
+            migrationBuilder.CreateTable(
+                name: "Tags",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Tags", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Tags_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "EventTags",
+                columns: table => new
+                {
+                    EventId = table.Column<Guid>(type: "uuid", nullable: false),
+                    TagId = table.Column<Guid>(type: "uuid", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_EventTags", x => new { x.EventId, x.TagId });
+                    table.ForeignKey(
+                        name: "FK_EventTags_Events_EventId",
+                        column: x => x.EventId,
+                        principalTable: "Events",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_EventTags_Tags_TagId",
+                        column: x => x.TagId,
+                        principalTable: "Tags",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
             migrationBuilder.CreateIndex(
                 name: "IX_Events_Timestamp",
                 table: "Events",
@@ -125,6 +167,11 @@ namespace Pdmt.Api.Migrations.Postgres
                 name: "IX_Events_UserId_Timestamp",
                 table: "Events",
                 columns: new[] { "UserId", "Timestamp" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_EventTags_TagId",
+                table: "EventTags",
+                column: "TagId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_FailedLoginAttempts_Email",
@@ -154,6 +201,12 @@ namespace Pdmt.Api.Migrations.Postgres
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_Tags_UserId_Name",
+                table: "Tags",
+                columns: new[] { "UserId", "Name" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Users_Email",
                 table: "Users",
                 column: "Email",
@@ -164,7 +217,7 @@ namespace Pdmt.Api.Migrations.Postgres
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "Events");
+                name: "EventTags");
 
             migrationBuilder.DropTable(
                 name: "FailedLoginAttempts");
@@ -174,6 +227,12 @@ namespace Pdmt.Api.Migrations.Postgres
 
             migrationBuilder.DropTable(
                 name: "Summaries");
+
+            migrationBuilder.DropTable(
+                name: "Events");
+
+            migrationBuilder.DropTable(
+                name: "Tags");
 
             migrationBuilder.DropTable(
                 name: "Users");

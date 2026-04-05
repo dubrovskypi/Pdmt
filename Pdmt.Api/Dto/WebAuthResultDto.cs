@@ -1,4 +1,4 @@
 namespace Pdmt.Api.Dto
 {
-    public record WebAuthResultDto(string AccessToken, DateTime AccessTokenExpiresAt);
+    public record WebAuthResultDto(string AccessToken, DateTimeOffset AccessTokenExpiresAt);
 }

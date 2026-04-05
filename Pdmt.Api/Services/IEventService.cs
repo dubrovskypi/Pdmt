@@ -6,9 +6,9 @@ public interface IEventService
 {
     Task<IReadOnlyList<EventResponseDto>> GetEventsAsync(
         Guid userId,
-        DateTime? from,
-        DateTime? to,
-        int? type,
+        DateTimeOffset? from,
+        DateTimeOffset? to,
+        DtoEventType? type,
         IReadOnlyList<Guid>? tagIds,
         int? minIntensity,
         int? maxIntensity);

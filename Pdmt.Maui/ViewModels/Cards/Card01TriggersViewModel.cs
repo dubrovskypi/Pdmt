@@ -11,7 +11,7 @@ public partial class Card01TriggersViewModel(InsightsService insightsService) : 
 
     [ObservableProperty] private IReadOnlyList<TriggerBarItem> _items = [];
 
-    public override async Task LoadAsync(DateTime from, DateTime to)
+    public override async Task LoadAsync(DateTimeOffset from, DateTimeOffset to)
     {
         IsLoading = true;
         ErrorMessage = null;

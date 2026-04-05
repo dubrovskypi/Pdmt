@@ -32,10 +32,10 @@ else
             Type *
             <div style="display:flex; gap:16px; margin-top:4px;">
                 <label>
-                    <input type="radio" name="type" value="1" @onchange="() => type = 1" checked="@(type == 1)" /> Positive
+                    <input type="radio" name="type" value="1" @onchange="() => type = DtoEventType.Positive" checked="@(type == DtoEventType.Positive)" /> Positive
                 </label>
                 <label>
-                    <input type="radio" name="type" value="0" @onchange="() => type = 0" checked="@(type == 0)" /> Negative
+                    <input type="radio" name="type" value="0" @onchange="() => type = DtoEventType.Negative" checked="@(type == DtoEventType.Negative)" /> Negative
                 </label>
             </div>
         </label>
@@ -109,12 +109,12 @@ else
     [Parameter] public Guid Id { get; set; }
 
     private string title = "";
-    private int type = 1;
+    private DtoEventType type = DtoEventType.Positive;
     private int intensity = 5;
     private string? context;
     private string? description;
     private bool canInfluence;
-    private DateTime originalTimestamp;
+    private DateTimeOffset originalTimestamp;
     private bool loading = true;
     private bool submitting;
     private string? errorMessage;

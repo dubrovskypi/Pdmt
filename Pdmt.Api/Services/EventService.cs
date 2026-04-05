@@ -9,9 +9,9 @@ public class EventService(AppDbContext db) : IEventService
 {
     public async Task<IReadOnlyList<EventResponseDto>> GetEventsAsync(
         Guid userId,
-        DateTime? from,
-        DateTime? to,
-        int? type,
+        DateTimeOffset? from,
+        DateTimeOffset? to,
+        DtoEventType? type,
         IReadOnlyList<Guid>? tagIds,
         int? minIntensity,
         int? maxIntensity)
@@ -28,7 +28,7 @@ public class EventService(AppDbContext db) : IEventService
         if (to.HasValue)
             query = query.Where(e => e.Timestamp <= to.Value);
         if (type.HasValue)
-            query = query.Where(e => e.Type == type.Value);
+            query = query.Where(e => e.Type == (EventType)type.Value);
         if (tagIds is not null && tagIds.Count > 0)
             query = query.Where(e => e.EventTags.Any(et => tagIds.Contains(et.TagId)));
         if (minIntensity.HasValue)
@@ -72,7 +72,7 @@ public class EventService(AppDbContext db) : IEventService
             Id = eventId,
             UserId = userId,
             Timestamp = ev.Timestamp,
-            Type = ev.Type,
+            Type = (EventType)ev.Type,
             Intensity = ev.Intensity,
             Title = ev.Title,
             Description = ev.Description,
@@ -101,7 +101,7 @@ public class EventService(AppDbContext db) : IEventService
         if (existing is null) return false;
 
         existing.Timestamp = newEvent.Timestamp;
-        existing.Type = newEvent.Type;
+        existing.Type = (EventType)newEvent.Type;
         existing.Intensity = newEvent.Intensity;
         existing.Title = newEvent.Title;
         existing.Description = newEvent.Description;
@@ -155,7 +155,7 @@ public class EventService(AppDbContext db) : IEventService
                 Id = Guid.NewGuid(),
                 Name = n,
                 UserId = userId,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTimeOffset.UtcNow
             })
             .ToList();
 
@@ -170,7 +170,7 @@ public class EventService(AppDbContext db) : IEventService
         {
             Id = entity.Id,
             Timestamp = entity.Timestamp,
-            Type = entity.Type,
+            Type = (DtoEventType)entity.Type,
             Intensity = entity.Intensity,
             Title = entity.Title,
             Description = entity.Description,

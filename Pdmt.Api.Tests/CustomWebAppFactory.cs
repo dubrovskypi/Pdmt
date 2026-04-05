@@ -17,11 +17,7 @@ namespace Pdmt.Api.Tests
             builder.ConfigureServices(services =>
             {
                 // --- Remove the real DbContext registrations ---
-                RemoveService<DbContextOptions<SqlServerAppDbContext>>(services);
-                RemoveService<DbContextOptions<PostgresAppDbContext>>(services);
                 RemoveService<DbContextOptions<AppDbContext>>(services);
-                RemoveService<SqlServerAppDbContext>(services);
-                RemoveService<PostgresAppDbContext>(services);
                 RemoveService<AppDbContext>(services);
 
                 // Register in-memory database

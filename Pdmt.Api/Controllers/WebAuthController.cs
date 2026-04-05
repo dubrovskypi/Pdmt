@@ -14,6 +14,19 @@ namespace Pdmt.Api.Controllers
     [Route("api/auth/web")]
     public class WebAuthController(IAuthService auth) : ControllerBase
     {
+        [HttpPost("register")]
+        [AllowAnonymous]
+        [ProducesResponseType(typeof(WebAuthResultDto), StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<ActionResult<WebAuthResultDto>> Register(UserDto dto)
+        {
+            var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+            var result = await auth.RegisterAsync(dto, ip);
+            SetRefreshCookie(result.RefreshToken);
+            return StatusCode(StatusCodes.Status201Created,
+                new WebAuthResultDto(result.AccessToken, result.AccessTokenExpiresAt));
+        }
+
         [HttpPost("login")]
         [AllowAnonymous]
         [ProducesResponseType(typeof(WebAuthResultDto), StatusCodes.Status200OK)]

@@ -17,7 +17,7 @@ public partial class Card08CombosViewModel(InsightsService insightsService) : In
 
     [ObservableProperty] private IReadOnlyList<ComboItem> _items = [];
 
-    public override async Task LoadAsync(DateTime from, DateTime to)
+    public override async Task LoadAsync(DateTimeOffset from, DateTimeOffset to)
     {
         IsLoading = true;
         ErrorMessage = null;

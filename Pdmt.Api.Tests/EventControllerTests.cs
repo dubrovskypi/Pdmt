@@ -1,5 +1,4 @@
 using Microsoft.IdentityModel.Tokens;
-using Pdmt.Api.Domain;
 using Pdmt.Api.Dto;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
@@ -36,7 +35,7 @@ namespace Pdmt.Api.Tests
             var dto = new CreateEventDto
             {
                 Timestamp = DateTime.UtcNow,
-                Type = 1,
+                Type = DtoEventType.Positive,
                 Title = "Integration Test",
                 Intensity = 5
             };
@@ -83,7 +82,7 @@ namespace Pdmt.Api.Tests
             var dto = new CreateEventDto
             {
                 Timestamp = DateTime.UtcNow,
-                Type = 1,
+                Type = DtoEventType.Positive,
                 Title = "Morning Run",
                 Intensity = 7
             };
@@ -120,7 +119,7 @@ namespace Pdmt.Api.Tests
             var createDto = new CreateEventDto
             {
                 Timestamp = DateTime.UtcNow,
-                Type = 0,
+                Type = DtoEventType.Negative,
                 Title = "Original Title",
                 Intensity = 3
             };
@@ -130,7 +129,7 @@ namespace Pdmt.Api.Tests
             var updateDto = new UpdateEventDto
             {
                 Timestamp = created!.Timestamp,
-                Type = 1,
+                Type = DtoEventType.Positive,
                 Title = "Updated Title",
                 Intensity = 8
             };
@@ -151,7 +150,7 @@ namespace Pdmt.Api.Tests
             var createDto = new CreateEventDto
             {
                 Timestamp = DateTime.UtcNow,
-                Type = 1,
+                Type = DtoEventType.Positive,
                 Title = "To Be Deleted",
                 Intensity = 4
             };
@@ -172,7 +171,7 @@ namespace Pdmt.Api.Tests
             var createDto = new CreateEventDto
             {
                 Timestamp = DateTime.UtcNow,
-                Type = 1,
+                Type = DtoEventType.Positive,
                 Title = "User A Secret Event",
                 Intensity = 5
             };

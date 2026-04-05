@@ -1,8 +1,8 @@
-using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Pdmt.Maui.Models;
 using Pdmt.Maui.Services;
+using System.Collections.ObjectModel;
 
 namespace Pdmt.Maui.ViewModels;
 
@@ -10,27 +10,27 @@ public partial class EventListViewModel(
     EventService eventService,
     TagService tagService) : ObservableObject
 {
-    public record EventTypeFilter(string Label, int? Value);
+    public record EventTypeFilter(string Label, EventType? Value);
     public record TagFilter(string Name, Guid? Id);
 
     public ObservableCollection<EventItemViewModel> Events { get; } = [];
 
     public IReadOnlyList<EventTypeFilter> EventTypeFilters { get; } = [
-        new("Все", null),
-        new("Положительные", 1),
-        new("Отрицательные", 0),
-    ];
+        new("All", null),
+        ..Enum.GetValues<EventType>()
+        .Select(t => new EventTypeFilter(t.ToString(), t))
+        ];
 
     public ObservableCollection<TagFilter> TagFilters { get; } = [];
 
     [ObservableProperty]
-    private DateTime? _filterFrom;
+    private DateTimeOffset? _filterFrom;
 
     [ObservableProperty]
-    private DateTime? _filterTo;
+    private DateTimeOffset? _filterTo;
 
     [ObservableProperty]
-    private EventTypeFilter _selectedTypeFilter = new("Все", null);
+    private EventTypeFilter _selectedTypeFilter = new("All", null);
 
     [ObservableProperty]
     private TagFilter? _selectedTagFilter;

@@ -61,11 +61,11 @@ public class AnalyticsControllerTests : IClassFixture<CustomWebAppFactory>
     public async Task GetRepeatingTriggers_Should_Return_Tags_Meeting_MinCount()
     {
         var tag = await SeedTagAsync(TestUserId, "rt_argument");
-        await SeedEventsWithTagAsync(TestUserId, tag, type: 0, intensity: 7, count: 4,
+        await SeedEventsWithTagAsync(TestUserId, tag, type: EventType.Negative, intensity: 7, count: 4,
             baseDate: new DateTime(2026, 2, 1, 0, 0, 0, DateTimeKind.Utc));
 
         var rareTag = await SeedTagAsync(TestUserId, "rt_rare");
-        await SeedEventsWithTagAsync(TestUserId, rareTag, type: 0, intensity: 5, count: 2,
+        await SeedEventsWithTagAsync(TestUserId, rareTag, type: EventType.Negative, intensity: 5, count: 2,
             baseDate: new DateTime(2026, 2, 10, 0, 0, 0, DateTimeKind.Utc));
 
         var client = CreateTestAuthClient();
@@ -81,7 +81,7 @@ public class AnalyticsControllerTests : IClassFixture<CustomWebAppFactory>
     public async Task GetRepeatingTriggers_Should_Only_Consider_Negative_Events()
     {
         var tag = await SeedTagAsync(TestUserId, "rt_positive_tag");
-        await SeedEventsWithTagAsync(TestUserId, tag, type: 1, intensity: 6, count: 5,
+        await SeedEventsWithTagAsync(TestUserId, tag, type: EventType.Positive, intensity: 6, count: 5,
             baseDate: new DateTime(2026, 3, 1, 0, 0, 0, DateTimeKind.Utc));
 
         var client = CreateTestAuthClient();
@@ -98,11 +98,11 @@ public class AnalyticsControllerTests : IClassFixture<CustomWebAppFactory>
     public async Task GetDiscountedPositives_Should_Return_HighFrequency_LowIntensity_Tags()
     {
         var tag = await SeedTagAsync(TestUserId, "dp_coffee");
-        await SeedEventsWithTagAsync(TestUserId, tag, type: 1, intensity: 2, count: 6,
+        await SeedEventsWithTagAsync(TestUserId, tag, type: EventType.Positive, intensity: 2, count: 6,
             baseDate: new DateTime(2026, 4, 1, 0, 0, 0, DateTimeKind.Utc));
 
         var highTag = await SeedTagAsync(TestUserId, "dp_achievement");
-        await SeedEventsWithTagAsync(TestUserId, highTag, type: 1, intensity: 8, count: 6,
+        await SeedEventsWithTagAsync(TestUserId, highTag, type: EventType.Positive, intensity: 8, count: 6,
             baseDate: new DateTime(2026, 4, 10, 0, 0, 0, DateTimeKind.Utc));
 
         var client = CreateTestAuthClient();
@@ -118,7 +118,7 @@ public class AnalyticsControllerTests : IClassFixture<CustomWebAppFactory>
     public async Task GetDiscountedPositives_Should_Exclude_Tags_Below_Count_Threshold()
     {
         var tag = await SeedTagAsync(TestUserId, "dp_rare_low");
-        await SeedEventsWithTagAsync(TestUserId, tag, type: 1, intensity: 2, count: 3,
+        await SeedEventsWithTagAsync(TestUserId, tag, type: EventType.Positive, intensity: 2, count: 3,
             baseDate: new DateTime(2026, 5, 1, 0, 0, 0, DateTimeKind.Utc));
 
         var client = CreateTestAuthClient();
@@ -146,7 +146,7 @@ public class AnalyticsControllerTests : IClassFixture<CustomWebAppFactory>
                 {
                     Id = Guid.NewGuid(), UserId = TestUserId,
                     Timestamp = new DateTime(2026, 6, i + 1, 10, 0, 0, DateTimeKind.Utc),
-                    Type = 0, Intensity = 3, Title = $"nde_gym_event_{i}"
+                    Type = EventType.Negative, Intensity = 3, Title = $"nde_gym_event_{i}"
                 };
                 db.Events.Add(eventWithTag);
                 db.EventTags.Add(new EventTag { EventId = eventWithTag.Id, TagId = tag.Id });
@@ -156,7 +156,7 @@ public class AnalyticsControllerTests : IClassFixture<CustomWebAppFactory>
                 {
                     Id = Guid.NewGuid(), UserId = TestUserId,
                     Timestamp = new DateTime(2026, 6, i + 2, 10, 0, 0, DateTimeKind.Utc),
-                    Type = 1, Intensity = 6, Title = $"nde_gym_nextday_{i}"
+                    Type = EventType.Positive, Intensity = 6, Title = $"nde_gym_nextday_{i}"
                 };
                 db.Events.Add(nextDayEvent);
             }
@@ -177,7 +177,7 @@ public class AnalyticsControllerTests : IClassFixture<CustomWebAppFactory>
     public async Task GetNextDayEffects_Should_Exclude_Tags_With_Fewer_Than_3_Occurrences()
     {
         var tag = await SeedTagAsync(TestUserId, "nde_rare");
-        await SeedEventsWithTagAsync(TestUserId, tag, type: 0, intensity: 5, count: 2,
+        await SeedEventsWithTagAsync(TestUserId, tag, type: EventType.Negative, intensity: 5, count: 2,
             baseDate: new DateTime(2026, 7, 1, 0, 0, 0, DateTimeKind.Utc));
 
         var client = CreateTestAuthClient();
@@ -298,7 +298,7 @@ public class AnalyticsControllerTests : IClassFixture<CustomWebAppFactory>
             };
             foreach (var (date, idx) in dates.Select((d, i) => (d, i)))
             {
-                var ev = new Event { Id = Guid.NewGuid(), UserId = TestUserId, Timestamp = date, Type = 0, Intensity = 5, Title = $"tt_ev_{idx}" };
+                var ev = new Event { Id = Guid.NewGuid(), UserId = TestUserId, Timestamp = date, Type = EventType.Negative, Intensity = 5, Title = $"tt_ev_{idx}" };
                 db.Events.Add(ev);
                 db.EventTags.Add(new EventTag { EventId = ev.Id, TagId = tag.Id });
             }
@@ -325,9 +325,9 @@ public class AnalyticsControllerTests : IClassFixture<CustomWebAppFactory>
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var baseDate = new DateTime(2026, 11, 1, 0, 0, 0, DateTimeKind.Utc);
             for (var i = 0; i < 3; i++)
-                db.Events.Add(new Event { Id = Guid.NewGuid(), UserId = TestUserId, Timestamp = baseDate.AddDays(i), Type = 0, Intensity = 6, CanInfluence = true, Title = $"inf_can_{i}" });
+                db.Events.Add(new Event { Id = Guid.NewGuid(), UserId = TestUserId, Timestamp = baseDate.AddDays(i), Type = EventType.Negative, Intensity = 6, CanInfluence = true, Title = $"inf_can_{i}" });
             for (var i = 0; i < 2; i++)
-                db.Events.Add(new Event { Id = Guid.NewGuid(), UserId = TestUserId, Timestamp = baseDate.AddDays(i + 10), Type = 0, Intensity = 8, CanInfluence = false, Title = $"inf_cannot_{i}" });
+                db.Events.Add(new Event { Id = Guid.NewGuid(), UserId = TestUserId, Timestamp = baseDate.AddDays(i + 10), Type = EventType.Negative, Intensity = 8, CanInfluence = false, Title = $"inf_cannot_{i}" });
             await db.SaveChangesAsync();
         }
 
@@ -352,7 +352,7 @@ public class AnalyticsControllerTests : IClassFixture<CustomWebAppFactory>
             var baseDate = new DateTime(2026, 12, 1, 0, 0, 0, DateTimeKind.Utc);
             // Only positive events — should return zeros
             for (var i = 0; i < 5; i++)
-                db.Events.Add(new Event { Id = Guid.NewGuid(), UserId = TestUserId, Timestamp = baseDate.AddDays(i), Type = 1, Intensity = 7, CanInfluence = true, Title = $"inf_pos_{i}" });
+                db.Events.Add(new Event { Id = Guid.NewGuid(), UserId = TestUserId, Timestamp = baseDate.AddDays(i), Type = EventType.Positive, Intensity = 7, CanInfluence = true, Title = $"inf_pos_{i}" });
             await db.SaveChangesAsync();
         }
 
@@ -372,7 +372,7 @@ public class AnalyticsControllerTests : IClassFixture<CustomWebAppFactory>
     public async Task GetRepeatingTriggers_Should_Not_Return_Other_Users_Data()
     {
         var otherTag = await SeedTagAsync(OtherUserId, "rt_isolation_other");
-        await SeedEventsWithTagAsync(OtherUserId, otherTag, type: 0, intensity: 8, count: 5,
+        await SeedEventsWithTagAsync(OtherUserId, otherTag, type: EventType.Negative, intensity: 8, count: 5,
             baseDate: new DateTime(2026, 1, 2, 0, 0, 0, DateTimeKind.Utc));
 
         var client = CreateTestAuthClient();
@@ -404,7 +404,7 @@ public class AnalyticsControllerTests : IClassFixture<CustomWebAppFactory>
         return tag;
     }
 
-    private async Task SeedEventsWithTagAsync(Guid userId, Tag tag, int type, int intensity, int count, DateTime baseDate)
+    private async Task SeedEventsWithTagAsync(Guid userId, Tag tag, EventType type, int intensity, int count, DateTime baseDate)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();

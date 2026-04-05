@@ -12,7 +12,7 @@ public abstract partial class InsightCardViewModel : ObservableObject
 
     public bool HasError => ErrorMessage is not null;
 
-    public abstract Task LoadAsync(DateTime from, DateTime to);
+    public abstract Task LoadAsync(DateTimeOffset from, DateTimeOffset to);
 
     // Ensure PropertyChanged always fires on the UI thread.
     // Card LoadAsync methods run HTTP calls concurrently via Task.WhenAll,

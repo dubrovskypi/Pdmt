@@ -18,6 +18,7 @@ export interface TagResponseDto {
   id: string;
   name: string;
   createdAt: string;
+  eventCount: number;
 }
 
 // --- Events ---

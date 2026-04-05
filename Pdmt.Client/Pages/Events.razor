@@ -64,8 +64,8 @@ else
             {
                 <tr style="border-bottom:1px solid #eee;">
                     <td style="padding:6px 8px; white-space:nowrap;">@ev.Timestamp.ToLocalTime().ToString("dd.MM.yy HH:mm")</td>
-                    <td style="padding:6px 8px; color:@(ev.Type == 1 ? "green" : "crimson"); font-weight:bold;">
-                        @(ev.Type == 1 ? "+" : "−")
+                    <td style="padding:6px 8px; color:@(ev.Type == DtoEventType.Positive ? "green" : "crimson"); font-weight:bold;">
+                        @(ev.Type == DtoEventType.Positive ? "+" : "−")
                     </td>
                     <td style="padding:6px 8px;">@ev.Title</td>
                     <td style="padding:6px 8px;">@string.Join(", ", ev.Tags.Select(t => t.Name))</td>
@@ -84,8 +84,8 @@ else
     private List<EventResponseDto>? events;
     private string? errorMessage;
 
-    private DateTime? filterFrom;
-    private DateTime? filterTo;
+    private DateTimeOffset? filterFrom;
+    private DateTimeOffset? filterTo;
     private string filterType = "";
 
     protected override async Task OnInitializedAsync()
@@ -99,7 +99,7 @@ else
         await LoadEvents();
     }
 
-    private async Task LoadEvents(DateTime? from = null, DateTime? to = null, int? type = null)
+    private async Task LoadEvents(DateTimeOffset? from = null, DateTimeOffset? to = null, int? type = null)
     {
         try
         {

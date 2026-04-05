@@ -236,7 +236,7 @@ export function CalendarPage() {
       setLoading(true);
       setExpandedDay(null);
       setDayEvents({});
-      const week = await getCalendarWeek(weekDate.toISOString());
+      const week = await getCalendarWeek(toDateString(weekDate));
       setCalendarWeek(week.days);
       setLoading(false);
     })();
@@ -250,9 +250,12 @@ export function CalendarPage() {
     setExpandedDay(date);
     if (dayEvents[date]) return;
 
+    // Extract just date part (handle both "2026-04-05" and "2026-04-05T..." formats)
+    const dateStr = date.includes("T") ? toDateString(new Date(date)) : date;
+
     const evts = await getEvents({
-      from: new Date(date + "T00:00:00Z").toISOString(),
-      to: new Date(date + "T23:59:59.999Z").toISOString(),
+      from: new Date(dateStr + "T00:00:00Z").toISOString(),
+      to: new Date(dateStr + "T23:59:59.999Z").toISOString(),
     });
     setDayEvents((prev) => ({ ...prev, [date]: evts }));
   }

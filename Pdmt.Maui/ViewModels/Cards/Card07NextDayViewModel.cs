@@ -11,7 +11,7 @@ public partial class Card07NextDayViewModel(InsightsService insightsService) : I
 
     [ObservableProperty] private IReadOnlyList<NextDayBarItem> _items = [];
 
-    public override async Task LoadAsync(DateTime from, DateTime to)
+    public override async Task LoadAsync(DateTimeOffset from, DateTimeOffset to)
     {
         IsLoading = true;
         ErrorMessage = null;

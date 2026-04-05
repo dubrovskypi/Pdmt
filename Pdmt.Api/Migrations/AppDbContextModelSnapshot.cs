@@ -2,21 +2,18 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Pdmt.Api.Data;
 
 #nullable disable
 
-namespace Pdmt.Api.Migrations.Postgres
+namespace Pdmt.Api.Migrations
 {
-    [DbContext(typeof(PostgresAppDbContext))]
-    [Migration("20260328142013_AddTagsSystem")]
-    partial class AddTagsSystem
+    [DbContext(typeof(AppDbContext))]
+    partial class AppDbContextModelSnapshot : ModelSnapshot
     {
-        /// <inheritdoc />
-        protected override void BuildTargetModel(ModelBuilder modelBuilder)
+        protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -43,7 +40,7 @@ namespace Pdmt.Api.Migrations.Postgres
                     b.Property<int>("Intensity")
                         .HasColumnType("integer");
 
-                    b.Property<DateTime>("Timestamp")
+                    b.Property<DateTimeOffset>("Timestamp")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Title")
@@ -97,7 +94,7 @@ namespace Pdmt.Api.Migrations.Postgres
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<DateTime>("OccurredAtUtc")
+                    b.Property<DateTimeOffset>("OccurredAtUtc")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Reason")
@@ -119,10 +116,10 @@ namespace Pdmt.Api.Migrations.Postgres
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<DateTime>("CreatedAt")
+                    b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<DateTime>("ExpiresAt")
+                    b.Property<DateTimeOffset>("ExpiresAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<bool>("IsRevoked")
@@ -205,7 +202,7 @@ namespace Pdmt.Api.Migrations.Postgres
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<DateTime>("CreatedAt")
+                    b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Email")

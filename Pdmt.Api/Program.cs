@@ -71,36 +71,14 @@ builder.Services.AddCors(options =>
     });
 });
 // Register DbContext
-var dbProvider = builder.Configuration["Database:Provider"];
-if (dbProvider == "SqlServer")
-{
-    var sqlCs = builder.Configuration.GetConnectionString("SqlServer");
-    if (string.IsNullOrWhiteSpace(sqlCs))
-        throw new InvalidOperationException(
-            "ConnectionStrings:SqlServer is not configured. " +
-            "Dev: set in appsettings.Development.json  " +
-            "Prod: set env var ConnectionStrings__SqlServer");
+var pgCs = builder.Configuration.GetConnectionString("Postgres");
+if (string.IsNullOrWhiteSpace(pgCs))
+    throw new InvalidOperationException(
+        "ConnectionStrings:Postgres is not configured. " +
+        "Prod: set env var ConnectionStrings__Postgres");
 
-    builder.Services.AddDbContext<AppDbContext, SqlServerAppDbContext>(options =>
-        options.UseSqlServer(sqlCs));
-    builder.Services.AddHealthChecks()
-        .AddSqlServer(sqlCs);
-}
-else if (dbProvider == "Postgres")
-{
-    var pgCs = builder.Configuration.GetConnectionString("Postgres");
-    if (string.IsNullOrWhiteSpace(pgCs))
-        throw new InvalidOperationException(
-            "ConnectionStrings:Postgres is not configured. " +
-            "Prod: set env var ConnectionStrings__Postgres");
-
-    builder.Services.AddDbContext<AppDbContext, PostgresAppDbContext>(options =>
-        options.UseNpgsql(pgCs));
-}
-else
-{
-    throw new InvalidOperationException("Unknown database provider. Set Database:Provider to 'SqlServer' or 'Postgres'.");
-}
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseNpgsql(pgCs));
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -126,7 +104,9 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
     config.AbortOnConnectFail = false;
     return ConnectionMultiplexer.Connect(config);
 });
-builder.Services.AddHealthChecks().AddRedis(builder.Configuration.GetValue<string>("Redis:ConnectionString"));
+builder.Services.AddHealthChecks()
+    .AddNpgSql(pgCs)
+    .AddRedis(builder.Configuration.GetValue<string>("Redis:ConnectionString"));
 var otelEndpoint = builder.Configuration["OpenTelemetry:Endpoint"]
     ?? throw new InvalidOperationException(
         "OpenTelemetry:Endpoint is not configured. " +

@@ -14,22 +14,22 @@ public partial class WeeklyCalendarViewModel(
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(WeekLabel))]
     [NotifyPropertyChangedFor(nameof(IsCurrentWeek))]
-    private DateTime _weekStart;
+    private DateTimeOffset _weekStart;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(WeekLabel))]
-    private DateTime _weekEnd;
+    private DateTimeOffset _weekEnd;
 
     [ObservableProperty] private bool _isBusy;
     [ObservableProperty] private string? _errorMessage;
 
-    public bool IsCurrentWeek => WeekStart >= GetMonday(DateTime.UtcNow.Date);
+    public bool IsCurrentWeek => WeekStart >= GetMonday(DateTimeOffset.UtcNow);
     public string WeekLabel => $"{WeekStart:dd MMM} \u2014 {WeekEnd:dd MMM yyyy}";
 
     [RelayCommand]
     private async Task LoadAsync()
     {
-        WeekStart = GetMonday(DateTime.UtcNow.Date);
+        WeekStart = GetMonday(DateTimeOffset.UtcNow);
         WeekEnd = WeekStart.AddDays(6);
         await LoadWeekAsync();
     }
@@ -72,9 +72,10 @@ public partial class WeeklyCalendarViewModel(
         day.IsExpandedLoading = true;
         try
         {
-            var events = await eventService.GetEventsAsync(
-                from: DateTime.SpecifyKind(day.Date, DateTimeKind.Utc),
-                to: DateTime.SpecifyKind(day.Date.AddDays(1).AddTicks(-1), DateTimeKind.Utc));
+            var dateTime = day.Date.Date;
+            var dayStart = new DateTimeOffset(dateTime, TimeSpan.Zero);
+            var dayEnd = new DateTimeOffset(dateTime.AddDays(1).AddTicks(-1), TimeSpan.Zero);
+            var events = await eventService.GetEventsAsync(from: dayStart, to: dayEnd);
 
             day.ExpandedEvents.Clear();
             foreach (var ev in events.OrderBy(e => e.Timestamp))
@@ -119,9 +120,16 @@ public partial class WeeklyCalendarViewModel(
         }
     }
 
-    private static DateTime GetMonday(DateTime date)
+    private static DateTimeOffset StartOfDayUtc(DateTimeOffset date)
     {
-        int diff = (7 + (date.DayOfWeek - DayOfWeek.Monday)) % 7;
-        return date.AddDays(-diff).Date;
+        return new DateTimeOffset(date.UtcDateTime.Date, TimeSpan.Zero);
+    }
+
+    private static DateTimeOffset GetMonday(DateTimeOffset date)
+    {
+        var utcDate = date.ToUniversalTime();
+        int daysToMonday = ((int)utcDate.DayOfWeek - (int)DayOfWeek.Monday + 7) % 7;
+        var mondayDate = utcDate.AddDays(-daysToMonday).Date;
+        return new DateTimeOffset(mondayDate, TimeSpan.Zero);
     }
 }

@@ -8,7 +8,7 @@ public class InsightsService(IHttpClientFactory factory, TagService tagService)
     // ── Insights endpoints ─────────────────────────────────────────────────
 
     public async Task<List<RepeatingTriggerDto>> GetRepeatingTriggersAsync(
-        DateTime from, DateTime to, int minCount = 3)
+        DateTimeOffset from, DateTimeOffset to, int minCount = 3)
     {
         var http = factory.CreateClient("PdmtApi");
         var (f, t) = FormatRange(from, to);
@@ -17,7 +17,7 @@ public class InsightsService(IHttpClientFactory factory, TagService tagService)
     }
 
     public async Task<List<DiscountedPositiveDto>> GetDiscountedPositivesAsync(
-        DateTime from, DateTime to)
+        DateTimeOffset from, DateTimeOffset to)
     {
         var http = factory.CreateClient("PdmtApi");
         var (f, t) = FormatRange(from, to);
@@ -26,7 +26,7 @@ public class InsightsService(IHttpClientFactory factory, TagService tagService)
     }
 
     public async Task<List<NextDayEffectDto>> GetNextDayEffectsAsync(
-        DateTime from, DateTime to)
+        DateTimeOffset from, DateTimeOffset to)
     {
         var http = factory.CreateClient("PdmtApi");
         var (f, t) = FormatRange(from, to);
@@ -35,7 +35,7 @@ public class InsightsService(IHttpClientFactory factory, TagService tagService)
     }
 
     public async Task<List<TagComboDto>> GetTagCombosAsync(
-        DateTime from, DateTime to)
+        DateTimeOffset from, DateTimeOffset to)
     {
         var http = factory.CreateClient("PdmtApi");
         var (f, t) = FormatRange(from, to);
@@ -44,7 +44,7 @@ public class InsightsService(IHttpClientFactory factory, TagService tagService)
     }
 
     public async Task<List<TagTrendPointDto>> GetTagTrendAsync(
-        Guid tagId, DateTime from, DateTime to, string period = "week")
+        Guid tagId, DateTimeOffset from, DateTimeOffset to, string period = "week")
     {
         var http = factory.CreateClient("PdmtApi");
         var (f, t) = FormatRange(from, to);
@@ -53,7 +53,7 @@ public class InsightsService(IHttpClientFactory factory, TagService tagService)
     }
 
     public async Task<InfluenceabilitySplitDto?> GetInfluenceabilityAsync(
-        DateTime from, DateTime to)
+        DateTimeOffset from, DateTimeOffset to)
     {
         var http = factory.CreateClient("PdmtApi");
         var (f, t) = FormatRange(from, to);
@@ -63,16 +63,16 @@ public class InsightsService(IHttpClientFactory factory, TagService tagService)
 
     // ── Existing analytics endpoints ───────────────────────────────────────
 
-    public async Task<WeeklySummaryDto?> GetWeeklySummaryAsync(DateTime weekOf)
+    public async Task<WeeklySummaryDto?> GetWeeklySummaryAsync(DateTimeOffset weekOf)
     {
         var http = factory.CreateClient("PdmtApi");
-        var param = Uri.EscapeDataString(DateTime.SpecifyKind(weekOf, DateTimeKind.Utc).ToString("O"));
+        var param = Uri.EscapeDataString(weekOf.ToUniversalTime().ToString("yyyy-MM-dd"));
         return await http.GetFromJsonAsync<WeeklySummaryDto>(
             $"api/analytics/weekly-summary?weekOf={param}");
     }
 
     public async Task<List<TrendPeriodDto>> GetTrendsAsync(
-        DateTime from, DateTime to, string groupBy = "week")
+        DateTimeOffset from, DateTimeOffset to, string groupBy = "week")
     {
         var http = factory.CreateClient("PdmtApi");
         var (f, t) = FormatRange(from, to);
@@ -90,7 +90,7 @@ public class InsightsService(IHttpClientFactory factory, TagService tagService)
 
     // ── Helpers ───────────────────────────────────────────────────────────
 
-    private static (string from, string to) FormatRange(DateTime from, DateTime to) => (
-        Uri.EscapeDataString(DateTime.SpecifyKind(from, DateTimeKind.Utc).ToString("O")),
-        Uri.EscapeDataString(DateTime.SpecifyKind(to, DateTimeKind.Utc).ToString("O")));
+    private static (string from, string to) FormatRange(DateTimeOffset from, DateTimeOffset to) => (
+        Uri.EscapeDataString(from.ToUniversalTime().ToString("O")),
+        Uri.EscapeDataString(to.ToUniversalTime().ToString("O")));
 }

@@ -26,10 +26,10 @@
         Type *
         <div style="display:flex; gap:16px; margin-top:4px;">
             <label>
-                <input type="radio" name="type" value="1" @onchange="() => type = 1" checked="@(type == 1)" /> Positive
+                <input type="radio" name="type" value="1" @onchange="() => type = DtoEventType.Positive" checked="@(type == DtoEventType.Positive)" /> Positive
             </label>
             <label>
-                <input type="radio" name="type" value="0" @onchange="() => type = 0" checked="@(type == 0)" /> Negative
+                <input type="radio" name="type" value="0" @onchange="() => type = DtoEventType.Negative" checked="@(type == DtoEventType.Negative)" /> Negative
             </label>
         </div>
     </label>
@@ -100,7 +100,7 @@
 
 @code {
     private string title = "";
-    private int type = 1;
+    private DtoEventType type = DtoEventType.Positive;
     private int intensity = 5;
     private string? context;
     private string? description;
@@ -175,7 +175,7 @@
         {
             await EventService.CreateEventAsync(new CreateEventDto
             {
-                Timestamp = DateTime.UtcNow,
+                Timestamp = DateTimeOffset.UtcNow,
                 Title = title,
                 Type = type,
                 Intensity = intensity,

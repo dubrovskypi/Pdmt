@@ -3,11 +3,8 @@ using Pdmt.Api.Domain;
 
 namespace Pdmt.Api.Data;
 
-public class AppDbContext : DbContext
+public class AppDbContext(DbContextOptions options) : DbContext(options)
 {
-    public AppDbContext(DbContextOptions options) : base(options)
-    {
-    }
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
@@ -85,7 +82,7 @@ public class AppDbContext : DbContext
             .HasOne(et => et.Tag)
             .WithMany(t => t.EventTags)
             .HasForeignKey(et => et.TagId)
-            .OnDelete(DeleteBehavior.ClientCascade);
+            .OnDelete(DeleteBehavior.Cascade);
         builder.Entity<EventTag>()
             .HasIndex(et => et.TagId);
     }

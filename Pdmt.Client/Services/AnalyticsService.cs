@@ -9,7 +9,7 @@ namespace Pdmt.Client.Services
     {
         private readonly HttpClient _http = factory.CreateClient(options.Value.ClientName);
 
-        public async Task<CalendarWeekDto?> GetCalendarWeekAsync(DateTime weekOf)
+        public async Task<CalendarWeekDto?> GetCalendarWeekAsync(DateOnly weekOf)
         {
             var param = Uri.EscapeDataString(weekOf.ToString("yyyy-MM-dd"));
             return await _http.GetFromJsonAsync<CalendarWeekDto>($"api/analytics/calendar/week?weekOf={param}");

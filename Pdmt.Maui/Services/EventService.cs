@@ -7,16 +7,16 @@ namespace Pdmt.Maui.Services;
 public class EventService(IHttpClientFactory factory)
 {
     public async Task<List<EventResponseDto>> GetEventsAsync(
-        DateTime? from = null,
-        DateTime? to = null,
-        int? type = null,
+        DateTimeOffset? from = null,
+        DateTimeOffset? to = null,
+        EventType? type = null,
         IReadOnlyList<Guid>? tagIds = null,
         int? minIntensity = null,
         int? maxIntensity = null)
     {
         var query = new StringBuilder("api/events?");
-        if (from.HasValue) query.Append($"from={DateTime.SpecifyKind(from.Value, DateTimeKind.Utc):O}&");
-        if (to.HasValue) query.Append($"to={DateTime.SpecifyKind(to.Value, DateTimeKind.Utc):O}&");
+        if (from.HasValue) query.Append($"from={Uri.EscapeDataString(from.Value.ToUniversalTime().ToString("o"))}&");
+        if (to.HasValue) query.Append($"to={Uri.EscapeDataString(to.Value.ToUniversalTime().ToString("o"))}&");
         if (type.HasValue) query.Append($"type={type.Value}&");
         if (tagIds is { Count: > 0 }) query.Append($"tags={string.Join(",", tagIds)}&");
         if (minIntensity.HasValue) query.Append($"minIntensity={minIntensity.Value}&");

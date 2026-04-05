@@ -14,7 +14,7 @@ public class AnalyticsController(IAnalyticsService analyticsService) : Controlle
 {
     [HttpGet("weekly-summary")]
     [ProducesResponseType(typeof(WeeklySummaryDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<WeeklySummaryDto>> GetWeeklySummary([FromQuery] DateTime weekOf)
+    public async Task<ActionResult<WeeklySummaryDto>> GetWeeklySummary([FromQuery] DateOnly weekOf)
     {
         var userId = User.GetUserId();
         return Ok(await analyticsService.GetWeeklySummaryAsync(userId, weekOf));
@@ -24,10 +24,12 @@ public class AnalyticsController(IAnalyticsService analyticsService) : Controlle
     [ProducesResponseType(typeof(IReadOnlyList<TrendPeriodDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<IReadOnlyList<TrendPeriodDto>>> GetTrends(
-        [FromQuery] DateTime from,
-        [FromQuery] DateTime to,
+        [FromQuery] DateTimeOffset from,
+        [FromQuery] DateTimeOffset to,
         [FromQuery] TrendGranularity period = TrendGranularity.Week)
     {
+        from = from.ToUniversalTime();
+        to = to.ToUniversalTime();
         if (from > to)
             return BadRequest("'from' must be earlier than 'to'.");
 
@@ -37,16 +39,25 @@ public class AnalyticsController(IAnalyticsService analyticsService) : Controlle
 
     [HttpGet("correlations")]
     [ProducesResponseType(typeof(CorrelationsDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<CorrelationsDto>> GetCorrelations([FromQuery] Guid tagId)
+    public async Task<ActionResult<CorrelationsDto>> GetCorrelations(
+        [FromQuery] Guid tagId,
+        [FromQuery] DateTimeOffset from,
+        [FromQuery] DateTimeOffset to)
     {
+        from = from.ToUniversalTime();
+        to = to.ToUniversalTime();
+        if (from > to)
+            return BadRequest("'from' must be earlier than 'to'.");
+
         var userId = User.GetUserId();
-        return Ok(await analyticsService.GetCorrelationsAsync(userId, tagId));
+        return Ok(await analyticsService.GetCorrelationsAsync(userId, tagId, from, to));
     }
 
     [HttpGet("calendar/week")]
     [ProducesResponseType(typeof(CalendarWeekDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<CalendarWeekDto>> GetCalendarWeek([FromQuery] DateTime weekOf)
+    public async Task<ActionResult<CalendarWeekDto>> GetCalendarWeek([FromQuery] DateOnly weekOf)
     {
         var userId = User.GetUserId();
         return Ok(await analyticsService.GetCalendarWeekAsync(userId, weekOf));
@@ -73,10 +84,12 @@ public class AnalyticsController(IAnalyticsService analyticsService) : Controlle
     [ProducesResponseType(typeof(IReadOnlyList<RepeatingTriggerDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<IReadOnlyList<RepeatingTriggerDto>>> GetRepeatingTriggers(
-        [FromQuery] DateTime from,
-        [FromQuery] DateTime to,
+        [FromQuery] DateTimeOffset from,
+        [FromQuery] DateTimeOffset to,
         [FromQuery] int minCount = 3)
     {
+        from = from.ToUniversalTime();
+        to = to.ToUniversalTime();
         if (from > to)
             return BadRequest("'from' must be earlier than 'to'.");
 
@@ -88,9 +101,11 @@ public class AnalyticsController(IAnalyticsService analyticsService) : Controlle
     [ProducesResponseType(typeof(IReadOnlyList<DiscountedPositiveDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<IReadOnlyList<DiscountedPositiveDto>>> GetDiscountedPositives(
-        [FromQuery] DateTime from,
-        [FromQuery] DateTime to)
+        [FromQuery] DateTimeOffset from,
+        [FromQuery] DateTimeOffset to)
     {
+        from = from.ToUniversalTime();
+        to = to.ToUniversalTime();
         if (from > to)
             return BadRequest("'from' must be earlier than 'to'.");
 
@@ -102,9 +117,11 @@ public class AnalyticsController(IAnalyticsService analyticsService) : Controlle
     [ProducesResponseType(typeof(IReadOnlyList<NextDayEffectDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<IReadOnlyList<NextDayEffectDto>>> GetNextDayEffects(
-        [FromQuery] DateTime from,
-        [FromQuery] DateTime to)
+        [FromQuery] DateTimeOffset from,
+        [FromQuery] DateTimeOffset to)
     {
+        from = from.ToUniversalTime();
+        to = to.ToUniversalTime();
         if (from > to)
             return BadRequest("'from' must be earlier than 'to'.");
 
@@ -116,9 +133,11 @@ public class AnalyticsController(IAnalyticsService analyticsService) : Controlle
     [ProducesResponseType(typeof(IReadOnlyList<TagComboDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<IReadOnlyList<TagComboDto>>> GetTagCombos(
-        [FromQuery] DateTime from,
-        [FromQuery] DateTime to)
+        [FromQuery] DateTimeOffset from,
+        [FromQuery] DateTimeOffset to)
     {
+        from = from.ToUniversalTime();
+        to = to.ToUniversalTime();
         if (from > to)
             return BadRequest("'from' must be earlier than 'to'.");
 
@@ -132,10 +151,12 @@ public class AnalyticsController(IAnalyticsService analyticsService) : Controlle
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<IReadOnlyList<TagTrendPointDto>>> GetTagTrend(
         [FromQuery] Guid tagId,
-        [FromQuery] DateTime from,
-        [FromQuery] DateTime to,
+        [FromQuery] DateTimeOffset from,
+        [FromQuery] DateTimeOffset to,
         [FromQuery] TrendGranularity period = TrendGranularity.Week)
     {
+        from = from.ToUniversalTime();
+        to = to.ToUniversalTime();
         if (from > to)
             return BadRequest("'from' must be earlier than 'to'.");
 
@@ -147,9 +168,11 @@ public class AnalyticsController(IAnalyticsService analyticsService) : Controlle
     [ProducesResponseType(typeof(InfluenceabilitySplitDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<InfluenceabilitySplitDto>> GetInfluenceabilitySplit(
-        [FromQuery] DateTime from,
-        [FromQuery] DateTime to)
+        [FromQuery] DateTimeOffset from,
+        [FromQuery] DateTimeOffset to)
     {
+        from = from.ToUniversalTime();
+        to = to.ToUniversalTime();
         if (from > to)
             return BadRequest("'from' must be earlier than 'to'.");
 

@@ -18,3 +18,5 @@
 		cancellation via HttpContext.RequestAborted
 
 Continue from 7th 
+       
+TLS everywhere in Auth

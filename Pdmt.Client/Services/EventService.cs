@@ -15,13 +15,13 @@ namespace Pdmt.Client.Services
         }
 
         public async Task<List<EventResponseDto>> GetEventsAsync(
-            DateTime? from = null, DateTime? to = null,
+            DateTimeOffset? from = null, DateTimeOffset? to = null,
             int? type = null, IReadOnlyList<Guid>? tagIds = null,
             int? minIntensity = null, int? maxIntensity = null)
         {
             var query = new List<string>();
-            if (from.HasValue) query.Add($"from={Uri.EscapeDataString(from.Value.ToString("o"))}");
-            if (to.HasValue) query.Add($"to={Uri.EscapeDataString(to.Value.ToString("o"))}");
+            if (from.HasValue) query.Add($"from={Uri.EscapeDataString(from.Value.ToUniversalTime().ToString("o"))}");
+            if (to.HasValue) query.Add($"to={Uri.EscapeDataString(to.Value.ToUniversalTime().ToString("o"))}");
             if (type.HasValue) query.Add($"type={type.Value}");
             if (tagIds is not null && tagIds.Count > 0) query.Add($"tags={string.Join(",", tagIds)}");
             if (minIntensity.HasValue) query.Add($"minIntensity={minIntensity.Value}");

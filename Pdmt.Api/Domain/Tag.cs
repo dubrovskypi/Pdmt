@@ -6,6 +6,6 @@ public class Tag
     public required string Name { get; set; }
     public Guid UserId { get; set; }
     public User User { get; set; } = null!;
-    public DateTime CreatedAt { get; set; }
-    public List<EventTag> EventTags { get; set; } = new();
+    public DateTimeOffset CreatedAt { get; set; }
+    public ICollection<EventTag> EventTags { get; set; } = [];
 }

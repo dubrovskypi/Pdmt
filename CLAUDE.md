@@ -131,7 +131,13 @@ Integration tests in `EventControllerTests.cs` cover auth enforcement, CRUD, fil
 - No lazy loading — always explicit `.Include()`
 - Never edit migration files manually; generate via `dotnet ef migrations add`
 - Custom C# methods cannot be used inside EF Core queries (`IQueryable`) — EF cannot translate them to SQL. Materialize with `ToListAsync()` first, then apply custom logic in-memory.
-- **DateTime + PostgreSQL**: Npgsql requires `Kind=Utc` for `timestamp with time zone` columns. ASP.NET Core model binding parses `DateTime` from query strings as `Kind=Unspecified`. Always normalize at the top of service methods: `param = DateTime.SpecifyKind(param, DateTimeKind.Utc)`. Same applies to `new DateTime(year, month, day)` — wrap with `SpecifyKind`.
+- **DateTimeOffset (Pdmt.Api)**: The API has been refactored to use `DateTimeOffset` for UTC consistency. Use `DateTimeOffset` in all new code. Legacy `DateTime` usage should be migrated gradually when encountered.
+- **DateTime + PostgreSQL (legacy)**: If working with remaining `DateTime` code, Npgsql requires `Kind=Utc` for `timestamp with time zone` columns. Normalize at the top of service methods: `param = DateTime.SpecifyKind(param, DateTimeKind.Utc)`.
+- **DateTimeOffset normalization at module boundaries**: All `DateTimeOffset` parameters from query strings or client requests **must be normalized to UTC** at API layer (controllers) before passing to services. Use `.ToUniversalTime()` at the earliest point:
+  - **Controllers**: normalize `[FromQuery] DateTimeOffset` parameters immediately after receiving them
+  - **Clients** (Blazor, MAUI, React): call `.ToUniversalTime()` before serializing to query string or JSON; use `Uri.EscapeDataString()` when building query strings (the `+` in offset breaks URL parsing)
+  - **Database**: Npgsql requires UTC offset only; Postgresql will reject DateTimeOffset with non-zero offset. This is enforced at the API boundary, not in services
+  - **Rationale**: Single responsibility (boundaries handle conversion), defense in depth (double-normalize), consistency across all clients
  
 ## What NOT to do
  

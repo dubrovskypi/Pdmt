@@ -4,10 +4,9 @@ namespace Pdmt.Api.Dto
 {
     public class CreateEventDto
     {
-        public DateTime Timestamp { get; set; }
+        public DateTimeOffset Timestamp { get; set; }
 
-        [Range(0, 1)]
-        public int Type { get; set; }
+        public DtoEventType Type { get; set; }
 
         [Range(0, 10)]
         public int Intensity { get; set; }

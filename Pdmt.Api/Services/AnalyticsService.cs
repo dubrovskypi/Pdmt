@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Pdmt.Api.Data;
+using Pdmt.Api.Domain;
 using Pdmt.Api.Dto.Analytics;
 using Pdmt.Api.Infrastructure.Exceptions;
 
@@ -7,11 +8,19 @@ namespace Pdmt.Api.Services;
 
 public class AnalyticsService(AppDbContext db) : IAnalyticsService
 {
-    private static DateTime GetMonday(DateTime date) => date.Date.AddDays(-(((int)date.DayOfWeek + 6) % 7));
-
-    public async Task<WeeklySummaryDto> GetWeeklySummaryAsync(Guid userId, DateTime weekOf)
+    private static DateTimeOffset GetMonday(DateTimeOffset date)
     {
-        var monday = GetMonday(DateTime.SpecifyKind(weekOf, DateTimeKind.Utc));
+        var daysToSubtract = ((int)date.DayOfWeek + 6) % 7;
+        var monday = date.Date.AddDays(-daysToSubtract);
+        return new DateTimeOffset(monday, TimeSpan.Zero);
+    }
+
+    private static DateTimeOffset GetMonday(DateOnly date) =>
+       GetMonday(new DateTimeOffset(date.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc), TimeSpan.Zero));
+
+    public async Task<WeeklySummaryDto> GetWeeklySummaryAsync(Guid userId, DateOnly weekOf)
+    {
+        var monday = GetMonday(weekOf);
 
         var events = await db.Events
             .AsNoTracking()
@@ -19,8 +28,8 @@ public class AnalyticsService(AppDbContext db) : IAnalyticsService
             .Where(e => e.UserId == userId && e.Timestamp >= monday && e.Timestamp < monday.AddDays(7))
             .ToListAsync();
 
-        var posEvents = events.Where(e => e.Type == 1).ToList();
-        var negEvents = events.Where(e => e.Type == 0).ToList();
+        var posEvents = events.Where(e => e.Type == EventType.Positive).ToList();
+        var negEvents = events.Where(e => e.Type == EventType.Negative).ToList();
 
         var posToNegRatio = negEvents.Count == 0 ? 0.0 : (double)posEvents.Count / negEvents.Count;
 
@@ -52,8 +61,8 @@ public class AnalyticsService(AppDbContext db) : IAnalyticsService
             .OrderBy(g => ((int)g.Key + 6) % 7)
             .Select(g => new DayOfWeekBreakdownDto(
                 g.Key.ToString(),
-                g.Count(e => e.Type == 0),
-                g.Count(e => e.Type == 1),
+                g.Count(e => e.Type == EventType.Positive),
+                g.Count(e => e.Type == EventType.Negative),
                 g.Average(e => (double)e.Intensity)))
             .ToList();
 
@@ -61,50 +70,47 @@ public class AnalyticsService(AppDbContext db) : IAnalyticsService
             posEvents.Count,
             negEvents.Count,
             posToNegRatio,
-            avgNegIntensity,
             avgPosIntensity,
+            avgNegIntensity,
             topTags,
             topPosEvents,
             topNegEvents,
             byDayOfWeek);
     }
 
-    public async Task<IReadOnlyList<TrendPeriodDto>> GetTrendsAsync(Guid userId, DateTime from, DateTime to, TrendGranularity period)
+    public async Task<IReadOnlyList<TrendPeriodDto>> GetTrendsAsync(Guid userId, DateTimeOffset from, DateTimeOffset to, TrendGranularity period)
     {
-        from = DateTime.SpecifyKind(from, DateTimeKind.Utc);
-        to = DateTime.SpecifyKind(to, DateTimeKind.Utc);
         var raw = await db.Events
             .AsNoTracking()
             .Where(e => e.UserId == userId && e.Timestamp >= from && e.Timestamp < to.AddDays(1))
             .Select(e => new { e.Timestamp, e.Type, e.Intensity })
             .ToListAsync();
 
-        Func<DateTime, DateTime> getKey = period == TrendGranularity.Week
+        Func<DateTimeOffset, DateTimeOffset> getKey = period == TrendGranularity.Week
             ? date => GetMonday(date)
-            : date => new DateTime(date.Year, date.Month, 1);
+            : date => new DateTimeOffset(date.Year, date.Month, 1, 0, 0, 0, TimeSpan.Zero);
 
         return raw
             .GroupBy(e => getKey(e.Timestamp))
             .OrderBy(g => g.Key)
             .Select(g => new TrendPeriodDto(
                 g.Key,
-                g.Count(e => e.Type == 1),
-                g.Count(e => e.Type == 0),
+                g.Count(e => e.Type == EventType.Positive),
+                g.Count(e => e.Type == EventType.Negative),
                 g.Average(e => (double)e.Intensity)))
             .ToList();
     }
 
-    public async Task<CorrelationsDto> GetCorrelationsAsync(Guid userId, Guid tagId)
+    public async Task<CorrelationsDto> GetCorrelationsAsync(Guid userId, Guid tagId, DateTimeOffset from, DateTimeOffset to)
     {
         var tag = await db.Tags
             .AsNoTracking()
             .FirstOrDefaultAsync(t => t.Id == tagId && t.UserId == userId)
             ?? throw new NotFoundException("Tag not found.");
 
-        // TODO: loads all user events — add date range filter when data grows
         var allEvents = await db.Events
             .AsNoTracking()
-            .Where(e => e.UserId == userId)
+            .Where(e => e.UserId == userId && e.Timestamp >= from && e.Timestamp < to.AddDays(1))
             .Select(e => new
             {
                 e.Timestamp,
@@ -128,9 +134,9 @@ public class AnalyticsService(AppDbContext db) : IAnalyticsService
         return new CorrelationsDto(tag.Name, avgIntensityWithTag, avgIntensityWithoutTag, daysOfWeek);
     }
 
-    public async Task<CalendarWeekDto> GetCalendarWeekAsync(Guid userId, DateTime weekOf)
+    public async Task<CalendarWeekDto> GetCalendarWeekAsync(Guid userId, DateOnly weekOf)
     {
-        var monday = GetMonday(DateTime.SpecifyKind(weekOf, DateTimeKind.Utc));
+        var monday = GetMonday(weekOf);
 
         var events = await db.Events
             .AsNoTracking()
@@ -138,20 +144,20 @@ public class AnalyticsService(AppDbContext db) : IAnalyticsService
             .Where(e => e.UserId == userId && e.Timestamp >= monday && e.Timestamp < monday.AddDays(7))
             .ToListAsync();
 
-        var byDay = events.GroupBy(e => e.Timestamp.Date).ToDictionary(g => g.Key, g => g.ToList());
+        var byDay = events.GroupBy(e => e.Timestamp.DateTime.Date).ToDictionary(g => g.Key, g => g.ToList());
 
         var days = new List<CalendarDayDetailsDto>(7);
         for (var i = 0; i < 7; i++)
         {
             var date = monday.AddDays(i);
-            if (!byDay.TryGetValue(date, out var dayEvents))
+            if (!byDay.TryGetValue(date.DateTime.Date, out var dayEvents))
             {
                 days.Add(new CalendarDayDetailsDto(date, 0, 0, 0, 0, 0.0, [], []));
                 continue;
             }
 
-            var posEvents = dayEvents.Where(e => e.Type == 1).ToList();
-            var negEvents = dayEvents.Where(e => e.Type == 0).ToList();
+            var posEvents = dayEvents.Where(e => e.Type == EventType.Positive).ToList();
+            var negEvents = dayEvents.Where(e => e.Type == EventType.Negative).ToList();
             var posSum = posEvents.Sum(e => e.Intensity);
             var negSum = negEvents.Sum(e => e.Intensity);
             var total = dayEvents.Count;
@@ -182,7 +188,7 @@ public class AnalyticsService(AppDbContext db) : IAnalyticsService
 
     public async Task<CalendarMonthDto> GetCalendarMonthAsync(Guid userId, int year, int month)
     {
-        var from = DateTime.SpecifyKind(new DateTime(year, month, 1), DateTimeKind.Utc);
+        var from = new DateTimeOffset(year, month, 1, 0, 0, 0, TimeSpan.Zero);
         var to = from.AddMonths(1);
 
         var raw = await db.Events
@@ -191,13 +197,13 @@ public class AnalyticsService(AppDbContext db) : IAnalyticsService
             .Select(e => new { e.Timestamp, e.Type, e.Intensity })
             .ToListAsync();
 
-        var byDay = raw.GroupBy(e => e.Timestamp.Date).ToDictionary(g => g.Key, g => g.ToList());
+        var byDay = raw.GroupBy(e => e.Timestamp.DateTime.Date).ToDictionary(g => g.Key, g => g.ToList());
 
         var days = new List<CalendarDayLightDto>(DateTime.DaysInMonth(year, month));
         for (var d = 1; d <= DateTime.DaysInMonth(year, month); d++)
         {
-            var date = new DateTime(year, month, d);
-            if (!byDay.TryGetValue(date, out var dayEvents))
+            var date = new DateTimeOffset(year, month, d, 0, 0, 0, TimeSpan.Zero);
+            if (!byDay.TryGetValue(date.DateTime.Date, out var dayEvents))
             {
                 days.Add(new CalendarDayLightDto(date, 0, 0, 0.0));
                 continue;
@@ -209,8 +215,15 @@ public class AnalyticsService(AppDbContext db) : IAnalyticsService
             var negSum = 0;
             foreach (var e in dayEvents)
             {
-                if (e.Type == 1) { posCount++; posSum += e.Intensity; }
-                else { negCount++; negSum += e.Intensity; }
+                switch (e.Type)
+                {
+                    case EventType.Positive:
+                        posCount++; posSum += e.Intensity; break;
+                    case EventType.Negative:
+                        negCount++; negSum += e.Intensity; break;
+                    default:
+                        break;
+                }
             }
             var total = dayEvents.Count;
             var dayScore = total == 0 ? 0.0 : (double)(posSum - negSum) / total;
@@ -219,15 +232,12 @@ public class AnalyticsService(AppDbContext db) : IAnalyticsService
 
         return new CalendarMonthDto(days);
     }
-    public async Task<IReadOnlyList<RepeatingTriggerDto>> GetRepeatingTriggersAsync(Guid userId, DateTime from, DateTime to, int minCount = 3)
+    public async Task<IReadOnlyList<RepeatingTriggerDto>> GetRepeatingTriggersAsync(Guid userId, DateTimeOffset from, DateTimeOffset to, int minCount = 3)
     {
-        from = DateTime.SpecifyKind(from, DateTimeKind.Utc);
-        to = DateTime.SpecifyKind(to, DateTimeKind.Utc);
-
         var events = await db.Events
             .AsNoTracking()
             .Include(e => e.EventTags).ThenInclude(et => et.Tag)
-            .Where(e => e.UserId == userId && e.Type == 0 && e.Timestamp >= from && e.Timestamp < to.AddDays(1))
+            .Where(e => e.UserId == userId && e.Type == EventType.Negative && e.Timestamp >= from && e.Timestamp < to.AddDays(1))
             .ToListAsync();
 
         return events
@@ -239,15 +249,12 @@ public class AnalyticsService(AppDbContext db) : IAnalyticsService
             .ToList();
     }
 
-    public async Task<IReadOnlyList<DiscountedPositiveDto>> GetDiscountedPositivesAsync(Guid userId, DateTime from, DateTime to)
+    public async Task<IReadOnlyList<DiscountedPositiveDto>> GetDiscountedPositivesAsync(Guid userId, DateTimeOffset from, DateTimeOffset to)
     {
-        from = DateTime.SpecifyKind(from, DateTimeKind.Utc);
-        to = DateTime.SpecifyKind(to, DateTimeKind.Utc);
-
         var events = await db.Events
             .AsNoTracking()
             .Include(e => e.EventTags).ThenInclude(et => et.Tag)
-            .Where(e => e.UserId == userId && e.Type == 1 && e.Timestamp >= from && e.Timestamp < to.AddDays(1))
+            .Where(e => e.UserId == userId && e.Type == EventType.Positive && e.Timestamp >= from && e.Timestamp < to.AddDays(1))
             .ToListAsync();
 
         return events
@@ -259,11 +266,8 @@ public class AnalyticsService(AppDbContext db) : IAnalyticsService
             .ToList();
     }
 
-    public async Task<IReadOnlyList<NextDayEffectDto>> GetNextDayEffectsAsync(Guid userId, DateTime from, DateTime to)
+    public async Task<IReadOnlyList<NextDayEffectDto>> GetNextDayEffectsAsync(Guid userId, DateTimeOffset from, DateTimeOffset to)
     {
-        from = DateTime.SpecifyKind(from, DateTimeKind.Utc);
-        to = DateTime.SpecifyKind(to, DateTimeKind.Utc);
-
         // Запрашиваем на 2 дня шире — чтобы вычислить dayScore следующего дня после последнего дня периода
         var events = await db.Events
             .AsNoTracking()
@@ -273,15 +277,15 @@ public class AnalyticsService(AppDbContext db) : IAnalyticsService
 
         // Вычисляем dayScore для каждого дня
         var dayScores = events
-            .GroupBy(e => e.Timestamp.Date)
+            .GroupBy(e => e.Timestamp.DateTime.Date)
             .ToDictionary(
                 g => g.Key,
-                g => (double)(g.Sum(e => e.Type == 1 ? e.Intensity : 0) - g.Sum(e => e.Type == 0 ? e.Intensity : 0)) / g.Count());
+                g => (double)(g.Sum(e => e.Type == EventType.Positive ? e.Intensity : 0) - g.Sum(e => e.Type == EventType.Negative ? e.Intensity : 0)) / g.Count());
 
         // Собираем теги только из основного периода [from, to]
         var tagDates = events
             .Where(e => e.Timestamp < to.AddDays(1))
-            .SelectMany(e => e.EventTags.Select(et => new { et.Tag.Name, Date = e.Timestamp.Date }))
+            .SelectMany(e => e.EventTags.Select(et => new { et.Tag.Name, Date = e.Timestamp.DateTime.Date }))
             .GroupBy(x => x.Name)
             .ToDictionary(g => g.Key, g => g.Select(x => x.Date).Distinct().ToList());
 
@@ -305,11 +309,8 @@ public class AnalyticsService(AppDbContext db) : IAnalyticsService
             .ToList();
     }
 
-    public async Task<IReadOnlyList<TagComboDto>> GetTagCombosAsync(Guid userId, DateTime from, DateTime to)
+    public async Task<IReadOnlyList<TagComboDto>> GetTagCombosAsync(Guid userId, DateTimeOffset from, DateTimeOffset to)
     {
-        from = DateTime.SpecifyKind(from, DateTimeKind.Utc);
-        to = DateTime.SpecifyKind(to, DateTimeKind.Utc);
-
         var events = await db.Events
             .AsNoTracking()
             .Include(e => e.EventTags).ThenInclude(et => et.Tag)
@@ -318,7 +319,7 @@ public class AnalyticsService(AppDbContext db) : IAnalyticsService
 
         // Группируем события по дням
         var byDay = events
-            .GroupBy(e => e.Timestamp.Date)
+            .GroupBy(e => e.Timestamp.DateTime.Date)
             .Select(g => new
             {
                 Date = g.Key,
@@ -396,11 +397,8 @@ public class AnalyticsService(AppDbContext db) : IAnalyticsService
             .ToList();
     }
 
-    public async Task<IReadOnlyList<TagTrendPointDto>> GetTagTrendAsync(Guid userId, Guid tagId, DateTime from, DateTime to, TrendGranularity period)
+    public async Task<IReadOnlyList<TagTrendPointDto>> GetTagTrendAsync(Guid userId, Guid tagId, DateTimeOffset from, DateTimeOffset to, TrendGranularity period)
     {
-        from = DateTime.SpecifyKind(from, DateTimeKind.Utc);
-        to = DateTime.SpecifyKind(to, DateTimeKind.Utc);
-
         _ = await db.Tags
             .AsNoTracking()
             .FirstOrDefaultAsync(t => t.Id == tagId && t.UserId == userId)
@@ -414,9 +412,9 @@ public class AnalyticsService(AppDbContext db) : IAnalyticsService
             .Select(e => new { e.Timestamp, e.Intensity })
             .ToListAsync();
 
-        Func<DateTime, DateTime> getKey = period == TrendGranularity.Week
+        Func<DateTimeOffset, DateTimeOffset> getKey = period == TrendGranularity.Week
             ? date => GetMonday(date)
-            : date => new DateTime(date.Year, date.Month, 1);
+            : date => new DateTimeOffset(date.Year, date.Month, 1, 0, 0, 0, TimeSpan.Zero);
 
         return raw
             .GroupBy(e => getKey(e.Timestamp))
@@ -425,14 +423,11 @@ public class AnalyticsService(AppDbContext db) : IAnalyticsService
             .ToList();
     }
 
-    public async Task<InfluenceabilitySplitDto> GetInfluenceabilitySplitAsync(Guid userId, DateTime from, DateTime to)
+    public async Task<InfluenceabilitySplitDto> GetInfluenceabilitySplitAsync(Guid userId, DateTimeOffset from, DateTimeOffset to)
     {
-        from = DateTime.SpecifyKind(from, DateTimeKind.Utc);
-        to = DateTime.SpecifyKind(to, DateTimeKind.Utc);
-
         var raw = await db.Events
             .AsNoTracking()
-            .Where(e => e.UserId == userId && e.Type == 0 && e.Timestamp >= from && e.Timestamp < to.AddDays(1))
+            .Where(e => e.UserId == userId && e.Type == EventType.Negative && e.Timestamp >= from && e.Timestamp < to.AddDays(1))
             .Select(e => new { e.CanInfluence, e.Intensity })
             .ToListAsync();
 

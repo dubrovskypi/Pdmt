@@ -1,12 +1,12 @@
 namespace Pdmt.Api.Dto.Analytics;
 
 public record CalendarWeekDto(
-    DateTime WeekStart,
-    DateTime WeekEnd,
+    DateTimeOffset WeekStart,
+    DateTimeOffset WeekEnd,
     IReadOnlyList<CalendarDayDetailsDto> Days);
 
 public record CalendarDayDetailsDto(
-    DateTime Date,
+    DateTimeOffset Date,
     int PosCount,
     int NegCount,
     int PositiveIntensitySum,

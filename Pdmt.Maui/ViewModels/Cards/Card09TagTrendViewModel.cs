@@ -12,7 +12,7 @@ public partial class Card09TagTrendViewModel(InsightsService insightsService) : 
     [ObservableProperty] private string? _tagName;
     [ObservableProperty] private IReadOnlyList<TagTrendBarItem> _points = [];
 
-    public override async Task LoadAsync(DateTime from, DateTime to)
+    public override async Task LoadAsync(DateTimeOffset from, DateTimeOffset to)
     {
         IsLoading = true;
         ErrorMessage = null;
