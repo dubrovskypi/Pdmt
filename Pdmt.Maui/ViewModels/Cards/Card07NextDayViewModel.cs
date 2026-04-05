@@ -11,13 +11,14 @@ public partial class Card07NextDayViewModel(InsightsService insightsService) : I
 
     [ObservableProperty] private IReadOnlyList<NextDayBarItem> _items = [];
 
-    public override async Task LoadAsync(DateTimeOffset from, DateTimeOffset to)
+    public override async Task LoadAsync(DateTimeOffset from, DateTimeOffset to, bool showLoading = true, CancellationToken ct = default)
     {
-        IsLoading = true;
+        if (showLoading)
+            IsLoading = true;
         ErrorMessage = null;
         try
         {
-            var effects = await insightsService.GetNextDayEffectsAsync(from, to);
+            var effects = await insightsService.GetNextDayEffectsAsync(from, to, ct);
             double maxAbs = effects.Count > 0
                 ? effects.Max(e => Math.Abs(e.NextDayAvgScore))
                 : 1;
@@ -28,6 +29,14 @@ public partial class Card07NextDayViewModel(InsightsService insightsService) : I
                 e.Occurrences,
                 maxAbs > 0 ? Math.Abs(e.NextDayAvgScore) / maxAbs * DesignMaxWidth : 4,
                 e.NextDayAvgScore >= 0)).ToList();
+        }
+        catch (OperationCanceledException)
+        {
+            // Загрузка отменена — не показываем ошибку
+        }
+        catch (Exception) when (ct.IsCancellationRequested)
+        {
+            // Исключение из-за отмены токена (например, SocketException) — не показываем ошибку
         }
         catch
         {

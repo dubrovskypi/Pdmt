@@ -1,6 +1,1 @@
-﻿1) fix card loading
-	- 2 circles
-	- probably memory leak
-	- load 1 and 2, than others in bg
-2) 5 card is empty
-3) translate to EN
+﻿1) translate to EN

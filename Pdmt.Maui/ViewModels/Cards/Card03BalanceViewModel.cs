@@ -14,13 +14,14 @@ public partial class Card03BalanceViewModel(InsightsService insightsService) : I
     [ObservableProperty] private double _posBarWidth;
     [ObservableProperty] private double _negBarWidth;
 
-    public override async Task LoadAsync(DateTimeOffset from, DateTimeOffset to)
+    public override async Task LoadAsync(DateTimeOffset from, DateTimeOffset to, bool showLoading = true, CancellationToken ct = default)
     {
-        IsLoading = true;
+        if (showLoading)
+            IsLoading = true;
         ErrorMessage = null;
         try
         {
-            var summary = await insightsService.GetWeeklySummaryAsync(from);
+            var summary = await insightsService.GetWeeklySummaryAsync(from, ct);
             if (summary is null) return;
 
             PosCount = summary.PosCount;
@@ -31,6 +32,14 @@ public partial class Card03BalanceViewModel(InsightsService insightsService) : I
             double maxIntensity = Math.Max(summary.AvgPosIntensity, summary.AvgNegIntensity);
             PosBarWidth = maxIntensity > 0 ? summary.AvgPosIntensity / maxIntensity * DesignMaxWidth : 0;
             NegBarWidth = maxIntensity > 0 ? summary.AvgNegIntensity / maxIntensity * DesignMaxWidth : 0;
+        }
+        catch (OperationCanceledException)
+        {
+            // Загрузка отменена — не показываем ошибку
+        }
+        catch (Exception) when (ct.IsCancellationRequested)
+        {
+            // Исключение из-за отмены токена (например, SocketException) — не показываем ошибку
         }
         catch
         {

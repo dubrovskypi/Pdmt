@@ -21,18 +21,21 @@
                 <Label Text="⚠ Только недельный период" FontSize="11" TextColor="#f59e0b" />
             </VerticalStackLayout>
             <VerticalStackLayout Grid.Row="3" Spacing="16">
-                <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
-                    <VerticalStackLayout Grid.Column="0" HorizontalOptions="Center" Spacing="2">
-                        <Label Text="{Binding PosCount}" FontSize="40" FontAttributes="Bold"
-                               TextColor="{StaticResource Positive}" HorizontalOptions="Center" />
-                        <Label Text="позитивных" Style="{StaticResource MutedLabel}" HorizontalOptions="Center" />
-                    </VerticalStackLayout>
-                    <VerticalStackLayout Grid.Column="1" HorizontalOptions="Center" Spacing="2">
-                        <Label Text="{Binding NegCount}" FontSize="40" FontAttributes="Bold"
-                               TextColor="{StaticResource Negative}" HorizontalOptions="Center" />
-                        <Label Text="негативных" Style="{StaticResource MutedLabel}" HorizontalOptions="Center" />
-                    </VerticalStackLayout>
-                </Grid>
+                <VerticalStackLayout Spacing="6">
+                    <Label Text="Количество событий" Style="{StaticResource MutedLabel}" FontSize="12" />
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                        <VerticalStackLayout Grid.Column="0" HorizontalOptions="Center" Spacing="2">
+                            <Label Text="{Binding PosCount}" FontSize="40" FontAttributes="Bold"
+                                   TextColor="{StaticResource Positive}" HorizontalOptions="Center" />
+                            <Label Text="позитивных" Style="{StaticResource MutedLabel}" HorizontalOptions="Center" />
+                        </VerticalStackLayout>
+                        <VerticalStackLayout Grid.Column="1" HorizontalOptions="Center" Spacing="2">
+                            <Label Text="{Binding NegCount}" FontSize="40" FontAttributes="Bold"
+                                   TextColor="{StaticResource Negative}" HorizontalOptions="Center" />
+                            <Label Text="негативных" Style="{StaticResource MutedLabel}" HorizontalOptions="Center" />
+                        </VerticalStackLayout>
+                    </Grid>
+                </VerticalStackLayout>
                 <VerticalStackLayout Spacing="6">
                     <Label Text="Средняя интенсивность" Style="{StaticResource MutedLabel}" />
                     <Grid ColumnDefinitions="70,*,36" ColumnSpacing="8">
@@ -41,7 +44,7 @@
                                  Color="#4ade80" CornerRadius="2"
                                  HorizontalOptions="Start" VerticalOptions="Center" />
                         <Label Grid.Column="2"
-                               Text="{Binding AvgPosIntensity, StringFormat='{0:0.1}'}"
+                               Text="{Binding AvgPosIntensity, StringFormat='{0:F1}'}"
                                FontSize="12" TextColor="{StaticResource Muted}" VerticalOptions="Center" />
                     </Grid>
                     <Grid ColumnDefinitions="70,*,36" ColumnSpacing="8">
@@ -50,7 +53,7 @@
                                  Color="#f87171" CornerRadius="2"
                                  HorizontalOptions="Start" VerticalOptions="Center" />
                         <Label Grid.Column="2"
-                               Text="{Binding AvgNegIntensity, StringFormat='{0:0.1}'}"
+                               Text="{Binding AvgNegIntensity, StringFormat='{0:F1}'}"
                                FontSize="12" TextColor="{StaticResource Muted}" VerticalOptions="Center" />
                     </Grid>
                 </VerticalStackLayout>

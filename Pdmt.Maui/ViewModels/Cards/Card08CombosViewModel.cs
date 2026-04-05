@@ -17,13 +17,14 @@ public partial class Card08CombosViewModel(InsightsService insightsService) : In
 
     [ObservableProperty] private IReadOnlyList<ComboItem> _items = [];
 
-    public override async Task LoadAsync(DateTimeOffset from, DateTimeOffset to)
+    public override async Task LoadAsync(DateTimeOffset from, DateTimeOffset to, bool showLoading = true, CancellationToken ct = default)
     {
-        IsLoading = true;
+        if (showLoading)
+            IsLoading = true;
         ErrorMessage = null;
         try
         {
-            var combos = await insightsService.GetTagCombosAsync(from, to);
+            var combos = await insightsService.GetTagCombosAsync(from, to, ct);
             double max = combos.Count > 0
                 ? combos.Max(c => Math.Max(c.CombinedAvgIntensity,
                     Math.Max(c.Tag1AloneAvgIntensity, c.Tag2AloneAvgIntensity)))
@@ -40,6 +41,14 @@ public partial class Card08CombosViewModel(InsightsService insightsService) : In
                     max > 0 ? alone / max * DesignMaxWidth : 0,
                     c.CoOccurrences);
             }).ToList();
+        }
+        catch (OperationCanceledException)
+        {
+            // Загрузка отменена — не показываем ошибку
+        }
+        catch (Exception) when (ct.IsCancellationRequested)
+        {
+            // Исключение из-за отмены токена (например, SocketException) — не показываем ошибку
         }
         catch
         {

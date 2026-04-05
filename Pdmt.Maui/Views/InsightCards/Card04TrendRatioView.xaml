@@ -24,8 +24,8 @@
                 </CollectionView.ItemsLayout>
                 <CollectionView.ItemTemplate>
                     <DataTemplate x:DataType="cards:WeekBarItem">
-                        <VerticalStackLayout Spacing="3" HorizontalOptions="Center" WidthRequest="40">
-                            <BoxView WidthRequest="28" HeightRequest="{Binding BarHeight}"
+                        <Grid RowDefinitions="80,Auto" RowSpacing="3" HorizontalOptions="Center" WidthRequest="40">
+                            <BoxView Grid.Row="0" WidthRequest="28" HeightRequest="{Binding BarHeight}"
                                      CornerRadius="3,3,0,0"
                                      HorizontalOptions="Center" VerticalOptions="End">
                                 <BoxView.Triggers>
@@ -37,13 +37,16 @@
                                     </DataTrigger>
                                 </BoxView.Triggers>
                             </BoxView>
-                            <Label Text="{Binding WeekLabel}" FontSize="10"
+                            <Label Grid.Row="1" Text="{Binding WeekLabel}" FontSize="10"
                                    TextColor="{StaticResource Muted}"
                                    HorizontalOptions="Center" HorizontalTextAlignment="Center" />
-                        </VerticalStackLayout>
+                        </Grid>
                     </DataTemplate>
                 </CollectionView.ItemTemplate>
             </CollectionView>
+            <Label Grid.Row="3" Text="Нет данных за 6 недель"
+                   Style="{StaticResource MutedLabel}" HorizontalTextAlignment="Center"
+                   IsVisible="{Binding IsEmpty}" VerticalOptions="Center" Margin="0,20" />
             <ActivityIndicator Grid.Row="4" IsRunning="{Binding IsLoading}" IsVisible="{Binding IsLoading}"
                                Color="{StaticResource Primary}" HorizontalOptions="Center" Margin="0,8" />
             <Label Grid.Row="4" Style="{StaticResource ErrorLabel}" Text="{Binding ErrorMessage}"

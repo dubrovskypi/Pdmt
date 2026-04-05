@@ -15,4 +15,10 @@ public partial class InsightsPage : ContentPage
         base.OnAppearing();
         await ((InsightsViewModel)BindingContext).LoadCommand.ExecuteAsync(null);
     }
+
+    protected override void OnDisappearing()
+    {
+        base.OnDisappearing();
+        ((InsightsViewModel)BindingContext).CancelLoad();
+    }
 }

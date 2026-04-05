@@ -24,10 +24,10 @@ public partial class EventListViewModel(
     public ObservableCollection<TagFilter> TagFilters { get; } = [];
 
     [ObservableProperty]
-    private DateTimeOffset? _filterFrom;
+    private DateTime? _filterFrom;
 
     [ObservableProperty]
-    private DateTimeOffset? _filterTo;
+    private DateTime? _filterTo;
 
     [ObservableProperty]
     private EventTypeFilter _selectedTypeFilter = new("All", null);
@@ -51,6 +51,12 @@ public partial class EventListViewModel(
         ErrorMessage = null;
         try
         {
+            if (!FilterFrom.HasValue || !FilterTo.HasValue)
+            {
+                FilterFrom = DateTime.Today.AddDays(-6);
+                FilterTo = DateTime.Today.AddDays(1);
+            }
+
             var tags = await tagService.GetTagsAsync();
             TagFilters.Clear();
             foreach (var tag in tags)
@@ -89,8 +95,15 @@ public partial class EventListViewModel(
             ? (IReadOnlyList<Guid>)[id]
             : null;
 
+        DateTimeOffset? fromOffset = FilterFrom.HasValue
+            ? new DateTimeOffset(DateTime.SpecifyKind(FilterFrom.Value.Date, DateTimeKind.Utc))
+            : null;
+        DateTimeOffset? toOffset = FilterTo.HasValue
+            ? new DateTimeOffset(DateTime.SpecifyKind(FilterTo.Value.Date, DateTimeKind.Utc))
+            : null;
+
         var results = await eventService.GetEventsAsync(
-            FilterFrom, FilterTo, SelectedTypeFilter.Value, tagIds);
+            fromOffset, toOffset, SelectedTypeFilter.Value, tagIds);
 
         Events.Clear();
         foreach (var e in results.OrderByDescending(e => e.Timestamp))

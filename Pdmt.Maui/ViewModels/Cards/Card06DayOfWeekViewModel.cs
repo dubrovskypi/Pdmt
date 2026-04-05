@@ -11,13 +11,14 @@ public partial class Card06DayOfWeekViewModel(InsightsService insightsService) :
 
     [ObservableProperty] private IReadOnlyList<DayBarItem> _days = [];
 
-    public override async Task LoadAsync(DateTimeOffset from, DateTimeOffset to)
+    public override async Task LoadAsync(DateTimeOffset from, DateTimeOffset to, bool showLoading = true, CancellationToken ct = default)
     {
-        IsLoading = true;
+        if (showLoading)
+            IsLoading = true;
         ErrorMessage = null;
         try
         {
-            var summary = await insightsService.GetWeeklySummaryAsync(from);
+            var summary = await insightsService.GetWeeklySummaryAsync(from, ct);
             if (summary is null) return;
 
             double maxAbs = summary.ByDayOfWeek.Count > 0
@@ -35,6 +36,14 @@ public partial class Card06DayOfWeekViewModel(InsightsService insightsService) :
                     maxAbs > 0 ? Math.Abs(net) / maxAbs * DesignMaxWidth : 4,
                     net >= 0);
             }).ToList();
+        }
+        catch (OperationCanceledException)
+        {
+            // Загрузка отменена — не показываем ошибку
+        }
+        catch (Exception) when (ct.IsCancellationRequested)
+        {
+            // Исключение из-за отмены токена (например, SocketException) — не показываем ошибку
         }
         catch
         {

@@ -14,13 +14,14 @@ public partial class Card10InfluenceViewModel(InsightsService insightsService) :
     [ObservableProperty] private double _canBarWidth;
     [ObservableProperty] private double _cannotBarWidth;
 
-    public override async Task LoadAsync(DateTimeOffset from, DateTimeOffset to)
+    public override async Task LoadAsync(DateTimeOffset from, DateTimeOffset to, bool showLoading = true, CancellationToken ct = default)
     {
-        IsLoading = true;
+        if (showLoading)
+            IsLoading = true;
         ErrorMessage = null;
         try
         {
-            var split = await insightsService.GetInfluenceabilityAsync(from, to);
+            var split = await insightsService.GetInfluenceabilityAsync(from, to, ct);
             if (split is null) return;
 
             CanInfluenceCount = split.CanInfluenceCount;
@@ -39,6 +40,14 @@ public partial class Card10InfluenceViewModel(InsightsService insightsService) :
                 CanBarWidth    = 0;
                 CannotBarWidth = 0;
             }
+        }
+        catch (OperationCanceledException)
+        {
+            // Загрузка отменена — не показываем ошибку
+        }
+        catch (Exception) when (ct.IsCancellationRequested)
+        {
+            // Исключение из-за отмены токена (например, SocketException) — не показываем ошибку
         }
         catch
         {

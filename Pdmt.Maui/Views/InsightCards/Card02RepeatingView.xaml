@@ -15,7 +15,7 @@
             </Border>
             <Label Grid.Row="1" Text="Повторяющиеся триггеры"
                    FontAttributes="Bold" FontSize="16" Margin="0,8,0,2" />
-            <Label Grid.Row="2" Text="Теги, которые появляются снова и снова"
+            <Label Grid.Row="2" Text="Теги с 3+ появлениями за выбранный период"
                    Style="{StaticResource MutedLabel}" Margin="0,0,0,10" />
             <CollectionView Grid.Row="3" ItemsSource="{Binding Items}">
                 <CollectionView.ItemsLayout>
@@ -36,6 +36,9 @@
                     </DataTemplate>
                 </CollectionView.ItemTemplate>
             </CollectionView>
+            <Label Grid.Row="3" Text="Нет тегов с 3+ повторениями за выбранный период"
+                   Style="{StaticResource MutedLabel}" HorizontalTextAlignment="Center"
+                   IsVisible="{Binding IsEmpty}" VerticalOptions="Center" Margin="0,20" />
             <ActivityIndicator Grid.Row="4" IsRunning="{Binding IsLoading}" IsVisible="{Binding IsLoading}"
                                Color="{StaticResource Primary}" HorizontalOptions="Center" Margin="0,8" />
             <Label Grid.Row="4" Style="{StaticResource ErrorLabel}" Text="{Binding ErrorMessage}"

@@ -31,11 +31,11 @@
                 <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
                     <VerticalStackLayout Grid.Column="0" Spacing="2">
                         <Label Style="{StaticResource MutedLabel}" Text="От" />
-                        <DatePicker Date="{Binding FilterFrom, TargetNullValue={x:Null}}" Format="dd.MM.yy" />
+                        <DatePicker Date="{Binding FilterFrom, Mode=TwoWay}" Format="dd.MM.yy" />
                     </VerticalStackLayout>
                     <VerticalStackLayout Grid.Column="1" Spacing="2">
                         <Label Style="{StaticResource MutedLabel}" Text="До" />
-                        <DatePicker Date="{Binding FilterTo, TargetNullValue={x:Null}}" Format="dd.MM.yy" />
+                        <DatePicker Date="{Binding FilterTo, Mode=TwoWay}" Format="dd.MM.yy" />
                     </VerticalStackLayout>
                 </Grid>
 

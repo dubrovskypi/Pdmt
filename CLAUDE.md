@@ -66,6 +66,7 @@ npm run dev   # https://localhost:5173 (HTTPS via @vitejs/plugin-basic-ssl)
 - Services (`AuthService`, `EventService`, `TagService`, `AnalyticsService`) contain all business logic; controllers are thin
 - Controllers: `AuthController`, `WebAuthController`, `EventsController`, `TagsController`, `AnalyticsController`
 - `AnalyticsController` routes: `/weekly-summary`, `/trends`, `/correlations`, `/calendar/week`, `/calendar/month`, `/insights/*` (repeating-triggers, discounted-positives, next-day-effects, tag-combos, tag-trend, influenceability) — TODO: split insights into separate `InsightsController`
+- Add `[ProducesResponseType]` and response code attributes to action methods for Swagger documentation
 - `TokenCleanupBgService` — background service that purges expired refresh tokens
 - Global exception handling via `ExceptionHandlingMiddleware` — do not add try/catch in controllers
 
@@ -131,13 +132,8 @@ Integration tests in `EventControllerTests.cs` cover auth enforcement, CRUD, fil
 - No lazy loading — always explicit `.Include()`
 - Never edit migration files manually; generate via `dotnet ef migrations add`
 - Custom C# methods cannot be used inside EF Core queries (`IQueryable`) — EF cannot translate them to SQL. Materialize with `ToListAsync()` first, then apply custom logic in-memory.
-- **DateTimeOffset (Pdmt.Api)**: The API has been refactored to use `DateTimeOffset` for UTC consistency. Use `DateTimeOffset` in all new code. Legacy `DateTime` usage should be migrated gradually when encountered.
-- **DateTime + PostgreSQL (legacy)**: If working with remaining `DateTime` code, Npgsql requires `Kind=Utc` for `timestamp with time zone` columns. Normalize at the top of service methods: `param = DateTime.SpecifyKind(param, DateTimeKind.Utc)`.
-- **DateTimeOffset normalization at module boundaries**: All `DateTimeOffset` parameters from query strings or client requests **must be normalized to UTC** at API layer (controllers) before passing to services. Use `.ToUniversalTime()` at the earliest point:
-  - **Controllers**: normalize `[FromQuery] DateTimeOffset` parameters immediately after receiving them
-  - **Clients** (Blazor, MAUI, React): call `.ToUniversalTime()` before serializing to query string or JSON; use `Uri.EscapeDataString()` when building query strings (the `+` in offset breaks URL parsing)
-  - **Database**: Npgsql requires UTC offset only; Postgresql will reject DateTimeOffset with non-zero offset. This is enforced at the API boundary, not in services
-  - **Rationale**: Single responsibility (boundaries handle conversion), defense in depth (double-normalize), consistency across all clients
+- **DateTime/DateTimeOffset**: Use `DateTimeOffset` in all new code. When encountering legacy `DateTime`, propose migration if feasible.
+- **Normalization at module boundaries**: Normalize all inbound parameters to UTC at the earliest point (controllers, clients) using `.ToUniversalTime()` before passing to services. PostgreSQL requires UTC offset only (rejects non-UTC offsets).
  
 ## What NOT to do
  
@@ -157,6 +153,7 @@ Integration tests in `EventControllerTests.cs` cover auth enforcement, CRUD, fil
 - `DatePicker` returns `DateTime` with `Kind=Unspecified` — use `DateTime.SpecifyKind(value, DateTimeKind.Utc)` before sending to PostgreSQL API
 - Same for `DateTime.Date` property — it preserves `Kind`, so if the source was `Unspecified`, the result is too
 - Heterogeneous `CarouselView`: use `DataTemplateSelector` (see `InsightCardTemplateSelector`) — subclass, expose one `DataTemplate` property per card type, dispatch via pattern-matching `switch`
+- **Insights loading lifecycle**: `InsightsViewModel` owns `CancellationTokenSource`; cards 0–1 load with priority, remaining 8 in background; `OnDisappearing` calls `CancelLoad()` to abort all in-flight HTTP requests before ViewModel is collected
 
 ## Pdmt.Client Conventions
  
@@ -181,6 +178,6 @@ Integration tests in `EventControllerTests.cs` cover auth enforcement, CRUD, fil
 
 - Conventional commits: `feat:`, `fix:`, `refactor:`, `test:`, `chore:`, `docs:`, `style:`, `perf:`, `ci:`, `build:`, `revert:`
 - One logical change per commit
-- Message: single concise line, imperative mood, no period at the end (e.g. `feat: add tag filtering`)
+- Message: single concise line, imperative mood, no period at the end
 - Multiple types in one commit: join with `; ` on the summary line
 - No co-authorship lines — do not add `Co-Authored-By` to commits

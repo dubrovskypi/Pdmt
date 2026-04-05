@@ -12,14 +12,15 @@ public partial class Card09TagTrendViewModel(InsightsService insightsService) : 
     [ObservableProperty] private string? _tagName;
     [ObservableProperty] private IReadOnlyList<TagTrendBarItem> _points = [];
 
-    public override async Task LoadAsync(DateTimeOffset from, DateTimeOffset to)
+    public override async Task LoadAsync(DateTimeOffset from, DateTimeOffset to, bool showLoading = true, CancellationToken ct = default)
     {
-        IsLoading = true;
+        if (showLoading)
+            IsLoading = true;
         ErrorMessage = null;
         TagName = null;
         try
         {
-            var triggers = await insightsService.GetRepeatingTriggersAsync(from, to, minCount: 1);
+            var triggers = await insightsService.GetRepeatingTriggersAsync(from, to, minCount: 1, ct: ct);
             var topTrigger = triggers.MaxBy(t => t.Count);
             if (topTrigger is null)
             {
@@ -35,13 +36,21 @@ public partial class Card09TagTrendViewModel(InsightsService insightsService) : 
             }
 
             TagName = topTrigger.TagName;
-            var rawPoints = await insightsService.GetTagTrendAsync(tagId.Value, from, to, "week");
+            var rawPoints = await insightsService.GetTagTrendAsync(tagId.Value, from, to, "week", ct);
 
             double maxCount = rawPoints.Count > 0 ? rawPoints.Max(p => (double)p.Count) : 1;
             Points = rawPoints.Select(p => new TagTrendBarItem(
                 p.PeriodStart.ToString("dd.MM"),
                 p.Count,
                 maxCount > 0 ? p.Count / maxCount * DesignMaxHeight : 4)).ToList();
+        }
+        catch (OperationCanceledException)
+        {
+            // Загрузка отменена — не показываем ошибку
+        }
+        catch (Exception) when (ct.IsCancellationRequested)
+        {
+            // Исключение из-за отмены токена (например, SocketException) — не показываем ошибку
         }
         catch
         {

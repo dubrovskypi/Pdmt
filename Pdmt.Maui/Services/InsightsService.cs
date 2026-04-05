@@ -8,76 +8,76 @@ public class InsightsService(IHttpClientFactory factory, TagService tagService)
     // ── Insights endpoints ─────────────────────────────────────────────────
 
     public async Task<List<RepeatingTriggerDto>> GetRepeatingTriggersAsync(
-        DateTimeOffset from, DateTimeOffset to, int minCount = 3)
+        DateTimeOffset from, DateTimeOffset to, int minCount = 3, CancellationToken ct = default)
     {
         var http = factory.CreateClient("PdmtApi");
         var (f, t) = FormatRange(from, to);
         return await http.GetFromJsonAsync<List<RepeatingTriggerDto>>(
-            $"api/analytics/insights/repeating-triggers?from={f}&to={t}&minCount={minCount}") ?? [];
+            $"api/analytics/insights/repeating-triggers?from={f}&to={t}&minCount={minCount}", ct) ?? [];
     }
 
     public async Task<List<DiscountedPositiveDto>> GetDiscountedPositivesAsync(
-        DateTimeOffset from, DateTimeOffset to)
+        DateTimeOffset from, DateTimeOffset to, CancellationToken ct = default)
     {
         var http = factory.CreateClient("PdmtApi");
         var (f, t) = FormatRange(from, to);
         return await http.GetFromJsonAsync<List<DiscountedPositiveDto>>(
-            $"api/analytics/insights/discounted-positives?from={f}&to={t}") ?? [];
+            $"api/analytics/insights/discounted-positives?from={f}&to={t}", ct) ?? [];
     }
 
     public async Task<List<NextDayEffectDto>> GetNextDayEffectsAsync(
-        DateTimeOffset from, DateTimeOffset to)
+        DateTimeOffset from, DateTimeOffset to, CancellationToken ct = default)
     {
         var http = factory.CreateClient("PdmtApi");
         var (f, t) = FormatRange(from, to);
         return await http.GetFromJsonAsync<List<NextDayEffectDto>>(
-            $"api/analytics/insights/next-day-effects?from={f}&to={t}") ?? [];
+            $"api/analytics/insights/next-day-effects?from={f}&to={t}", ct) ?? [];
     }
 
     public async Task<List<TagComboDto>> GetTagCombosAsync(
-        DateTimeOffset from, DateTimeOffset to)
+        DateTimeOffset from, DateTimeOffset to, CancellationToken ct = default)
     {
         var http = factory.CreateClient("PdmtApi");
         var (f, t) = FormatRange(from, to);
         return await http.GetFromJsonAsync<List<TagComboDto>>(
-            $"api/analytics/insights/tag-combos?from={f}&to={t}") ?? [];
+            $"api/analytics/insights/tag-combos?from={f}&to={t}", ct) ?? [];
     }
 
     public async Task<List<TagTrendPointDto>> GetTagTrendAsync(
-        Guid tagId, DateTimeOffset from, DateTimeOffset to, string period = "week")
+        Guid tagId, DateTimeOffset from, DateTimeOffset to, string period = "week", CancellationToken ct = default)
     {
         var http = factory.CreateClient("PdmtApi");
         var (f, t) = FormatRange(from, to);
         return await http.GetFromJsonAsync<List<TagTrendPointDto>>(
-            $"api/analytics/insights/tag-trend?tagId={tagId}&from={f}&to={t}&period={period}") ?? [];
+            $"api/analytics/insights/tag-trend?tagId={tagId}&from={f}&to={t}&period={period}", ct) ?? [];
     }
 
     public async Task<InfluenceabilitySplitDto?> GetInfluenceabilityAsync(
-        DateTimeOffset from, DateTimeOffset to)
+        DateTimeOffset from, DateTimeOffset to, CancellationToken ct = default)
     {
         var http = factory.CreateClient("PdmtApi");
         var (f, t) = FormatRange(from, to);
         return await http.GetFromJsonAsync<InfluenceabilitySplitDto>(
-            $"api/analytics/insights/influenceability?from={f}&to={t}");
+            $"api/analytics/insights/influenceability?from={f}&to={t}", ct);
     }
 
     // ── Existing analytics endpoints ───────────────────────────────────────
 
-    public async Task<WeeklySummaryDto?> GetWeeklySummaryAsync(DateTimeOffset weekOf)
+    public async Task<WeeklySummaryDto?> GetWeeklySummaryAsync(DateTimeOffset weekOf, CancellationToken ct = default)
     {
         var http = factory.CreateClient("PdmtApi");
         var param = Uri.EscapeDataString(weekOf.ToUniversalTime().ToString("yyyy-MM-dd"));
         return await http.GetFromJsonAsync<WeeklySummaryDto>(
-            $"api/analytics/weekly-summary?weekOf={param}");
+            $"api/analytics/weekly-summary?weekOf={param}", ct);
     }
 
     public async Task<List<TrendPeriodDto>> GetTrendsAsync(
-        DateTimeOffset from, DateTimeOffset to, string groupBy = "week")
+        DateTimeOffset from, DateTimeOffset to, string groupBy = "week", CancellationToken ct = default)
     {
         var http = factory.CreateClient("PdmtApi");
         var (f, t) = FormatRange(from, to);
         return await http.GetFromJsonAsync<List<TrendPeriodDto>>(
-            $"api/analytics/trends?from={f}&to={t}&period={groupBy}") ?? [];
+            $"api/analytics/trends?from={f}&to={t}&period={groupBy}", ct) ?? [];
     }
 
     // ── Tag name → ID lookup ───────────────────────────────────────────────

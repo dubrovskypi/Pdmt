@@ -23,19 +23,25 @@
                 </CollectionView.ItemsLayout>
                 <CollectionView.ItemTemplate>
                     <DataTemplate x:DataType="cards:BlindSpotBarItem">
-                        <Grid ColumnDefinitions="90,*,42" ColumnSpacing="8">
+                        <Grid ColumnDefinitions="90,*,52" ColumnSpacing="8">
                             <Label Grid.Column="0" Text="{Binding TagName}"
                                    FontSize="13" LineBreakMode="TailTruncation" VerticalOptions="Center" />
                             <BoxView Grid.Column="1" WidthRequest="{Binding BarWidth}" HeightRequest="14"
                                      Color="#fcd34d" CornerRadius="2"
                                      HorizontalOptions="Start" VerticalOptions="Center" />
-                            <Label Grid.Column="2"
-                                   Text="{Binding Count, StringFormat='{0}×'}"
-                                   FontSize="12" TextColor="{StaticResource Muted}" VerticalOptions="Center" />
+                            <VerticalStackLayout Grid.Column="2" Spacing="1" VerticalOptions="Center">
+                                <Label Text="{Binding Count, StringFormat='{0}×'}"
+                                       FontSize="12" TextColor="{StaticResource Muted}" />
+                                <Label Text="{Binding AvgIntensity, StringFormat='{0:F1}'}"
+                                       FontSize="11" TextColor="{StaticResource Muted}" Margin="0,-2,0,0" />
+                            </VerticalStackLayout>
                         </Grid>
                     </DataTemplate>
                 </CollectionView.ItemTemplate>
             </CollectionView>
+            <Label Grid.Row="3" Text="Нет тегов с 5+ позитивными событиями и средней интенсивностью менее 4.0"
+                   Style="{StaticResource MutedLabel}" HorizontalTextAlignment="Center"
+                   IsVisible="{Binding IsEmpty}" VerticalOptions="Center" Margin="0,20" />
             <ActivityIndicator Grid.Row="4" IsRunning="{Binding IsLoading}" IsVisible="{Binding IsLoading}"
                                Color="{StaticResource Primary}" HorizontalOptions="Center" Margin="0,8" />
             <Label Grid.Row="4" Style="{StaticResource ErrorLabel}" Text="{Binding ErrorMessage}"
