@@ -2,7 +2,7 @@
 
 ## Bugs
 
-- [ ] **pdmt-web: `EventListPage`** — `getTags()` вызывается при каждом изменении фильтра (в т.ч. tag filter). Вынести в отдельный `useEffect([], [])`, события грузить отдельно
+- [x] **pdmt-web: `EventListPage`** — `getTags()` вызывается при каждом изменении фильтра (в т.ч. tag filter). Вынести в отдельный `useEffect([], [])`, события грузить отдельно
 - [x] **MAUI: Insights loading** — двойной спиннер при открытии страницы, возможный memory leak; загружать карточки 1–2 первыми, остальные в фоне
 - [x] **MAUI: Card 5 (Discounted Positives)** — карточка пустая; проверить `GetDiscountedPositivesAsync` и порог `count >= 5 AND avgIntensity < 4.0`
 
