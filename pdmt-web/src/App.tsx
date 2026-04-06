@@ -3,6 +3,7 @@ import { AuthProvider } from "@/auth/AuthProvider";
 import { useAuth } from "@/auth/useAuth";
 import { Layout } from "@/components/Layout";
 import { LoginPage } from "@/pages/LoginPage";
+import { RegisterPage } from "@/pages/RegisterPage";
 import { EventListPage } from "@/pages/EventListPage";
 import { CalendarPage } from "@/pages/CalendarPage";
 import { AnalyticsPage } from "@/pages/AnalyticsPage";
@@ -25,6 +26,7 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
       <Route element={<Layout />}>
         <Route
           path="/events"

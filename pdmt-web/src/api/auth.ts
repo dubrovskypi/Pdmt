@@ -16,6 +16,20 @@ export async function login(
   return res.json() as Promise<WebAuthResultDto>;
 }
 
+export async function register(
+  email: string,
+  password: string,
+): Promise<WebAuthResultDto> {
+  const res = await fetch(`${config.pdmtapi.baseUrl}/api/auth/web/register`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password }),
+  });
+  if (!res.ok) throw new Error(`Register failed: ${res.status}`);
+  return res.json() as Promise<WebAuthResultDto>;
+}
+
 // Called on page load to silently restore session from httpOnly cookie.
 export async function refreshSilent(): Promise<WebAuthResultDto | null> {
   try {

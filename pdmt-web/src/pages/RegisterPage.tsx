@@ -1,14 +1,15 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/auth/useAuth";
-import { login } from "@/api/auth";
+import { register } from "@/api/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-export function LoginPage() {
+export function RegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const { setAccessToken, isAuthenticated } = useAuth();
@@ -21,14 +22,18 @@ export function LoginPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (password !== confirm) {
+      setError("Пароли не совпадают.");
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
-      const result = await login(email, password);
+      const result = await register(email, password);
       setAccessToken(result.accessToken);
       navigate("/events", { replace: true });
     } catch {
-      setError("Неверный email или пароль.");
+      setError("Не удалось зарегистрироваться. Возможно, email уже занят.");
     } finally {
       setLoading(false);
     }
@@ -62,15 +67,25 @@ export function LoginPage() {
             required
           />
         </div>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="confirm">Повторите пароль</Label>
+          <Input
+            id="confirm"
+            type="password"
+            value={confirm}
+            onChange={(e) => setConfirm(e.target.value)}
+            required
+          />
+        </div>
         {error && <p className="text-sm text-red-500">{error}</p>}
         <Button type="submit" disabled={loading}>
-          {loading ? "Вход…" : "Войти"}
+          {loading ? "Регистрация…" : "Зарегистрироваться"}
         </Button>
       </form>
       <p className="text-sm text-slate-500 text-center">
-        Нет аккаунта?{" "}
-        <Link to="/register" className="text-slate-900 underline underline-offset-2">
-          Зарегистрироваться
+        Уже есть аккаунт?{" "}
+        <Link to="/login" className="text-slate-900 underline underline-offset-2">
+          Войти
         </Link>
       </p>
     </div>
