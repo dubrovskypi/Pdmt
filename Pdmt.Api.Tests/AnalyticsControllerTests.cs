@@ -256,6 +256,113 @@ public class AnalyticsControllerTests : IClassFixture<CustomWebAppFactory>
             (r.Tag1 == "tc_solo_b" || r.Tag2 == "tc_solo_b"));
     }
 
+    [Fact]
+    public async Task GetTagCombos_Should_Return_Zero_Alone_Intensities_When_Tags_Only_CoOccur()
+    {
+        var tagA = await SeedTagAsync(TestUserId, "tc_always_together_a");
+        var tagB = await SeedTagAsync(TestUserId, "tc_always_together_b");
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+            // Days 1-3: TagA + TagB together, never separately (use February to avoid conflicts with other tests)
+            for (var i = 0; i < 3; i++)
+            {
+                var date = new DateTime(2026, 2, i + 1, 10, 0, 0, DateTimeKind.Utc);
+                var evA = new Event { Id = Guid.NewGuid(), UserId = TestUserId, Timestamp = date, Type = EventType.Positive, Intensity = 8, Title = $"tc_together_{i}" };
+                var evB = new Event { Id = Guid.NewGuid(), UserId = TestUserId, Timestamp = date.AddHours(1), Type = EventType.Positive, Intensity = 8, Title = $"tc_together_b_{i}" };
+                db.Events.AddRange(evA, evB);
+                db.EventTags.Add(new EventTag { EventId = evA.Id, TagId = tagA.Id });
+                db.EventTags.Add(new EventTag { EventId = evB.Id, TagId = tagB.Id });
+            }
+
+            await db.SaveChangesAsync();
+        }
+
+        var client = CreateTestAuthClient();
+        var response = await client.GetAsync("/api/analytics/insights/tag-combos?from=2026-02-01&to=2026-02-28");
+        var result = await response.Content.ReadFromJsonAsync<IReadOnlyList<TagComboDto>>();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var combo = result!.FirstOrDefault(r =>
+            (r.Tag1 == "tc_always_together_a" && r.Tag2 == "tc_always_together_b") ||
+            (r.Tag1 == "tc_always_together_b" && r.Tag2 == "tc_always_together_a"));
+        Assert.NotNull(combo);
+
+        // Both alone intensities should be 0, since they never appear separately
+        Assert.Equal(0.0, combo.Tag1AloneAvgIntensity);
+        Assert.Equal(0.0, combo.Tag2AloneAvgIntensity);
+        Assert.Equal(8.0, combo.CombinedAvgIntensity);
+    }
+
+    [Fact]
+    public async Task GetTagCombos_Should_Calculate_Alone_Intensities_Correctly()
+    {
+        var tagA = await SeedTagAsync(TestUserId, "tc_calc_a");
+        var tagB = await SeedTagAsync(TestUserId, "tc_calc_b");
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+            // Days 1-3: TagA + TagB together (intensity 8) — use March to avoid conflicts
+            for (var i = 0; i < 3; i++)
+            {
+                var date = new DateTime(2026, 3, i + 1, 10, 0, 0, DateTimeKind.Utc);
+                var evA = new Event { Id = Guid.NewGuid(), UserId = TestUserId, Timestamp = date, Type = EventType.Positive, Intensity = 8, Title = $"tc_calc_together_{i}" };
+                var evB = new Event { Id = Guid.NewGuid(), UserId = TestUserId, Timestamp = date.AddHours(1), Type = EventType.Positive, Intensity = 8, Title = $"tc_calc_together_b_{i}" };
+                db.Events.AddRange(evA, evB);
+                db.EventTags.Add(new EventTag { EventId = evA.Id, TagId = tagA.Id });
+                db.EventTags.Add(new EventTag { EventId = evB.Id, TagId = tagB.Id });
+            }
+
+            // Days 4-5: TagA alone (intensity 4)
+            for (var i = 0; i < 2; i++)
+            {
+                var date = new DateTime(2026, 3, i + 4, 10, 0, 0, DateTimeKind.Utc);
+                var evA = new Event { Id = Guid.NewGuid(), UserId = TestUserId, Timestamp = date, Type = EventType.Positive, Intensity = 4, Title = $"tc_calc_a_alone_{i}" };
+                db.Events.Add(evA);
+                db.EventTags.Add(new EventTag { EventId = evA.Id, TagId = tagA.Id });
+            }
+
+            // Day 6: TagB alone (intensity 6)
+            var evBAlone = new Event { Id = Guid.NewGuid(), UserId = TestUserId, Timestamp = new DateTime(2026, 3, 6, 10, 0, 0, DateTimeKind.Utc), Type = EventType.Positive, Intensity = 6, Title = "tc_calc_b_alone" };
+            db.Events.Add(evBAlone);
+            db.EventTags.Add(new EventTag { EventId = evBAlone.Id, TagId = tagB.Id });
+
+            await db.SaveChangesAsync();
+        }
+
+        var client = CreateTestAuthClient();
+        var response = await client.GetAsync("/api/analytics/insights/tag-combos?from=2026-03-01&to=2026-03-31");
+        var result = await response.Content.ReadFromJsonAsync<IReadOnlyList<TagComboDto>>();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var combo = result!.FirstOrDefault(r =>
+            (r.Tag1 == "tc_calc_a" && r.Tag2 == "tc_calc_b") ||
+            (r.Tag1 == "tc_calc_b" && r.Tag2 == "tc_calc_a"));
+        Assert.NotNull(combo);
+        Assert.Equal(3, combo.CoOccurrences);
+
+        // Combined days: avg intensity = (8 + 8 + 8 + 8 + 8 + 8) / 6 = 8.0
+        Assert.Equal(8.0, combo.CombinedAvgIntensity);
+
+        // Tag1 alone (intensity 4 on 2 days)
+        // Tag2 alone (intensity 6 on 1 day)
+        // Order can vary, so check both possibilities
+        if (combo.Tag1 == "tc_calc_a")
+        {
+            Assert.Equal(4.0, combo.Tag1AloneAvgIntensity);
+            Assert.Equal(6.0, combo.Tag2AloneAvgIntensity);
+        }
+        else
+        {
+            Assert.Equal(6.0, combo.Tag1AloneAvgIntensity);
+            Assert.Equal(4.0, combo.Tag2AloneAvgIntensity);
+        }
+    }
+
     // ── TagTrend ──────────────────────────────────────────────────────────────
 
     [Fact]

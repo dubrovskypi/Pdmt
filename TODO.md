@@ -8,7 +8,7 @@
 
 ## Phase 3 — незавершённое (pdmt-web)
 
-- [ ] **`InsightsPage.tsx`** — карусель из 10 карточек (ROADMAP §3.4 Screen 5); lazy-load каждой карточки отдельно
+- [x] **`InsightsPage.tsx`** — карусель из 10 карточек (ROADMAP §3.4 Screen 5); lazy-load каждой карточки отдельно
 - [x] **`AnalyticsPage.tsx`** — weekly summary + trend chart через Recharts (ROADMAP §3.4 Screen 6)
 
 ## Рефакторинг

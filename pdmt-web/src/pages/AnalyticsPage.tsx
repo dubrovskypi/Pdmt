@@ -44,6 +44,14 @@ function formatShortDate(iso: string): string {
   return `${pad(d.getUTCDate())}.${pad(d.getUTCMonth() + 1)}`;
 }
 
+function formatWeekRange(iso: string): string {
+  const start = new Date(iso);
+  const end = new Date(start);
+  end.setUTCDate(start.getUTCDate() + 6);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${pad(start.getUTCDate())}.${pad(start.getUTCMonth() + 1)}–${pad(end.getUTCDate())}.${pad(end.getUTCMonth() + 1)}`;
+}
+
 // --- WeekSelector ---
 
 interface WeekSelectorProps {
@@ -320,7 +328,7 @@ function TrendChartSection({ trends }: { trends: TrendPeriodDto[] }) {
   }
 
   const data = trends.map((t) => ({
-    week: formatShortDate(t.periodStart),
+    week: formatWeekRange(t.periodStart),
     posCount: t.posCount,
     negCount: t.negCount,
   }));

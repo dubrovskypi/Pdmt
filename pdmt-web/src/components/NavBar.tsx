@@ -24,6 +24,9 @@ export function NavBar() {
       <NavLink to="/analytics" className={linkClass}>
         Analytics
       </NavLink>
+      <NavLink to="/insights" className={linkClass}>
+        Insights
+      </NavLink>
       <Button
         variant="ghost"
         size="sm"

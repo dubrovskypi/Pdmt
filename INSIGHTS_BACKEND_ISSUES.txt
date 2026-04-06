@@ -1,0 +1,38 @@
+InsightsPage — несоответствия и ограничения бэка
+==================================================
+Зафиксировано: 2026-04-06
+
+--- ФУНКЦИОНАЛЬНЫЕ ОГРАНИЧЕНИЯ ---
+
+1. [Card 1 — Triggers] WeeklySummaryDto.TopTags (TagSummaryDto) не содержит поле типа события
+   (Positive / Negative). Фронт не может отфильтровать «только негативные» триггеры, как требует
+   ROADMAP. Показываются все топ-теги без разбивки по типу.
+   Решение на бэке: добавить EventType в TagSummaryDto, либо завести отдельный эндпоинт
+   GET /api/analytics/insights/top-negative-tags.
+
+2. [Cards 1, 3, 6 — weekly-summary] GET /api/analytics/weekly-summary?weekOf= принимает DateOnly
+   для конкретной недели. InsightsPage имеет период 7 / 14 / 30 дней. Для периодов 14 и 30 дней
+   эндпоинт не подходит — данные всегда за одну неделю. На карточках сделана пометка.
+   Решение на бэке: добавить period-aware вариант:
+   GET /api/analytics/weekly-summary?from=&to= (агрегация за произвольный диапазон).
+
+3. [Card 6 — DayOfWeek] WeeklySummaryDto.ByDayOfWeek агрегирует только неделю weekOf.
+   ROADMAP явно отмечает: «aggregated across the selected period — may need a period-aware variant».
+   Вариант для произвольного диапазона отсутствует.
+   Решение на бэке: то же, что в пункте 2 (period-aware summary endpoint).
+
+4. [Card 9 — TagTrend] RepeatingTriggerDto содержит tagName, но не tagId (Guid).
+   GET /api/analytics/insights/tag-trend требует tagId. Резолв: дополнительный GET /api/tags +
+   поиск по имени. Поиск по имени хрупкий (регистр, пробелы).
+   Решение на бэке: добавить tagId в RepeatingTriggerDto.
+
+--- ИЗБЫТОЧНЫЕ ПОЛЯ В DTO (вычисляются и передаются, но не используются в карточках) ---
+
+5. WeeklySummaryDto: поля topPosEvents, topNegEvents, posToNegRatio
+   — ни одна из 10 карточек не использует эти поля.
+
+6. DayOfWeekBreakdownDto: поля posCount, negCount
+   — Card 6 отображает только avgIntensity по дням.
+
+7. TrendPeriodDto: поле avgIntensity
+   — Card 4 использует только posCount / negCount.

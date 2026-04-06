@@ -117,6 +117,48 @@ export interface TrendPeriodDto {
   avgIntensity: number;
 }
 
+// --- Insights ---
+
+export interface RepeatingTriggerDto {
+  tagName: string;
+  count: number;
+  avgIntensity: number;
+}
+
+export interface DiscountedPositiveDto {
+  tagName: string;
+  avgIntensity: number;
+  count: number;
+}
+
+export interface NextDayEffectDto {
+  tagName: string;
+  nextDayAvgScore: number;
+  occurrences: number;
+}
+
+export interface TagComboDto {
+  tag1: string;
+  tag2: string;
+  combinedAvgIntensity: number;
+  tag1AloneAvgIntensity: number;
+  tag2AloneAvgIntensity: number;
+  coOccurrences: number;
+}
+
+export interface TagTrendPointDto {
+  periodStart: string;
+  count: number;
+  avgIntensity: number;
+}
+
+export interface InfluenceabilitySplitDto {
+  canInfluenceCount: number;
+  canInfluenceAvgIntensity: number;
+  cannotInfluenceCount: number;
+  cannotInfluenceAvgIntensity: number;
+}
+
 export interface CalendarDayDetailsDto {
   date: string;
   posCount: number;

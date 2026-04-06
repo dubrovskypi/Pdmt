@@ -350,22 +350,11 @@ public class AnalyticsService(AppDbContext db) : IAnalyticsService
             }
         }
 
-        // Вычисляем alone intensities отдельным проходом
+        // Второй проход: заполняем alone intensities для дней, где один тег есть, а другой нет
         foreach (var day in byDay)
         {
             var tagSet = day.Tags.ToHashSet();
-            foreach (var tag in day.Tags)
-            {
-                foreach (var otherTag in day.Tags)
-                {
-                    if (string.Compare(tag, otherTag, StringComparison.Ordinal) >= 0) continue;
-                    var key = (tag, otherTag);
-                    if (!comboData.ContainsKey(key)) continue;
-                    // Эта пара co-occurred — уже обработано в CombinedDayIntensities
-                }
-            }
 
-            // Alone: день, где Tag есть, но парного тега нет
             foreach (var kvp in comboData)
             {
                 var (t1, t2) = kvp.Key;
