@@ -79,6 +79,44 @@ export interface TagCountDto {
   count: number;
 }
 
+export interface TagSummaryDto {
+  tagName: string;
+  count: number;
+  avgIntensity: number;
+}
+
+export interface TopEventDto {
+  title: string | null;
+  intensity: number;
+  date: string;
+}
+
+export interface DayOfWeekBreakdownDto {
+  day: string;
+  posCount: number;
+  negCount: number;
+  avgIntensity: number;
+}
+
+export interface WeeklySummaryDto {
+  posCount: number;
+  negCount: number;
+  posToNegRatio: number;
+  avgPosIntensity: number;
+  avgNegIntensity: number;
+  topTags: TagSummaryDto[];
+  topPosEvents: TopEventDto[];
+  topNegEvents: TopEventDto[];
+  byDayOfWeek: DayOfWeekBreakdownDto[];
+}
+
+export interface TrendPeriodDto {
+  periodStart: string;
+  posCount: number;
+  negCount: number;
+  avgIntensity: number;
+}
+
 export interface CalendarDayDetailsDto {
   date: string;
   posCount: number;

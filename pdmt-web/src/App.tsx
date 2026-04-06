@@ -5,6 +5,7 @@ import { Layout } from "@/components/Layout";
 import { LoginPage } from "@/pages/LoginPage";
 import { EventListPage } from "@/pages/EventListPage";
 import { CalendarPage } from "@/pages/CalendarPage";
+import { AnalyticsPage } from "@/pages/AnalyticsPage";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
@@ -37,6 +38,14 @@ function AppRoutes() {
           element={
             <ProtectedRoute>
               <CalendarPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/analytics"
+          element={
+            <ProtectedRoute>
+              <AnalyticsPage />
             </ProtectedRoute>
           }
         />

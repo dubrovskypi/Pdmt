@@ -173,6 +173,9 @@ Integration tests in `EventControllerTests.cs` cover auth enforcement, CRUD, fil
 - **Tag filter**: `GET /api/events?tags=` accepts comma-separated **Guid IDs**, not names
 - **Dev HTTPS**: Vite runs on `https://localhost:5173` via `@vitejs/plugin-basic-ssl` — no proxy, real cross-origin like prod
 - Pages in `src/pages/`, shared components in `src/components/`, API modules in `src/api/`, auth in `src/auth/`
+- **Page sub-components**: Declare in same file above main component
+- **Data loading**: `useState` + `useEffect`; no custom hooks for read-only data; parallel requests via `Promise.all` when independent
+- **AnalyticsPage**: sub-components in same file; no custom hooks for read-only data; `Promise.all` for parallel independent requests
 
 ## Commits
 

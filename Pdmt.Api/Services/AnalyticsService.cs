@@ -47,13 +47,13 @@ public class AnalyticsService(AppDbContext db) : IAnalyticsService
         var topPosEvents = posEvents
             .OrderByDescending(e => e.Intensity)
             .Take(5)
-            .Select(e => new TopEventDto(e.Context, e.Intensity, e.Timestamp))
+            .Select(e => new TopEventDto(e.Title, e.Intensity, e.Timestamp))
             .ToList();
 
         var topNegEvents = negEvents
             .OrderByDescending(e => e.Intensity)
             .Take(5)
-            .Select(e => new TopEventDto(e.Context, e.Intensity, e.Timestamp))
+            .Select(e => new TopEventDto(e.Title, e.Intensity, e.Timestamp))
             .ToList();
 
         var byDayOfWeek = events
