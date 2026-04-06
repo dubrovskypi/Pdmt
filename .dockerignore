@@ -1,0 +1,15 @@
+**/.git
+**/.vs
+**/.idea
+**/bin
+**/obj
+**/*.user
+**/*.suo
+**/.env
+**/.env.*
+Pdmt.Api.Tests/
+Pdmt.Client/
+Pdmt.Maui/
+pdmt-web/
+docker-compose.yml
+docker-compose*.yml

@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -59,12 +60,17 @@ builder.Services.AddSwaggerGen(options =>
 });
 // Add MVC controllers (attribute routing)
 builder.Services.AddControllers();
+var corsOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
+if (!builder.Environment.IsDevelopment() && corsOrigins.Length == 0)
+    throw new InvalidOperationException(
+        "Cors:AllowedOrigins is not configured. " +
+        "Prod: set env var Cors__AllowedOrigins__0, Cors__AllowedOrigins__1, ...");
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("WebClients", policy =>
     {
-        var origins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()!;
-        policy.WithOrigins(origins)
+        policy.WithOrigins(corsOrigins)
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();
@@ -76,6 +82,12 @@ if (string.IsNullOrWhiteSpace(pgCs))
     throw new InvalidOperationException(
         "ConnectionStrings:Postgres is not configured. " +
         "Prod: set env var ConnectionStrings__Postgres");
+
+var redisCs = builder.Configuration.GetValue<string>("Redis:ConnectionString");
+if (string.IsNullOrWhiteSpace(redisCs))
+    throw new InvalidOperationException(
+        "Redis:ConnectionString is not configured. " +
+        "Prod: set env var Redis__ConnectionString");
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(pgCs));
@@ -99,14 +111,13 @@ builder.Services.AddAuthorization();
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
 {
-    var cs = builder.Configuration.GetValue<string>("Redis:ConnectionString");
-    var config = ConfigurationOptions.Parse(cs!);
+    var config = ConfigurationOptions.Parse(redisCs);
     config.AbortOnConnectFail = false;
     return ConnectionMultiplexer.Connect(config);
 });
 builder.Services.AddHealthChecks()
     .AddNpgSql(pgCs)
-    .AddRedis(builder.Configuration.GetValue<string>("Redis:ConnectionString"));
+    .AddRedis(redisCs);
 var otelEndpoint = builder.Configuration["OpenTelemetry:Endpoint"]
     ?? throw new InvalidOperationException(
         "OpenTelemetry:Endpoint is not configured. " +
@@ -146,6 +157,12 @@ builder.Services.Configure<RateLimitOptions>(builder.Configuration.GetSection("R
 
 var app = builder.Build();
 
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.Migrate();
+}
+
 // Enable middleware to serve generated Swagger as a JSON endpoint and the Swagger UI.
 if (app.Environment.IsDevelopment())
 {
@@ -153,18 +170,21 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+});
 app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseMiddleware<HttpLoggingMiddleware>();
 // Configure the HTTP request pipeline.
 app.UseCors("WebClients");
-app.UseHttpsRedirection();
+if (app.Environment.IsDevelopment())
+    app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.MapHealthChecks("/health");
-
-app.MapGet("/", () => Results.Ok("Hello World!"));
 
 app.Run();
 
