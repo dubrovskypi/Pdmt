@@ -83,11 +83,11 @@ if (string.IsNullOrWhiteSpace(pgCs))
         "ConnectionStrings:Postgres is not configured. " +
         "Prod: set env var ConnectionStrings__Postgres");
 
-var redisCs = builder.Configuration.GetValue<string>("Redis:ConnectionString");
+var redisCs = builder.Configuration.GetConnectionString("Redis");
 if (string.IsNullOrWhiteSpace(redisCs))
     throw new InvalidOperationException(
-        "Redis:ConnectionString is not configured. " +
-        "Prod: set env var Redis__ConnectionString");
+        "ConnectionStrings:Redis is not configured. " +
+        "Prod: set env var ConnectionStrings__Redis");
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(pgCs));

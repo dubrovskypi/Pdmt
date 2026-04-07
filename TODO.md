@@ -17,7 +17,7 @@
 
 ## Deploy
 
-- [ ] **CORS prod origins** — заполнить `Cors.AllowedOrigins` в `appsettings.Prod.json` после того как pdmt-web задеплоен на домен
+- [x] **CORS prod origins** — заполнить `Cors.AllowedOrigins` в `appsettings.Prod.json` после того как pdmt-web задеплоен на домен
 - [ ] **MAUI: перевод на EN** — UI сейчас частично на русском (todo.txt п.3)
 
 ## Технический долг (не блокирует деплой)
