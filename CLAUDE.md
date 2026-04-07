@@ -63,9 +63,10 @@ npm run dev   # https://localhost:5173 (HTTPS via @vitejs/plugin-basic-ssl)
 ### API Layers
  
 - **Controllers** → **Services** → **AppDbContext** (EF Core)
-- Services (`AuthService`, `EventService`, `TagService`, `AnalyticsService`) contain all business logic; controllers are thin
-- Controllers: `AuthController`, `WebAuthController`, `EventsController`, `TagsController`, `AnalyticsController`
-- `AnalyticsController` routes: `/weekly-summary`, `/trends`, `/correlations`, `/calendar/week`, `/calendar/month`, `/insights/*` (repeating-triggers, discounted-positives, next-day-effects, tag-combos, tag-trend, influenceability) — TODO: split insights into separate `InsightsController`
+- Services (`AuthService`, `EventService`, `TagService`, `AnalyticsService`, `InsightsService`) contain all business logic; controllers are thin
+- Controllers: `AuthController`, `WebAuthController`, `EventsController`, `TagsController`, `AnalyticsController`, `InsightsController`
+- `AnalyticsController` routes: `/weekly-summary`, `/trends`, `/correlations`, `/calendar/week`, `/calendar/month`
+- `InsightsController` routes (all under `/api/analytics/insights/`): `repeating-triggers`, `discounted-positives`, `next-day-effects`, `tag-combos`, `tag-trend`, `influenceability`
 - Add `[ProducesResponseType]` and response code attributes to action methods for Swagger documentation
 - `TokenCleanupBgService` — background service that purges expired refresh tokens
 - Global exception handling via `ExceptionHandlingMiddleware` — do not add try/catch in controllers

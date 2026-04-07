@@ -146,6 +146,7 @@ builder.Services.AddScoped<IEventService, EventService>();
 builder.Services.AddScoped<ITagService, TagService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
+builder.Services.AddScoped<IInsightsService, InsightsService>();
 builder.Services.AddScoped<RedisRateLimitService>();
 builder.Services.AddScoped<InMemoryRateLimitService>();
 builder.Services.AddScoped<IRateLimitService, CompositeRateLimitService>();
