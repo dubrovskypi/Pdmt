@@ -16,7 +16,7 @@ export function RegisterPage() {
   const navigate = useNavigate();
 
   if (isAuthenticated) {
-    navigate("/events", { replace: true });
+    void navigate("/events", { replace: true });
     return null;
   }
 
@@ -31,7 +31,7 @@ export function RegisterPage() {
     try {
       const result = await register(email, password);
       setAccessToken(result.accessToken);
-      navigate("/events", { replace: true });
+      await navigate("/events", { replace: true });
     } catch {
       setError("Не удалось зарегистрироваться. Возможно, email уже занят.");
     } finally {
@@ -42,10 +42,7 @@ export function RegisterPage() {
   return (
     <div className="max-w-sm mx-auto mt-24 flex flex-col gap-5">
       <h1 className="text-2xl font-bold text-slate-900">Pdmt</h1>
-      <form
-        onSubmit={(e) => void handleSubmit(e)}
-        className="flex flex-col gap-4"
-      >
+      <form onSubmit={(e) => void handleSubmit(e)} className="flex flex-col gap-4">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="email">Email</Label>
           <Input

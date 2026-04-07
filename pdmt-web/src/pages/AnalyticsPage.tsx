@@ -14,43 +14,13 @@ import {
 import { getWeeklySummary, getTrends } from "@/api/analytics";
 import type { WeeklySummaryDto, TrendPeriodDto } from "@/api/types";
 import { Button } from "@/components/ui/button";
-
-// --- Date utilities (UTC-based, same pattern as CalendarPage) ---
-
-function getMondayOf(d: Date): Date {
-  const utcDate = new Date(d.toISOString());
-  const day = utcDate.getUTCDay();
-  const diff = day === 0 ? -6 : 1 - day;
-  const monday = new Date(utcDate);
-  monday.setUTCDate(utcDate.getUTCDate() + diff);
-  monday.setUTCHours(0, 0, 0, 0);
-  return monday;
-}
-
-function addDays(d: Date, n: number): Date {
-  const result = new Date(d);
-  result.setUTCDate(d.getUTCDate() + n);
-  return result;
-}
-
-function toDateString(d: Date): string {
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`;
-}
-
-function formatShortDate(iso: string): string {
-  const d = new Date(iso);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${pad(d.getUTCDate())}.${pad(d.getUTCMonth() + 1)}`;
-}
-
-function formatWeekRange(iso: string): string {
-  const start = new Date(iso);
-  const end = new Date(start);
-  end.setUTCDate(start.getUTCDate() + 6);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${pad(start.getUTCDate())}.${pad(start.getUTCMonth() + 1)}–${pad(end.getUTCDate())}.${pad(end.getUTCMonth() + 1)}`;
-}
+import {
+  getMondayOf,
+  addDays,
+  toDateString,
+  formatWeekRange,
+  formatShortDate,
+} from "@/lib/dateUtils";
 
 // --- WeekSelector ---
 
@@ -61,29 +31,17 @@ interface WeekSelectorProps {
   onToday: () => void;
 }
 
-function WeekSelector({
-  weekRange,
-  onPrev,
-  onNext,
-  onToday,
-}: WeekSelectorProps) {
+function WeekSelector({ weekRange, onPrev, onNext, onToday }: WeekSelectorProps) {
   return (
     <div className="flex items-center gap-3">
       <Button variant="outline" size="sm" onClick={onPrev}>
         ‹ Пред.
       </Button>
-      <span className="text-sm font-medium text-slate-700 flex-1 text-center">
-        {weekRange}
-      </span>
+      <span className="text-sm font-medium text-slate-700 flex-1 text-center">{weekRange}</span>
       <Button variant="outline" size="sm" onClick={onNext}>
         След. ›
       </Button>
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={onToday}
-        className="text-slate-400 text-xs"
-      >
+      <Button variant="ghost" size="sm" onClick={onToday} className="text-slate-400 text-xs">
         Сегодня
       </Button>
     </div>
@@ -115,9 +73,7 @@ function StatCard({ label, count, avgIntensity, color }: StatCardProps) {
       </span>
       <span className="text-xs text-slate-500">
         ср. интенсивность:{" "}
-        <span
-          className={`font-medium ${isGreen ? "text-green-700" : "text-red-700"}`}
-        >
+        <span className={`font-medium ${isGreen ? "text-green-700" : "text-red-700"}`}>
           {avgIntensity.toFixed(1)}
         </span>
       </span>
@@ -144,9 +100,7 @@ function SummaryStatsSection({ summary }: { summary: WeeklySummaryDto }) {
       </div>
       <p className="text-xs text-slate-500 text-center">
         соотношение позитивных к негативным:{" "}
-        <span className="font-medium text-slate-700">
-          {summary.posToNegRatio.toFixed(2)}
-        </span>
+        <span className="font-medium text-slate-700">{summary.posToNegRatio.toFixed(2)}</span>
       </p>
     </div>
   );
@@ -162,14 +116,10 @@ function TopTagsSection({ summary }: { summary: WeeklySummaryDto }) {
 
   return (
     <div className="flex flex-col gap-2">
-      <h3 className="text-sm font-semibold text-slate-700">
-        Топ теги (по количеству)
-      </h3>
+      <h3 className="text-sm font-semibold text-slate-700">Топ теги (по количеству)</h3>
       {tags.map((tag) => (
         <div key={tag.tagName} className="flex items-center gap-2">
-          <span className="text-xs text-slate-600 w-24 truncate flex-shrink-0">
-            {tag.tagName}
-          </span>
+          <span className="text-xs text-slate-600 w-24 truncate flex-shrink-0">{tag.tagName}</span>
           <div
             className="flex-1 bg-slate-100 rounded-full h-2 overflow-hidden cursor-default"
             title={`${tag.count} событий`}
@@ -191,22 +141,17 @@ function TopTagsSection({ summary }: { summary: WeeklySummaryDto }) {
 // --- TopEventsSection ---
 
 function TopEventsSection({ summary }: { summary: WeeklySummaryDto }) {
-  if (summary.topPosEvents.length === 0 && summary.topNegEvents.length === 0)
-    return null;
+  if (summary.topPosEvents.length === 0 && summary.topNegEvents.length === 0) return null;
 
   return (
     <div className="flex flex-col gap-2">
-      <h3 className="text-sm font-semibold text-slate-700">
-        Топ события (по интенсивности)
-      </h3>
+      <h3 className="text-sm font-semibold text-slate-700">Топ события (по интенсивности)</h3>
       <div className="grid grid-cols-2 gap-3">
         <div className="flex flex-col gap-1.5">
           <span className="text-xs font-medium text-green-700">Позитивные</span>
           {summary.topPosEvents.map((ev, i) => (
             <div key={i} className="flex items-start gap-1.5 text-xs">
-              <span className="font-medium text-green-600 flex-shrink-0">
-                {ev.intensity}/10
-              </span>
+              <span className="font-medium text-green-600 flex-shrink-0">{ev.intensity}/10</span>
               <span className="text-slate-700 truncate">{ev.title ?? "—"}</span>
               <span className="text-slate-400 flex-shrink-0 ml-auto">
                 {formatShortDate(ev.date)}
@@ -218,9 +163,7 @@ function TopEventsSection({ summary }: { summary: WeeklySummaryDto }) {
           <span className="text-xs font-medium text-red-700">Негативные</span>
           {summary.topNegEvents.map((ev, i) => (
             <div key={i} className="flex items-start gap-1.5 text-xs">
-              <span className="font-medium text-red-600 flex-shrink-0">
-                {ev.intensity}/10
-              </span>
+              <span className="font-medium text-red-600 flex-shrink-0">{ev.intensity}/10</span>
               <span className="text-slate-700 truncate">{ev.title ?? "—"}</span>
               <span className="text-slate-400 flex-shrink-0 ml-auto">
                 {formatShortDate(ev.date)}
@@ -253,9 +196,7 @@ function DayOfWeekTooltip({
           }}
         >
           {entry.name}:{" "}
-          {entry.name === "Ср. интенсивность"
-            ? (entry.value as number).toFixed(1)
-            : entry.value}
+          {entry.name === "Ср. интенсивность" ? entry.value.toFixed(1) : entry.value}
         </div>
       ))}
     </div>
@@ -276,12 +217,7 @@ function DayOfWeekSection({ summary }: { summary: WeeklySummaryDto }) {
           <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
           <XAxis dataKey="day" tick={{ fontSize: 11 }} />
           <YAxis yAxisId="left" allowDecimals={false} tick={{ fontSize: 11 }} />
-          <YAxis
-            yAxisId="right"
-            orientation="right"
-            domain={[0, 10]}
-            tick={{ fontSize: 11 }}
-          />
+          <YAxis yAxisId="right" orientation="right" domain={[0, 10]} tick={{ fontSize: 11 }} />
           <Tooltip content={<DayOfWeekTooltip />} />
           <Legend wrapperStyle={{ fontSize: 12 }} />
           <Bar
@@ -319,9 +255,7 @@ function TrendChartSection({ trends }: { trends: TrendPeriodDto[] }) {
   if (trends.length === 0) {
     return (
       <div className="flex flex-col gap-2">
-        <h3 className="text-sm font-semibold text-slate-700">
-          Тренд (8 недель)
-        </h3>
+        <h3 className="text-sm font-semibold text-slate-700">Тренд (8 недель)</h3>
         <p className="text-sm text-slate-400">Нет данных за период.</p>
       </div>
     );
@@ -337,27 +271,14 @@ function TrendChartSection({ trends }: { trends: TrendPeriodDto[] }) {
     <div className="flex flex-col gap-2">
       <h3 className="text-sm font-semibold text-slate-700">Тренд (8 недель)</h3>
       <ResponsiveContainer width="100%" height={220}>
-        <BarChart
-          data={data}
-          margin={{ top: 4, right: 8, left: -16, bottom: 0 }}
-        >
+        <BarChart data={data} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
           <XAxis dataKey="week" tick={{ fontSize: 11 }} />
           <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
           <Tooltip />
           <Legend wrapperStyle={{ fontSize: 12 }} />
-          <Bar
-            dataKey="posCount"
-            name="Позитивных"
-            fill="#4ade80"
-            radius={[2, 2, 0, 0]}
-          />
-          <Bar
-            dataKey="negCount"
-            name="Негативных"
-            fill="#f87171"
-            radius={[2, 2, 0, 0]}
-          />
+          <Bar dataKey="posCount" name="Позитивных" fill="#4ade80" radius={[2, 2, 0, 0]} />
+          <Bar dataKey="negCount" name="Негативных" fill="#f87171" radius={[2, 2, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
     </div>
