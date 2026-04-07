@@ -22,7 +22,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await apiLogout().catch(() => {});
     tokenRef.current = null;
     setAccessTokenState(null);
-    await navigate("/login", { replace: true });
+    void navigate("/login", { replace: true });
   }, [navigate]);
 
   // Wire up api/client.ts with token getter and callbacks (runs once on mount).
