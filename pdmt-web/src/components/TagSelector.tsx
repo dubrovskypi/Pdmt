@@ -114,7 +114,7 @@ export function TagSelector({
                 }}
                 className="w-full text-left px-3 py-1.5 text-sm text-slate-500 hover:bg-slate-100 border-t"
               >
-                Скуфеу «{input.trim()}»
+                Создать «{input.trim()}»
               </button>
             )}
         </div>

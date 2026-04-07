@@ -2,7 +2,7 @@ import { useState, useCallback, useMemo } from "react";
 import { EventType } from "@/api/types";
 import type { EventResponseDto, TagResponseDto } from "@/api/types";
 import { deleteEvent } from "@/api/events";
-import { useEventList, type TypeFilter } from "./useEventList";
+import { useEventList, type TypeFilter } from "@/hooks/useEventList";
 import { EventForm } from "@/components/EventForm";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -23,10 +23,7 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 
-type ModalState =
-  | { mode: "add" }
-  | { mode: "edit"; event: EventResponseDto }
-  | null;
+type ModalState = { mode: "add" } | { mode: "edit"; event: EventResponseDto } | null;
 
 function formatTimestamp(iso: string): string {
   const d = new Date(iso);
@@ -134,7 +131,7 @@ function TagFilterPills({ allTags, activeTagIds, onToggle }: TagFilterPillsProps
             "px-2.5 py-0.5 rounded-full text-xs border transition-colors",
             activeTagIds.includes(tag.id)
               ? "bg-slate-800 text-white border-slate-800"
-              : "bg-white text-slate-600 border-slate-300 hover:bg-slate-100"
+              : "bg-white text-slate-600 border-slate-300 hover:bg-slate-100",
           )}
         >
           {tag.name}
@@ -161,14 +158,14 @@ function EventCard({ event, onEdit, onDelete }: EventCardProps) {
         "flex gap-3 p-3 rounded-lg border text-sm",
         event.type === EventType.Positive
           ? "border-green-200 bg-green-50"
-          : "border-red-200 bg-red-50"
+          : "border-red-200 bg-red-50",
       )}
     >
       {/* Left: type indicator */}
       <div
         className={cn(
           "mt-0.5 w-1 rounded-full flex-shrink-0",
-          event.type === EventType.Positive ? "bg-green-400" : "bg-red-400"
+          event.type === EventType.Positive ? "bg-green-400" : "bg-red-400",
         )}
       />
 
@@ -185,7 +182,7 @@ function EventCard({ event, onEdit, onDelete }: EventCardProps) {
           <span
             className={cn(
               "font-medium",
-              event.type === EventType.Positive ? "text-green-700" : "text-red-700"
+              event.type === EventType.Positive ? "text-green-700" : "text-red-700",
             )}
           >
             {event.intensity}/10
@@ -270,8 +267,9 @@ export function EventListPage() {
   }, [confirmDelete, refresh]);
 
   const sortedEvents = useMemo(
-    () => [...events].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()),
-    [events]
+    () =>
+      [...events].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()),
+    [events],
   );
 
   return (
@@ -325,9 +323,7 @@ export function EventListPage() {
               {modal?.mode === "edit" ? "Редактировать событие" : "Новое событие"}
             </DialogTitle>
             <DialogDescription>
-              {modal?.mode === "edit"
-                ? "Обновите информацию о событии"
-                : "Добавьте новое событие"}
+              {modal?.mode === "edit" ? "Обновите информацию о событии" : "Добавьте новое событие"}
             </DialogDescription>
           </DialogHeader>
           {modal && (

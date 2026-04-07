@@ -37,10 +37,7 @@ export function LoginPage() {
   return (
     <div className="max-w-sm mx-auto mt-24 flex flex-col gap-5">
       <h1 className="text-2xl font-bold text-slate-900">Pdmt</h1>
-      <form
-        onSubmit={(e) => void handleSubmit(e)}
-        className="flex flex-col gap-4"
-      >
+      <form onSubmit={(e) => void handleSubmit(e)} className="flex flex-col gap-4">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="email">Email</Label>
           <Input

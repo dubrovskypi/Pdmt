@@ -4,50 +4,15 @@ import { getEvents } from "@/api/events";
 import type { CalendarDayDetailsDto, EventResponseDto } from "@/api/types";
 import { EventType } from "@/api/types";
 import { Button } from "@/components/ui/button";
-
-const DAY_NAMES = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
-
-// --- Date utilities ---
-
-function getMondayOf(d: Date): Date {
-  const utcDate = new Date(d.toISOString());
-  const day = utcDate.getUTCDay();
-  const diff = day === 0 ? -6 : 1 - day;
-  const monday = new Date(utcDate);
-  monday.setUTCDate(utcDate.getUTCDate() + diff);
-  monday.setUTCHours(0, 0, 0, 0);
-  return monday;
-}
-
-function addDays(d: Date, n: number): Date {
-  const result = new Date(d);
-  result.setUTCDate(d.getUTCDate() + n);
-  return result;
-}
-
-function toDateString(d: Date): string {
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`;
-}
-
-function formatDayDisplay(iso: string) {
-  const d = new Date(iso);
-  const dayIndex = (d.getUTCDay() + 6) % 7;
-  return {
-    day: String(d.getUTCDate()),
-    dayName: DAY_NAMES[dayIndex],
-  };
-}
+import { getMondayOf, addDays, toDateString, formatDayDisplay } from "@/lib/dateUtils";
 
 // --- Score display ---
 
 type ScoreData = { color: string; dot: string; label: string };
 
 function getScoreData(score: number): ScoreData {
-  if (score > 1)
-    return { color: "text-green-600", dot: "bg-green-400", label: "pos" };
-  if (score < -1)
-    return { color: "text-red-600", dot: "bg-red-400", label: "neg" };
+  if (score > 1) return { color: "text-green-600", dot: "bg-green-400", label: "pos" };
+  if (score < -1) return { color: "text-red-600", dot: "bg-red-400", label: "neg" };
   return { color: "text-amber-500", dot: "bg-amber-400", label: "even" };
 }
 
@@ -61,25 +26,13 @@ interface DayCardProps {
   onToggle: () => void;
 }
 
-function DayCard({
-  day,
-  maxIntensitySum,
-  expanded,
-  events,
-  onToggle,
-}: DayCardProps) {
+function DayCard({ day, maxIntensitySum, expanded, events, onToggle }: DayCardProps) {
   const { dayName, day: dayNum } = formatDayDisplay(day.date);
   const scoreData = getScoreData(day.dayScore);
 
   const half = maxIntensitySum > 0 ? 50 : 0;
-  const posWidth =
-    maxIntensitySum > 0
-      ? (day.positiveIntensitySum / maxIntensitySum) * half
-      : 0;
-  const negWidth =
-    maxIntensitySum > 0
-      ? (day.negativeIntensitySum / maxIntensitySum) * half
-      : 0;
+  const posWidth = maxIntensitySum > 0 ? (day.positiveIntensitySum / maxIntensitySum) * half : 0;
+  const negWidth = maxIntensitySum > 0 ? (day.negativeIntensitySum / maxIntensitySum) * half : 0;
 
   const isEmpty = day.posCount === 0 && day.negCount === 0;
 
@@ -93,9 +46,7 @@ function DayCard({
         {/* Day label */}
         <div className="w-10 flex-shrink-0 text-center">
           <div className="text-xs text-slate-400 font-medium">{dayName}</div>
-          <div className="text-lg font-bold text-slate-800 leading-tight">
-            {dayNum}
-          </div>
+          <div className="text-lg font-bold text-slate-800 leading-tight">{dayNum}</div>
         </div>
 
         {/* Histogram */}
@@ -118,9 +69,7 @@ function DayCard({
           <div className="flex items-center h-5">
             <div className="w-1/2 flex justify-end items-center gap-1 pr-0.5">
               {day.posCount > 0 && (
-                <span className="text-xs text-green-600 font-medium">
-                  {day.posCount}
-                </span>
+                <span className="text-xs text-green-600 font-medium">{day.posCount}</span>
               )}
               <div
                 className="h-3 rounded-l-sm bg-green-400 transition-all"
@@ -136,9 +85,7 @@ function DayCard({
                 style={{ width: `${negWidth}%` }}
               />
               {day.negCount > 0 && (
-                <span className="text-xs text-red-600 font-medium">
-                  {day.negCount}
-                </span>
+                <span className="text-xs text-red-600 font-medium">{day.negCount}</span>
               )}
             </div>
           </div>
@@ -157,11 +104,7 @@ function DayCard({
             </div>
           )}
 
-          {isEmpty && (
-            <div className="text-xs text-slate-300 text-center">
-              нет событий
-            </div>
-          )}
+          {isEmpty && <div className="text-xs text-slate-300 text-center">нет событий</div>}
         </div>
 
         {/* Day score */}
@@ -181,9 +124,7 @@ function DayCard({
             <div key={ev.id} className="flex items-start gap-2 text-xs">
               <span
                 className={`mt-0.5 font-medium ${
-                  ev.type === EventType.Positive
-                    ? "text-green-600"
-                    : "text-red-600"
+                  ev.type === EventType.Positive ? "text-green-600" : "text-red-600"
                 }`}
               >
                 {ev.intensity}/10
@@ -196,9 +137,7 @@ function DayCard({
                   </span>
                 )}
                 {ev.description && (
-                  <p className="text-slate-500 mt-0.5 line-clamp-1">
-                    {ev.description}
-                  </p>
+                  <p className="text-slate-500 mt-0.5 line-clamp-1">{ev.description}</p>
                 )}
               </div>
               <span className="text-slate-400 flex-shrink-0">
@@ -212,9 +151,7 @@ function DayCard({
         </div>
       )}
       {expanded && events.length === 0 && (
-        <div className="border-t px-3 py-2 text-xs text-slate-400 bg-slate-50">
-          Нет событий
-        </div>
+        <div className="border-t px-3 py-2 text-xs text-slate-400 bg-slate-50">Нет событий</div>
       )}
     </button>
   );
@@ -225,9 +162,7 @@ function DayCard({
 export function CalendarPage() {
   const [weekDate, setWeekDate] = useState<Date>(new Date());
   const [calendarWeek, setCalendarWeek] = useState<CalendarDayDetailsDto[]>([]);
-  const [dayEvents, setDayEvents] = useState<
-    Record<string, EventResponseDto[]>
-  >({});
+  const [dayEvents, setDayEvents] = useState<Record<string, EventResponseDto[]>>({});
   const [expandedDay, setExpandedDay] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -268,29 +203,24 @@ export function CalendarPage() {
   const monday = getMondayOf(weekDate);
 
   // Build full week with API data or empty days
-  const filledWeek: CalendarDayDetailsDto[] = Array.from(
-    { length: 7 },
-    (_, i) => {
-      const dayDate = addDays(monday, i);
-      const dateStr = toDateString(dayDate);
-      const found = calendarWeek.find(
-        (d) => toDateString(new Date(d.date)) === dateStr,
-      );
+  const filledWeek: CalendarDayDetailsDto[] = Array.from({ length: 7 }, (_, i) => {
+    const dayDate = addDays(monday, i);
+    const dateStr = toDateString(dayDate);
+    const found = calendarWeek.find((d) => toDateString(new Date(d.date)) === dateStr);
 
-      return (
-        found || {
-          date: dateStr,
-          posCount: 0,
-          negCount: 0,
-          positiveIntensitySum: 0,
-          negativeIntensitySum: 0,
-          dayScore: 0,
-          topPositiveTags: [],
-          topNegativeTags: [],
-        }
-      );
-    },
-  );
+    return (
+      found || {
+        date: dateStr,
+        posCount: 0,
+        negCount: 0,
+        positiveIntensitySum: 0,
+        negativeIntensitySum: 0,
+        dayScore: 0,
+        topPositiveTags: [],
+        topNegativeTags: [],
+      }
+    );
+  });
 
   const weekRange = `${monday.toLocaleDateString("ru-RU", { day: "numeric", month: "short" })} — ${addDays(monday, 6).toLocaleDateString("ru-RU", { day: "numeric", month: "short" })}`;
 
@@ -298,21 +228,11 @@ export function CalendarPage() {
     <div className="flex flex-col gap-4">
       {/* Navigation */}
       <div className="flex items-center gap-3">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setWeekDate((d) => addDays(d, -7))}
-        >
+        <Button variant="outline" size="sm" onClick={() => setWeekDate((d) => addDays(d, -7))}>
           ‹ Пред.
         </Button>
-        <span className="text-sm font-medium text-slate-700 flex-1 text-center">
-          {weekRange}
-        </span>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setWeekDate((d) => addDays(d, 7))}
-        >
+        <span className="text-sm font-medium text-slate-700 flex-1 text-center">{weekRange}</span>
+        <Button variant="outline" size="sm" onClick={() => setWeekDate((d) => addDays(d, 7))}>
           След. ›
         </Button>
         <Button
