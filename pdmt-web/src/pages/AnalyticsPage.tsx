@@ -196,7 +196,7 @@ function DayOfWeekTooltip({
           }}
         >
           {entry.name}:{" "}
-          {entry.name === "Ср. интенсивность" ? (entry.value as number).toFixed(1) : entry.value}
+          {entry.name === "Ср. интенсивность" ? entry.value.toFixed(1) : entry.value}
         </div>
       ))}
     </div>

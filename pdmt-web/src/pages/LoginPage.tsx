@@ -15,7 +15,7 @@ export function LoginPage() {
   const navigate = useNavigate();
 
   if (isAuthenticated) {
-    navigate("/events", { replace: true });
+    void navigate("/events", { replace: true });
     return null;
   }
 
@@ -26,7 +26,7 @@ export function LoginPage() {
     try {
       const result = await login(email, password);
       setAccessToken(result.accessToken);
-      navigate("/events", { replace: true });
+      await navigate("/events", { replace: true });
     } catch {
       setError("Неверный email или пароль.");
     } finally {

@@ -5,7 +5,7 @@ export interface AuthContextValue {
   isAuthenticated: boolean;
   isLoading: boolean; // true while restoring session on page load
   setAccessToken: (token: string) => void;
-  clearAuth: () => void;
+  clearAuth: () => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextValue | null>(null);

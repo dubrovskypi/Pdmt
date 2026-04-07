@@ -16,7 +16,7 @@ export function RegisterPage() {
   const navigate = useNavigate();
 
   if (isAuthenticated) {
-    navigate("/events", { replace: true });
+    void navigate("/events", { replace: true });
     return null;
   }
 
@@ -31,7 +31,7 @@ export function RegisterPage() {
     try {
       const result = await register(email, password);
       setAccessToken(result.accessToken);
-      navigate("/events", { replace: true });
+      await navigate("/events", { replace: true });
     } catch {
       setError("Не удалось зарегистрироваться. Возможно, email уже занят.");
     } finally {
