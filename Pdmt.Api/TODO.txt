@@ -11,12 +11,5 @@
 		Request size limits
 		Query complexity control
 		Timeouts and cancellation tokens
-
-	ASP.NET Core:
 		built-in rate limiting middleware
-		request body size limits
-		cancellation via HttpContext.RequestAborted
-
-Continue from 7th 
-       
-TLS everywhere in Auth
+		TLS everywhere in Auth
