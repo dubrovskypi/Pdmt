@@ -159,10 +159,6 @@ GET /api/analytics/calendar/week?weekOf=2026-03-23
     - topPositiveTags: [{name, count}] (top 2 by frequency)
     - topNegativeTags: [{name, count}] (top 2 by frequency)
 
-GET /api/analytics/calendar/month?month=2026-03
-  Returns:
-  - days: [{date, positiveCount, negativeCount, dayScore}]
-  (lighter payload for month grid — Phase 4)
 ```
 
 **Implementation**: All queries are EF Core LINQ with `GroupBy`. No raw SQL unless performance requires it. Consider caching weekly summaries (Redis) if queries become slow on large datasets.
@@ -213,12 +209,6 @@ The formula captures both volume and weight of events, giving a more honest pict
 **Navigation**: Previous/Next week buttons. Week starts on Monday.
 
 **Implementation order**: Blazor first (test UI), then MAUI (primary use), then React.
-
-**Monthly calendar view**: deferred to Phase 4. Simpler grid (colored cells only, no histograms), uses the lighter `GET /api/analytics/calendar/month` endpoint. Only useful when there are several months of accumulated data.
-Ideas for monthly UI (discuss and implement later):
-- Monthly grid, each day colored by dominant mood (green → yellow → red gradient)
-- Tap day → see events for that day
-- Swipe between months
 
 ### 3.3 Correlation insights (carousel)
 
@@ -600,6 +590,14 @@ Vite config proxies `/api/*` to the backend to avoid CORS during development.
 - Periodic analysis of patterns: "this week had significantly more 'ссора' events than usual"
 - Anomaly detection on intensity trends
 - Could use local LLM or API call — evaluate when the time comes
+
+### 4.6 Monthly calendar view
+**API**: `GET /api/analytics/calendar/month?month=2026-03` — already implemented. Returns `days: [{date, positiveCount, negativeCount, dayScore}]`.
+
+**UI** (React + MAUI): Simpler grid than the weekly view — colored cells only, no histograms. Only useful once several months of data have accumulated.
+- Monthly grid, each day colored by dominant mood (green → yellow → red gradient based on dayScore)
+- Tap/click day → see events for that day
+- Swipe or prev/next buttons to navigate between months
 
 ---
 
