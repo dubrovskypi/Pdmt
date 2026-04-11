@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { isAbortError } from "@/lib/utils";
 import { EventType } from "@/api/types";
 import type { EventResponseDto, TagResponseDto } from "@/api/types";
 import { getEvents } from "@/api/events";
@@ -44,17 +45,18 @@ export function useEventList(): UseEventListReturn {
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
   const [tagIds, setTagIds] = useState<string[]>([]);
 
-  const loadTags = useCallback(async () => {
+  const loadTags = useCallback(async (signal?: AbortSignal) => {
     try {
-      const tags = await getTags();
+      const tags = await getTags(signal);
       setAllTags(tags);
     } catch (err) {
+      if (isAbortError(err)) return;
       setError("Не удалось загрузить теги.");
       console.error("Failed to load tags:", err);
     }
   }, []);
 
-  const loadEvents = useCallback(async () => {
+  const loadEvents = useCallback(async (signal?: AbortSignal) => {
     setLoading(true);
     setError(null);
     try {
@@ -69,9 +71,10 @@ export function useEventList(): UseEventListReturn {
               : undefined,
         tags: tagIds.length > 0 ? tagIds.join(",") : undefined,
       };
-      const evts = await getEvents(filters);
+      const evts = await getEvents(filters, signal);
       setEvents(evts);
     } catch (err) {
+      if (isAbortError(err)) return;
       setError("Не удалось загрузить события.");
       console.error("Failed to load events:", err);
     } finally {
@@ -81,12 +84,16 @@ export function useEventList(): UseEventListReturn {
 
   // Load tags once on mount
   useEffect(() => {
-    void loadTags();
+    const controller = new AbortController();
+    void loadTags(controller.signal);
+    return () => controller.abort();
   }, [loadTags]);
 
   // Load events when filters change
   useEffect(() => {
-    void loadEvents();
+    const controller = new AbortController();
+    void loadEvents(controller.signal);
+    return () => controller.abort();
   }, [loadEvents]);
 
   const toggleTag = useCallback((tagId: string) => {

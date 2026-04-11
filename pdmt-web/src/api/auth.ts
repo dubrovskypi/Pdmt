@@ -2,10 +2,7 @@ import { apiFetch } from "./client";
 import { config } from "@/config";
 import type { WebAuthResultDto } from "./types";
 
-export async function login(
-  email: string,
-  password: string,
-): Promise<WebAuthResultDto> {
+export async function login(email: string, password: string): Promise<WebAuthResultDto> {
   const res = await fetch(`${config.pdmtapi.baseUrl}/api/auth/web/login`, {
     method: "POST",
     credentials: "include",
@@ -16,10 +13,7 @@ export async function login(
   return res.json() as Promise<WebAuthResultDto>;
 }
 
-export async function register(
-  email: string,
-  password: string,
-): Promise<WebAuthResultDto> {
+export async function register(email: string, password: string): Promise<WebAuthResultDto> {
   const res = await fetch(`${config.pdmtapi.baseUrl}/api/auth/web/register`, {
     method: "POST",
     credentials: "include",

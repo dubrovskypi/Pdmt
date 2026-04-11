@@ -5,6 +5,7 @@ import type { CalendarDayDetailsDto, EventResponseDto } from "@/api/types";
 import { EventType } from "@/api/types";
 import { Button } from "@/components/ui/button";
 import { getMondayOf, addDays, toDateString, formatDayDisplay } from "@/lib/dateUtils";
+import { isAbortError } from "@/lib/utils";
 
 // --- Score display ---
 
@@ -165,16 +166,28 @@ export function CalendarPage() {
   const [dayEvents, setDayEvents] = useState<Record<string, EventResponseDto[]>>({});
   const [expandedDay, setExpandedDay] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    const controller = new AbortController();
+
     void (async () => {
       setLoading(true);
+      setError(null);
       setExpandedDay(null);
       setDayEvents({});
-      const week = await getCalendarWeek(toDateString(weekDate));
-      setCalendarWeek(week.days);
-      setLoading(false);
+      try {
+        const week = await getCalendarWeek(toDateString(weekDate), controller.signal);
+        setCalendarWeek(week.days);
+      } catch (err) {
+        if (isAbortError(err)) return;
+        setError("Не удалось загрузить данные календаря.");
+      } finally {
+        setLoading(false);
+      }
     })();
+
+    return () => controller.abort();
   }, [weekDate]);
 
   async function handleToggleDay(date: string) {
@@ -246,6 +259,11 @@ export function CalendarPage() {
       </div>
 
       {/* Calendar */}
+      {error && (
+        <p className="text-sm text-red-500 bg-red-50 border border-red-200 rounded px-3 py-2">
+          {error}
+        </p>
+      )}
       {loading ? (
         <p className="text-sm text-slate-400">Загрузка…</p>
       ) : (

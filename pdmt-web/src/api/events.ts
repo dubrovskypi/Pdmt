@@ -16,24 +16,23 @@ function buildQuery(filters: EventFilters): string {
   if (filters.to) q.set("to", filters.to);
   if (filters.type !== undefined) q.set("type", String(filters.type));
   if (filters.tags) q.set("tags", filters.tags);
-  if (filters.minIntensity !== undefined)
-    q.set("minIntensity", String(filters.minIntensity));
-  if (filters.maxIntensity !== undefined)
-    q.set("maxIntensity", String(filters.maxIntensity));
+  if (filters.minIntensity !== undefined) q.set("minIntensity", String(filters.minIntensity));
+  if (filters.maxIntensity !== undefined) q.set("maxIntensity", String(filters.maxIntensity));
   const s = q.toString();
   return s ? `/api/events?${s}` : "/api/events";
 }
 
-export const getEvents = (filters: EventFilters = {}) =>
-  apiGet<EventResponseDto[]>(buildQuery(filters));
+export const getEvents = (filters: EventFilters = {}, signal?: AbortSignal) =>
+  apiGet<EventResponseDto[]>(buildQuery(filters), signal);
 
-export const getEventById = (id: string) =>
-  apiGet<EventResponseDto>(`/api/events/${id}`);
+export const getEventById = (id: string, signal?: AbortSignal) =>
+  apiGet<EventResponseDto>(`/api/events/${id}`, signal);
 
-export const createEvent = (dto: CreateEventDto) =>
-  apiPost<EventResponseDto>("/api/events", dto);
+export const createEvent = (dto: CreateEventDto, signal?: AbortSignal) =>
+  apiPost<EventResponseDto>("/api/events", dto, signal);
 
-export const updateEvent = (id: string, dto: UpdateEventDto) =>
-  apiPut(`/api/events/${id}`, dto);
+export const updateEvent = (id: string, dto: UpdateEventDto, signal?: AbortSignal) =>
+  apiPut(`/api/events/${id}`, dto, signal);
 
-export const deleteEvent = (id: string) => apiDelete(`/api/events/${id}`);
+export const deleteEvent = (id: string, signal?: AbortSignal) =>
+  apiDelete(`/api/events/${id}`, signal);

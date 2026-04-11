@@ -21,6 +21,7 @@ import {
   formatWeekRange,
   formatShortDate,
 } from "@/lib/dateUtils";
+import { isAbortError } from "@/lib/utils";
 
 // --- WeekSelector ---
 
@@ -195,8 +196,7 @@ function DayOfWeekTooltip({
             color: entry.name === "Ср. интенсивность" ? "#94a3b8" : "#666",
           }}
         >
-          {entry.name}:{" "}
-          {entry.name === "Ср. интенсивность" ? entry.value.toFixed(1) : entry.value}
+          {entry.name}: {entry.name === "Ср. интенсивность" ? entry.value.toFixed(1) : entry.value}
         </div>
       ))}
     </div>
@@ -299,28 +299,35 @@ export function AnalyticsPage() {
   const weekRange = `${monday.toLocaleDateString("ru-RU", { day: "numeric", month: "short" })} — ${sunday.toLocaleDateString("ru-RU", { day: "numeric", month: "short" })}`;
 
   useEffect(() => {
+    const controller = new AbortController();
+    const mon = getMondayOf(weekDate);
+    const sun = addDays(mon, 6);
+
     void (async () => {
       setLoading(true);
       setError(null);
       try {
-        const weekOf = toDateString(monday);
-        const trendsFrom = addDays(monday, -7 * 7); // 8 weeks back (7 prior + current)
-        const trendsTo = sunday;
+        const weekOf = toDateString(mon);
+        const trendsFrom = addDays(mon, -7 * 7); // 8 weeks back (7 prior + current)
+        const trendsTo = sun;
 
         const [summaryData, trendsData] = await Promise.all([
-          getWeeklySummary(weekOf),
-          getTrends(trendsFrom.toISOString(), trendsTo.toISOString()),
+          getWeeklySummary(weekOf, controller.signal),
+          getTrends(trendsFrom.toISOString(), trendsTo.toISOString(), controller.signal),
         ]);
 
         setSummary(summaryData);
         setTrends(trendsData);
-      } catch {
+      } catch (err) {
+        if (isAbortError(err)) return;
         setError("Не удалось загрузить данные аналитики.");
       } finally {
         setLoading(false);
       }
     })();
-  }, [weekDate]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    return () => controller.abort();
+  }, [weekDate]);
 
   return (
     <div className="flex flex-col gap-5">

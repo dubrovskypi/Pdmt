@@ -23,6 +23,7 @@ import type {
 } from "@/api/types";
 import { Button } from "@/components/ui/button";
 import { getMondayOf, toDateString, formatWeekRange } from "@/lib/dateUtils";
+import { isAbortError } from "@/lib/utils";
 
 // --- Types ---
 
@@ -207,17 +208,20 @@ function Card1Triggers({ range, isActive }: { range: PeriodRange; isActive: bool
   }, [isActive]);
   useEffect(() => {
     if (!shouldLoad) return;
+    const controller = new AbortController();
     void (async () => {
       setLoading(true);
       setError(null);
       try {
-        setData(await getWeeklySummary(range.weekOf));
-      } catch {
+        setData(await getWeeklySummary(range.weekOf, controller.signal));
+      } catch (err) {
+        if (isAbortError(err)) return;
         setError("Не удалось загрузить данные.");
       } finally {
         setLoading(false);
       }
     })();
+    return () => controller.abort();
   }, [shouldLoad, range.weekOf]);
 
   const tags = data?.topTags ?? [];
@@ -266,17 +270,20 @@ function Card2Repeating({ range, isActive }: { range: PeriodRange; isActive: boo
   }, [isActive]);
   useEffect(() => {
     if (!shouldLoad) return;
+    const controller = new AbortController();
     void (async () => {
       setLoading(true);
       setError(null);
       try {
-        setData(await getRepeatingTriggers(range.from, range.to));
-      } catch {
+        setData(await getRepeatingTriggers(range.from, range.to, undefined, controller.signal));
+      } catch (err) {
+        if (isAbortError(err)) return;
         setError("Не удалось загрузить данные.");
       } finally {
         setLoading(false);
       }
     })();
+    return () => controller.abort();
   }, [shouldLoad, range.from, range.to]);
 
   const max = Math.max(...data.map((t) => t.count), 1);
@@ -323,17 +330,20 @@ function Card3Balance({ range, isActive }: { range: PeriodRange; isActive: boole
   }, [isActive]);
   useEffect(() => {
     if (!shouldLoad) return;
+    const controller = new AbortController();
     void (async () => {
       setLoading(true);
       setError(null);
       try {
-        setData(await getWeeklySummary(range.weekOf));
-      } catch {
+        setData(await getWeeklySummary(range.weekOf, controller.signal));
+      } catch (err) {
+        if (isAbortError(err)) return;
         setError("Не удалось загрузить данные.");
       } finally {
         setLoading(false);
       }
     })();
+    return () => controller.abort();
   }, [shouldLoad, range.weekOf]);
 
   return (
@@ -413,17 +423,20 @@ function Card4Trend({ range, isActive }: { range: PeriodRange; isActive: boolean
   }, [isActive]);
   useEffect(() => {
     if (!shouldLoad) return;
+    const controller = new AbortController();
     void (async () => {
       setLoading(true);
       setError(null);
       try {
-        setData(await getTrends(range.from, range.to));
-      } catch {
+        setData(await getTrends(range.from, range.to, controller.signal));
+      } catch (err) {
+        if (isAbortError(err)) return;
         setError("Не удалось загрузить данные.");
       } finally {
         setLoading(false);
       }
     })();
+    return () => controller.abort();
   }, [shouldLoad, range.from, range.to]);
 
   const chartData = data.map((t) => ({
@@ -472,17 +485,20 @@ function Card5BlindSpot({ range, isActive }: { range: PeriodRange; isActive: boo
   }, [isActive]);
   useEffect(() => {
     if (!shouldLoad) return;
+    const controller = new AbortController();
     void (async () => {
       setLoading(true);
       setError(null);
       try {
-        setData(await getDiscountedPositives(range.from, range.to));
-      } catch {
+        setData(await getDiscountedPositives(range.from, range.to, controller.signal));
+      } catch (err) {
+        if (isAbortError(err)) return;
         setError("Не удалось загрузить данные.");
       } finally {
         setLoading(false);
       }
     })();
+    return () => controller.abort();
   }, [shouldLoad, range.from, range.to]);
 
   const max = Math.max(...data.map((t) => t.count), 1);
@@ -529,17 +545,20 @@ function Card6DayOfWeek({ range, isActive }: { range: PeriodRange; isActive: boo
   }, [isActive]);
   useEffect(() => {
     if (!shouldLoad) return;
+    const controller = new AbortController();
     void (async () => {
       setLoading(true);
       setError(null);
       try {
-        setData(await getWeeklySummary(range.weekOf));
-      } catch {
+        setData(await getWeeklySummary(range.weekOf, controller.signal));
+      } catch (err) {
+        if (isAbortError(err)) return;
         setError("Не удалось загрузить данные.");
       } finally {
         setLoading(false);
       }
     })();
+    return () => controller.abort();
   }, [shouldLoad, range.weekOf]);
 
   const days = data?.byDayOfWeek ?? [];
@@ -588,20 +607,23 @@ function Card7NextDay({ range, isActive }: { range: PeriodRange; isActive: boole
   }, [isActive]);
   useEffect(() => {
     if (!shouldLoad) return;
+    const controller = new AbortController();
     void (async () => {
       setLoading(true);
       setError(null);
       try {
-        const result = await getNextDayEffects(range.from, range.to);
+        const result = await getNextDayEffects(range.from, range.to, controller.signal);
         setData(
           [...result].sort((a, b) => Math.abs(b.nextDayAvgScore) - Math.abs(a.nextDayAvgScore)),
         );
-      } catch {
+      } catch (err) {
+        if (isAbortError(err)) return;
         setError("Не удалось загрузить данные.");
       } finally {
         setLoading(false);
       }
     })();
+    return () => controller.abort();
   }, [shouldLoad, range.from, range.to]);
 
   const max = Math.max(...data.map((t) => Math.abs(t.nextDayAvgScore)), 1);
@@ -648,17 +670,20 @@ function Card8Combos({ range, isActive }: { range: PeriodRange; isActive: boolea
   }, [isActive]);
   useEffect(() => {
     if (!shouldLoad) return;
+    const controller = new AbortController();
     void (async () => {
       setLoading(true);
       setError(null);
       try {
-        setData(await getTagCombos(range.from, range.to));
-      } catch {
+        setData(await getTagCombos(range.from, range.to, controller.signal));
+      } catch (err) {
+        if (isAbortError(err)) return;
         setError("Не удалось загрузить данные.");
       } finally {
         setLoading(false);
       }
     })();
+    return () => controller.abort();
   }, [shouldLoad, range.from, range.to]);
 
   return (
@@ -731,13 +756,14 @@ function Card9TagTrend({ range, isActive }: { range: PeriodRange; isActive: bool
   }, [isActive]);
   useEffect(() => {
     if (!shouldLoad) return;
+    const controller = new AbortController();
     void (async () => {
       setLoading(true);
       setError(null);
       try {
         const [triggers, allTags] = await Promise.all([
-          getRepeatingTriggers(range.from, range.to),
-          getTags(),
+          getRepeatingTriggers(range.from, range.to, undefined, controller.signal),
+          getTags(controller.signal),
         ]);
         if (triggers.length === 0) {
           setTrend([]);
@@ -751,15 +777,17 @@ function Card9TagTrend({ range, isActive }: { range: PeriodRange; isActive: bool
           setTagName(top.tagName);
           return;
         }
-        const data = await getTagTrend(found.id, range.from, range.to);
+        const data = await getTagTrend(found.id, range.from, range.to, controller.signal);
         setTrend(data);
         setTagName(top.tagName);
-      } catch {
+      } catch (err) {
+        if (isAbortError(err)) return;
         setError("Не удалось загрузить данные.");
       } finally {
         setLoading(false);
       }
     })();
+    return () => controller.abort();
   }, [shouldLoad, range.from, range.to]);
 
   const chartData = trend.map((t) => ({
@@ -809,17 +837,20 @@ function Card10Influence({ range, isActive }: { range: PeriodRange; isActive: bo
   }, [isActive]);
   useEffect(() => {
     if (!shouldLoad) return;
+    const controller = new AbortController();
     void (async () => {
       setLoading(true);
       setError(null);
       try {
-        setData(await getInfluenceability(range.from, range.to));
-      } catch {
+        setData(await getInfluenceability(range.from, range.to, controller.signal));
+      } catch (err) {
+        if (isAbortError(err)) return;
         setError("Не удалось загрузить данные.");
       } finally {
         setLoading(false);
       }
     })();
+    return () => controller.abort();
   }, [shouldLoad, range.from, range.to]);
 
   const total = data ? data.canInfluenceCount + data.cannotInfluenceCount : 0;

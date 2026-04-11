@@ -17,8 +17,8 @@ function makeResponse(status: number, body?: unknown): Response {
 describe("apiFetch", () => {
   const fetchMock = vi.fn();
   let currentToken: string | null;
-  let setTokenFn: ReturnType<typeof vi.fn>;
-  let onLogoutFn: ReturnType<typeof vi.fn>;
+  let setTokenFn: (t: string) => void;
+  let onLogoutFn: () => void;
 
   beforeEach(() => {
     vi.stubGlobal("fetch", fetchMock);
@@ -27,11 +27,7 @@ describe("apiFetch", () => {
       currentToken = t;
     });
     onLogoutFn = vi.fn();
-    initApiClient(
-      () => currentToken,
-      setTokenFn,
-      onLogoutFn,
-    );
+    initApiClient(() => currentToken, setTokenFn, onLogoutFn);
   });
 
   afterEach(() => {
@@ -42,7 +38,7 @@ describe("apiFetch", () => {
   it("sets Content-Type: application/json on every request", async () => {
     fetchMock.mockResolvedValue(makeResponse(200));
     await apiFetch("/api/test");
-    const headers = fetchMock.mock.calls[0][1].headers as Headers;
+    const headers = (fetchMock.mock.calls[0][1] as RequestInit).headers as Headers;
     expect(headers.get("Content-Type")).toBe("application/json");
   });
 
@@ -50,14 +46,14 @@ describe("apiFetch", () => {
     currentToken = "my-token";
     fetchMock.mockResolvedValue(makeResponse(200));
     await apiFetch("/api/test");
-    const headers = fetchMock.mock.calls[0][1].headers as Headers;
+    const headers = (fetchMock.mock.calls[0][1] as RequestInit).headers as Headers;
     expect(headers.get("Authorization")).toBe("Bearer my-token");
   });
 
   it("omits Authorization header when no token", async () => {
     fetchMock.mockResolvedValue(makeResponse(200));
     await apiFetch("/api/test");
-    const headers = fetchMock.mock.calls[0][1].headers as Headers;
+    const headers = (fetchMock.mock.calls[0][1] as RequestInit).headers as Headers;
     expect(headers.get("Authorization")).toBeNull();
   });
 
@@ -94,9 +90,9 @@ describe("apiFetch", () => {
   it("retries with new token after successful refresh", async () => {
     const retryResponse = makeResponse(200);
     fetchMock
-      .mockResolvedValueOnce(makeResponse(401))                               // original request
-      .mockResolvedValueOnce(makeResponse(200, { accessToken: "new-tok" }))  // refresh
-      .mockResolvedValueOnce(retryResponse);                                  // retry
+      .mockResolvedValueOnce(makeResponse(401)) // original request
+      .mockResolvedValueOnce(makeResponse(200, { accessToken: "new-tok" })) // refresh
+      .mockResolvedValueOnce(retryResponse); // retry
 
     const result = await apiFetch("/api/events");
 
@@ -104,13 +100,13 @@ describe("apiFetch", () => {
     expect(currentToken).toBe("new-tok");
     expect(result).toBe(retryResponse);
 
-    const retryHeaders = fetchMock.mock.calls[2][1].headers as Headers;
+    const retryHeaders = (fetchMock.mock.calls[2][1] as RequestInit).headers as Headers;
     expect(retryHeaders.get("Authorization")).toBe("Bearer new-tok");
   });
 
   it("calls onLogout and returns 401 when refresh responds with non-ok", async () => {
     fetchMock
-      .mockResolvedValueOnce(makeResponse(401))  // original
+      .mockResolvedValueOnce(makeResponse(401)) // original
       .mockResolvedValueOnce(makeResponse(401)); // refresh fails
 
     const result = await apiFetch("/api/events");
@@ -154,9 +150,7 @@ describe("apiGet", () => {
 
   it("throws with path and status on non-ok response", async () => {
     fetchMock.mockResolvedValue(makeResponse(404));
-    await expect(apiGet("/api/events/missing")).rejects.toThrow(
-      "GET /api/events/missing → 404",
-    );
+    await expect(apiGet("/api/events/missing")).rejects.toThrow("GET /api/events/missing → 404");
   });
 });
 
@@ -178,13 +172,15 @@ describe("apiPost", () => {
   it("sends serialized JSON body", async () => {
     fetchMock.mockResolvedValue(makeResponse(200, { id: "new" }));
     await apiPost("/api/events", { title: "Test" });
-    expect(fetchMock.mock.calls[0][1].body).toBe(JSON.stringify({ title: "Test" }));
+    expect((fetchMock.mock.calls[0][1] as RequestInit).body).toBe(
+      JSON.stringify({ title: "Test" }),
+    );
   });
 
   it("sends no body when body argument is omitted", async () => {
     fetchMock.mockResolvedValue(makeResponse(200, {}));
     await apiPost("/api/events");
-    expect(fetchMock.mock.calls[0][1].body).toBeUndefined();
+    expect((fetchMock.mock.calls[0][1] as RequestInit).body).toBeUndefined();
   });
 
   it("returns undefined on 204 No Content without reading body", async () => {
@@ -245,8 +241,6 @@ describe("apiDelete", () => {
 
   it("throws with path and status on non-ok response", async () => {
     fetchMock.mockResolvedValue(makeResponse(404));
-    await expect(apiDelete("/api/events/1")).rejects.toThrow(
-      "DELETE /api/events/1 → 404",
-    );
+    await expect(apiDelete("/api/events/1")).rejects.toThrow("DELETE /api/events/1 → 404");
   });
 });
