@@ -21,7 +21,7 @@ import {
   formatWeekRange,
   formatShortDate,
 } from "@/lib/dateUtils";
-import { isAbortError } from "@/lib/utils";
+import { isAbortError, getErrorMessage } from "@/lib/utils";
 
 // --- WeekSelector ---
 
@@ -318,9 +318,10 @@ export function AnalyticsPage() {
 
         setSummary(summaryData);
         setTrends(trendsData);
-      } catch (err) {
+      } catch (err: unknown) {
         if (isAbortError(err)) return;
-        setError("Не удалось загрузить данные аналитики.");
+        setError(getErrorMessage(err));
+        console.error(err);
       } finally {
         setLoading(false);
       }

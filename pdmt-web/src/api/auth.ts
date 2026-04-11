@@ -1,6 +1,7 @@
 import { apiFetch } from "./client";
 import { config } from "@/config";
 import type { WebAuthResultDto } from "./types";
+import { WebAuthResultSchema } from "./schemas";
 
 export async function login(email: string, password: string): Promise<WebAuthResultDto> {
   const res = await fetch(`${config.pdmtapi.baseUrl}/api/auth/web/login`, {
@@ -10,7 +11,7 @@ export async function login(email: string, password: string): Promise<WebAuthRes
     body: JSON.stringify({ email, password }),
   });
   if (!res.ok) throw new Error(`Login failed: ${res.status}`);
-  return res.json() as Promise<WebAuthResultDto>;
+  return WebAuthResultSchema.parse(await res.json()) as WebAuthResultDto;
 }
 
 export async function register(email: string, password: string): Promise<WebAuthResultDto> {
@@ -21,7 +22,7 @@ export async function register(email: string, password: string): Promise<WebAuth
     body: JSON.stringify({ email, password }),
   });
   if (!res.ok) throw new Error(`Register failed: ${res.status}`);
-  return res.json() as Promise<WebAuthResultDto>;
+  return WebAuthResultSchema.parse(await res.json()) as WebAuthResultDto;
 }
 
 // Called on page load to silently restore session from httpOnly cookie.
@@ -32,7 +33,7 @@ export async function refreshSilent(): Promise<WebAuthResultDto | null> {
       credentials: "include",
     });
     if (!res.ok) return null;
-    return res.json() as Promise<WebAuthResultDto>;
+    return WebAuthResultSchema.parse(await res.json()) as WebAuthResultDto;
   } catch {
     return null;
   }

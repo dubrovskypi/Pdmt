@@ -1,5 +1,6 @@
 import { apiGet, apiPost, apiPut, apiDelete } from "./client";
 import type { EventResponseDto, CreateEventDto, UpdateEventDto } from "./types";
+import { EventResponseSchema } from "./schemas";
 
 export interface EventFilters {
   from?: string;
@@ -25,11 +26,15 @@ function buildQuery(filters: EventFilters): string {
 export const getEvents = (filters: EventFilters = {}, signal?: AbortSignal) =>
   apiGet<EventResponseDto[]>(buildQuery(filters), signal);
 
-export const getEventById = (id: string, signal?: AbortSignal) =>
-  apiGet<EventResponseDto>(`/api/events/${id}`, signal);
+export const getEventById = async (id: string, signal?: AbortSignal) =>
+  EventResponseSchema.parse(
+    await apiGet<EventResponseDto>(`/api/events/${id}`, signal),
+  ) as EventResponseDto;
 
-export const createEvent = (dto: CreateEventDto, signal?: AbortSignal) =>
-  apiPost<EventResponseDto>("/api/events", dto, signal);
+export const createEvent = async (dto: CreateEventDto, signal?: AbortSignal) =>
+  EventResponseSchema.parse(
+    await apiPost<EventResponseDto>("/api/events", dto, signal),
+  ) as EventResponseDto;
 
 export const updateEvent = (id: string, dto: UpdateEventDto, signal?: AbortSignal) =>
   apiPut(`/api/events/${id}`, dto, signal);

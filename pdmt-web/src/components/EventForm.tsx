@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { getErrorMessage } from "@/lib/utils";
 import { EventType, CONTEXT_OPTIONS } from "@/api/types";
 import type { EventResponseDto, EventTypeValue } from "@/api/types";
 import { createEvent, updateEvent } from "@/api/events";
@@ -34,40 +35,23 @@ function nowLocalString(): string {
   return toLocalDatetimeString(new Date().toISOString());
 }
 
-export function EventForm({
-  initialValues,
-  allTags,
-  onSuccess,
-  onCancel,
-}: EventFormProps) {
+export function EventForm({ initialValues, allTags, onSuccess, onCancel }: EventFormProps) {
   const isEdit = initialValues !== undefined;
 
-  const [type, setType] = useState<EventTypeValue>(
-    initialValues?.type ?? EventType.Negative,
-  );
+  const [type, setType] = useState<EventTypeValue>(initialValues?.type ?? EventType.Negative);
   const [title, setTitle] = useState(initialValues?.title ?? "");
   const [intensity, setIntensity] = useState(initialValues?.intensity ?? 5);
   const [timestamp, setTimestamp] = useState(
-    initialValues
-      ? toLocalDatetimeString(initialValues.timestamp)
-      : nowLocalString(),
+    initialValues ? toLocalDatetimeString(initialValues.timestamp) : nowLocalString(),
   );
-  const [context, setContext] = useState<string | null>(
-    initialValues?.context ?? null,
-  );
-  const [description, setDescription] = useState(
-    initialValues?.description ?? "",
-  );
-  const [canInfluence, setCanInfluence] = useState(
-    initialValues?.canInfluence ?? false,
-  );
-  const [tagNames, setTagNames] = useState<string[]>(
-    initialValues?.tags.map((t) => t.name) ?? [],
-  );
+  const [context, setContext] = useState<string | null>(initialValues?.context ?? null);
+  const [description, setDescription] = useState(initialValues?.description ?? "");
+  const [canInfluence, setCanInfluence] = useState(initialValues?.canInfluence ?? false);
+  const [tagNames, setTagNames] = useState<string[]>(initialValues?.tags.map((t) => t.name) ?? []);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
     setError(null);
@@ -88,18 +72,16 @@ export function EventForm({
         await createEvent(dto);
       }
       onSuccess();
-    } catch {
-      setError("Не удалось сохранить событие.");
+    } catch (err: unknown) {
+      setError(getErrorMessage(err));
+      console.error(err);
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <form
-      onSubmit={(e) => void handleSubmit(e)}
-      className="flex flex-col gap-4"
-    >
+    <form onSubmit={(e) => void handleSubmit(e)} className="flex flex-col gap-4">
       {/* Type toggle */}
       <div className="flex gap-2">
         <button
@@ -191,11 +173,7 @@ export function EventForm({
       {/* Tags */}
       <div className="flex flex-col gap-1.5">
         <Label>Теги</Label>
-        <TagSelector
-          selectedNames={tagNames}
-          allTags={allTags}
-          onChange={setTagNames}
-        />
+        <TagSelector selectedNames={tagNames} allTags={allTags} onChange={setTagNames} />
       </div>
 
       {/* Description */}

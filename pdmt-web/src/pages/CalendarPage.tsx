@@ -5,7 +5,7 @@ import type { CalendarDayDetailsDto, EventResponseDto } from "@/api/types";
 import { EventType } from "@/api/types";
 import { Button } from "@/components/ui/button";
 import { getMondayOf, addDays, toDateString, formatDayDisplay } from "@/lib/dateUtils";
-import { isAbortError } from "@/lib/utils";
+import { isAbortError, getErrorMessage } from "@/lib/utils";
 
 // --- Score display ---
 
@@ -179,9 +179,10 @@ export function CalendarPage() {
       try {
         const week = await getCalendarWeek(toDateString(weekDate), controller.signal);
         setCalendarWeek(week.days);
-      } catch (err) {
+      } catch (err: unknown) {
         if (isAbortError(err)) return;
-        setError("Не удалось загрузить данные календаря.");
+        setError(getErrorMessage(err));
+        console.error(err);
       } finally {
         setLoading(false);
       }

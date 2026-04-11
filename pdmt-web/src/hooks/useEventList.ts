@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { isAbortError } from "@/lib/utils";
+import { isAbortError, getErrorMessage } from "@/lib/utils";
 import { EventType } from "@/api/types";
 import type { EventResponseDto, TagResponseDto } from "@/api/types";
 import { getEvents } from "@/api/events";
@@ -49,38 +49,41 @@ export function useEventList(): UseEventListReturn {
     try {
       const tags = await getTags(signal);
       setAllTags(tags);
-    } catch (err) {
+    } catch (err: unknown) {
       if (isAbortError(err)) return;
-      setError("Не удалось загрузить теги.");
-      console.error("Failed to load tags:", err);
+      setError(getErrorMessage(err));
+      console.error(err);
     }
   }, []);
 
-  const loadEvents = useCallback(async (signal?: AbortSignal) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const filters: EventFilters = {
-        from: from ? new Date(from).toISOString() : undefined,
-        to: to ? new Date(to + "T23:59:59.999Z").toISOString() : undefined,
-        type:
-          typeFilter === "pos"
-            ? EventType.Positive
-            : typeFilter === "neg"
-              ? EventType.Negative
-              : undefined,
-        tags: tagIds.length > 0 ? tagIds.join(",") : undefined,
-      };
-      const evts = await getEvents(filters, signal);
-      setEvents(evts);
-    } catch (err) {
-      if (isAbortError(err)) return;
-      setError("Не удалось загрузить события.");
-      console.error("Failed to load events:", err);
-    } finally {
-      setLoading(false);
-    }
-  }, [from, to, typeFilter, tagIds]);
+  const loadEvents = useCallback(
+    async (signal?: AbortSignal) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const filters: EventFilters = {
+          from: from ? new Date(from).toISOString() : undefined,
+          to: to ? new Date(to + "T23:59:59.999Z").toISOString() : undefined,
+          type:
+            typeFilter === "pos"
+              ? EventType.Positive
+              : typeFilter === "neg"
+                ? EventType.Negative
+                : undefined,
+          tags: tagIds.length > 0 ? tagIds.join(",") : undefined,
+        };
+        const evts = await getEvents(filters, signal);
+        setEvents(evts);
+      } catch (err: unknown) {
+        if (isAbortError(err)) return;
+        setError(getErrorMessage(err));
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [from, to, typeFilter, tagIds],
+  );
 
   // Load tags once on mount
   useEffect(() => {
@@ -98,9 +101,7 @@ export function useEventList(): UseEventListReturn {
 
   const toggleTag = useCallback((tagId: string) => {
     setTagIds((prev) =>
-      prev.includes(tagId)
-        ? prev.filter((id) => id !== tagId)
-        : [...prev, tagId],
+      prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId],
     );
   }, []);
 
@@ -115,8 +116,7 @@ export function useEventList(): UseEventListReturn {
     void loadEvents();
   }, [loadEvents]);
 
-  const isFiltersEmpty =
-    from === "" && to === "" && typeFilter === "all" && tagIds.length === 0;
+  const isFiltersEmpty = from === "" && to === "" && typeFilter === "all" && tagIds.length === 0;
 
   return {
     events,

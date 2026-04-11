@@ -55,9 +55,21 @@ describe("getEvents", () => {
 
 // ─── other CRUD operations ────────────────────────────────────────────────────
 
+const mockEventResponse = {
+  id: "abc",
+  timestamp: "2026-04-07T10:00:00Z",
+  type: EventType.Positive,
+  intensity: 7,
+  title: "Test",
+  description: null,
+  context: null,
+  canInfluence: false,
+  tags: [],
+};
+
 describe("getEventById", () => {
   it("calls the correct endpoint", async () => {
-    mockApiGet.mockResolvedValue({ id: "abc" } as never);
+    mockApiGet.mockResolvedValue(mockEventResponse as never);
     await getEventById("abc");
     expect(mockApiGet).toHaveBeenCalledWith("/api/events/abc", undefined);
   });
@@ -65,7 +77,7 @@ describe("getEventById", () => {
 
 describe("createEvent", () => {
   it("posts to /api/events with the DTO", async () => {
-    mockApiPost.mockResolvedValue({ id: "new" } as never);
+    mockApiPost.mockResolvedValue({ ...mockEventResponse, id: "new" } as never);
     const dto: CreateEventDto = {
       timestamp: "2026-04-07T10:00:00Z",
       type: EventType.Positive,

@@ -35,11 +35,18 @@ describe("apiFetch", () => {
     vi.clearAllMocks();
   });
 
-  it("sets Content-Type: application/json on every request", async () => {
+  it("sets Content-Type when body is present", async () => {
+    fetchMock.mockResolvedValue(makeResponse(200));
+    await apiFetch("/api/test", { method: "POST", body: JSON.stringify({ x: 1 }) });
+    const headers = (fetchMock.mock.calls[0][1] as RequestInit).headers as Headers;
+    expect(headers.get("Content-Type")).toBe("application/json");
+  });
+
+  it("omits Content-Type for requests without body", async () => {
     fetchMock.mockResolvedValue(makeResponse(200));
     await apiFetch("/api/test");
     const headers = (fetchMock.mock.calls[0][1] as RequestInit).headers as Headers;
-    expect(headers.get("Content-Type")).toBe("application/json");
+    expect(headers.get("Content-Type")).toBeNull();
   });
 
   it("sets Authorization: Bearer header when token is present", async () => {
