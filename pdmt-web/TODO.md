@@ -7,9 +7,9 @@
 
 ## P1 — Архитектурные проблемы
 
-- [ ] **Глобальный мутабельный стейт API-клиента** — `getToken`/`setToken`/`onLogout` в `src/api/client.ts` — module-level singletons, перезаписываются при каждом маунте AuthProvider. Нет гарантии порядка, невозможно тестировать изолированно. Решение: передавать token-getter через параметр или DI через Context
-- [ ] **Нет кеша/дедупликации запросов** — каждый переход на страницу перезагружает данные, два компонента с `getTags()` делают два запроса. Решение: TanStack Query (кеш, дедупликация, refetch, retry, AbortController из коробки)
-- [ ] **navigate() в render phase** — `LoginPage.tsx:17-19` вызывает `navigate()` в теле рендера (side-effect). В StrictMode — двойная навигация. Решение: перенести в `useEffect`
+- [v] **Глобальный мутабельный стейт API-клиента** — `getToken`/`setToken`/`onLogout` в `src/api/client.ts` — module-level singletons, перезаписываются при каждом маунте AuthProvider. Нет гарантии порядка, невозможно тестировать изолированно. Решение: передавать token-getter через параметр или DI через Context
+- [v] **Нет кеша/дедупликации запросов** — каждый переход на страницу перезагружает данные, два компонента с `getTags()` делают два запроса. Решение: TanStack Query (кеш, дедупликация, refetch, retry, AbortController из коробки)
+- [v] **navigate() в render phase** — `LoginPage.tsx:17-19` вызывает `navigate()` в теле рендера (side-effect). В StrictMode — двойная навигация. Решение: перенести в `useEffect`
 
 ## P2 — Надёжность и поддерживаемость
 

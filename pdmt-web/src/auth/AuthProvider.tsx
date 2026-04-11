@@ -13,6 +13,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Without this, the getter closure would capture the initial null and never update.
   const tokenRef = useRef<string | null>(null);
 
+  // Keep latest navigate in a ref so callbacks always use the current instance
+  // without re-running initApiClient or recreating clearAuth on every render.
+  const navigateRef = useRef(navigate);
+  useEffect(() => {
+    navigateRef.current = navigate;
+  });
+
   const setAccessToken = useCallback((token: string) => {
     tokenRef.current = token;
     setAccessTokenState(token);
@@ -22,8 +29,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await apiLogout().catch(() => {});
     tokenRef.current = null;
     setAccessTokenState(null);
-    void navigate("/login", { replace: true });
-  }, [navigate]);
+    void navigateRef.current("/login", { replace: true });
+  }, []);
 
   // Wire up api/client.ts with token getter and callbacks (runs once on mount).
   useEffect(() => {
@@ -36,10 +43,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       () => {
         tokenRef.current = null;
         setAccessTokenState(null);
-        void navigate("/login", { replace: true });
+        void navigateRef.current("/login", { replace: true });
       },
     );
-  }, [navigate]);
+  }, []);
 
   // Restore session from httpOnly cookie on every page load.
   useEffect(() => {
