@@ -5,7 +5,7 @@ import { useLazyFetch } from "./useLazyFetch";
 import type { PeriodRange } from "./types";
 
 export function Card3Balance({ range, isActive }: { range: PeriodRange; isActive: boolean }) {
-  const { data, loading, error } = useLazyFetch<WeeklySummaryDto | null>(
+  const { data, loading, error, retry } = useLazyFetch<WeeklySummaryDto | null>(
     (signal) => getWeeklySummary(range.weekOf, signal),
     null,
     [range.weekOf],
@@ -20,6 +20,7 @@ export function Card3Balance({ range, isActive }: { range: PeriodRange; isActive
       explanation="Сколько событий каждого типа и насколько интенсивны."
       loading={loading}
       error={error}
+      onRetry={retry}
       weekOnly
     >
       {data && (

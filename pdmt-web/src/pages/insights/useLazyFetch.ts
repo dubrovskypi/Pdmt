@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { isAbortError, getErrorMessage } from "@/lib/utils";
 
 export function useLazyFetch<T>(
@@ -6,11 +6,12 @@ export function useLazyFetch<T>(
   initialValue: T,
   deps: unknown[],
   isActive: boolean,
-): { data: T; loading: boolean; error: string | null } {
+): { data: T; loading: boolean; error: string | null; retry: () => void } {
   const [data, setData] = useState<T>(initialValue);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [shouldLoad, setShouldLoad] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
     if (isActive) setShouldLoad(true);
@@ -33,7 +34,9 @@ export function useLazyFetch<T>(
     })();
     return () => controller.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [shouldLoad, ...deps]);
+  }, [shouldLoad, retryCount, ...deps]);
 
-  return { data, loading, error };
+  const retry = useCallback(() => setRetryCount((c) => c + 1), []);
+
+  return { data, loading, error, retry };
 }

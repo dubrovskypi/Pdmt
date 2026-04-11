@@ -5,7 +5,7 @@ import { useLazyFetch } from "./useLazyFetch";
 import type { PeriodRange } from "./types";
 
 export function Card10Influence({ range, isActive }: { range: PeriodRange; isActive: boolean }) {
-  const { data, loading, error } = useLazyFetch<InfluenceabilitySplitDto | null>(
+  const { data, loading, error, retry } = useLazyFetch<InfluenceabilitySplitDto | null>(
     (signal) => getInfluenceability(range.from, range.to, signal),
     null,
     [range.from, range.to],
@@ -24,6 +24,7 @@ export function Card10Influence({ range, isActive }: { range: PeriodRange; isAct
       explanation="Какой процент негативных событий ты можешь изменить. Сосредоточься на том, что в твоей власти."
       loading={loading}
       error={error}
+      onRetry={retry}
     >
       {data && total > 0 ? (
         <div className="flex flex-col gap-4">

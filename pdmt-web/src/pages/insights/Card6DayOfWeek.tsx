@@ -5,7 +5,7 @@ import { useLazyFetch } from "./useLazyFetch";
 import type { PeriodRange } from "./types";
 
 export function Card6DayOfWeek({ range, isActive }: { range: PeriodRange; isActive: boolean }) {
-  const { data, loading, error } = useLazyFetch<WeeklySummaryDto | null>(
+  const { data, loading, error, retry } = useLazyFetch<WeeklySummaryDto | null>(
     (signal) => getWeeklySummary(range.weekOf, signal),
     null,
     [range.weekOf],
@@ -23,6 +23,7 @@ export function Card6DayOfWeek({ range, isActive }: { range: PeriodRange; isActi
       explanation="Средняя интенсивность событий по каждому дню недели."
       loading={loading}
       error={error}
+      onRetry={retry}
       weekOnly
     >
       {days.length === 0 ? (

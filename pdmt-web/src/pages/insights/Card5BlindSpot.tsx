@@ -5,7 +5,7 @@ import { useLazyFetch } from "./useLazyFetch";
 import type { PeriodRange } from "./types";
 
 export function Card5BlindSpot({ range, isActive }: { range: PeriodRange; isActive: boolean }) {
-  const { data, loading, error } = useLazyFetch<DiscountedPositiveDto[]>(
+  const { data, loading, error, retry } = useLazyFetch<DiscountedPositiveDto[]>(
     (signal) => getDiscountedPositives(range.from, range.to, signal),
     [],
     [range.from, range.to],
@@ -22,6 +22,7 @@ export function Card5BlindSpot({ range, isActive }: { range: PeriodRange; isActi
       explanation="Теги с высокой частотой, но низкой средней интенсивностью. Хорошее есть — просто ты его недооцениваешь."
       loading={loading}
       error={error}
+      onRetry={retry}
     >
       {data.length === 0 ? (
         <p className="text-sm text-slate-400">Не найдено недооценённых позитивных тегов.</p>

@@ -167,6 +167,7 @@ export function CalendarPage() {
   const [expandedDay, setExpandedDay] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [retryKey, setRetryKey] = useState(0);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -189,7 +190,7 @@ export function CalendarPage() {
     })();
 
     return () => controller.abort();
-  }, [weekDate]);
+  }, [weekDate, retryKey]);
 
   async function handleToggleDay(date: string) {
     if (expandedDay === date) {
@@ -261,9 +262,14 @@ export function CalendarPage() {
 
       {/* Calendar */}
       {error && (
-        <p className="text-sm text-red-500 bg-red-50 border border-red-200 rounded px-3 py-2">
-          {error}
-        </p>
+        <div className="flex items-center gap-2">
+          <p className="text-sm text-red-500 bg-red-50 border border-red-200 rounded px-3 py-2">
+            {error}
+          </p>
+          <Button variant="outline" size="sm" onClick={() => setRetryKey((k) => k + 1)}>
+            Повторить
+          </Button>
+        </div>
       )}
       {loading ? (
         <p className="text-sm text-slate-400">Загрузка…</p>

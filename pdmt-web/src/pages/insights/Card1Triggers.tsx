@@ -5,7 +5,7 @@ import { useLazyFetch } from "./useLazyFetch";
 import type { PeriodRange } from "./types";
 
 export function Card1Triggers({ range, isActive }: { range: PeriodRange; isActive: boolean }) {
-  const { data, loading, error } = useLazyFetch<WeeklySummaryDto | null>(
+  const { data, loading, error, retry } = useLazyFetch<WeeklySummaryDto | null>(
     (signal) => getWeeklySummary(range.weekOf, signal),
     null,
     [range.weekOf],
@@ -23,6 +23,7 @@ export function Card1Triggers({ range, isActive }: { range: PeriodRange; isActiv
       explanation="Топ тегов по средней интенсивности за период."
       loading={loading}
       error={error}
+      onRetry={retry}
       weekOnly
     >
       {tags.length === 0 ? (

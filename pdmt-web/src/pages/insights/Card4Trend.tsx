@@ -7,7 +7,7 @@ import { useLazyFetch } from "./useLazyFetch";
 import type { PeriodRange } from "./types";
 
 export function Card4Trend({ range, isActive }: { range: PeriodRange; isActive: boolean }) {
-  const { data, loading, error } = useLazyFetch<TrendPeriodDto[]>(
+  const { data, loading, error, retry } = useLazyFetch<TrendPeriodDto[]>(
     (signal) => getTrends(range.from, range.to, signal),
     [],
     [range.from, range.to],
@@ -28,6 +28,7 @@ export function Card4Trend({ range, isActive }: { range: PeriodRange; isActive: 
       explanation="Как менялся баланс позитивного и негативного неделя за неделей."
       loading={loading}
       error={error}
+      onRetry={retry}
     >
       {data.length === 0 ? (
         <p className="text-sm text-slate-400">Нет данных за период.</p>

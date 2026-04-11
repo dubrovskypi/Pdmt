@@ -14,6 +14,7 @@ export function Card9TagTrend({ range, isActive }: { range: PeriodRange; isActiv
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [shouldLoad, setShouldLoad] = useState(false);
+  const [retryKey, setRetryKey] = useState(0);
 
   useEffect(() => {
     if (isActive) setShouldLoad(true);
@@ -53,7 +54,7 @@ export function Card9TagTrend({ range, isActive }: { range: PeriodRange; isActiv
       }
     })();
     return () => controller.abort();
-  }, [shouldLoad, range.from, range.to]);
+  }, [shouldLoad, retryKey, range.from, range.to]);
 
   const chartData = trend.map((t) => ({
     week: formatWeekRange(t.periodStart),
@@ -68,6 +69,7 @@ export function Card9TagTrend({ range, isActive }: { range: PeriodRange; isActiv
       explanation="Как менялась частота самого распространённого тега неделя за неделей."
       loading={loading}
       error={error}
+      onRetry={() => setRetryKey((k) => k + 1)}
     >
       {trend.length === 0 ? (
         <p className="text-sm text-slate-400">Недостаточно данных для анализа.</p>

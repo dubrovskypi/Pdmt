@@ -5,7 +5,7 @@ import { useLazyFetch } from "./useLazyFetch";
 import type { PeriodRange } from "./types";
 
 export function Card2Repeating({ range, isActive }: { range: PeriodRange; isActive: boolean }) {
-  const { data, loading, error } = useLazyFetch<RepeatingTriggerDto[]>(
+  const { data, loading, error, retry } = useLazyFetch<RepeatingTriggerDto[]>(
     (signal) => getRepeatingTriggers(range.from, range.to, undefined, signal),
     [],
     [range.from, range.to],
@@ -22,6 +22,7 @@ export function Card2Repeating({ range, isActive }: { range: PeriodRange; isActi
       explanation="Теги, которые встречались 3 и более раз. Это не случайность — это паттерн."
       loading={loading}
       error={error}
+      onRetry={retry}
     >
       {data.length === 0 ? (
         <p className="text-sm text-slate-400">Нет повторяющихся тегов за период.</p>

@@ -292,9 +292,14 @@ export function EventListPage() {
 
       {/* Error message */}
       {error && (
-        <p className="text-sm text-red-500 bg-red-50 border border-red-200 rounded px-3 py-2">
-          {error}
-        </p>
+        <div className="flex items-center gap-2">
+          <p className="text-sm text-red-500 bg-red-50 border border-red-200 rounded px-3 py-2">
+            {error}
+          </p>
+          <Button variant="outline" size="sm" onClick={refresh}>
+            Повторить
+          </Button>
+        </div>
       )}
 
       {/* Event list */}

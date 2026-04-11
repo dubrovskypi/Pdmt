@@ -5,7 +5,7 @@ import { useLazyFetch } from "./useLazyFetch";
 import type { PeriodRange } from "./types";
 
 export function Card7NextDay({ range, isActive }: { range: PeriodRange; isActive: boolean }) {
-  const { data, loading, error } = useLazyFetch<NextDayEffectDto[]>(
+  const { data, loading, error, retry } = useLazyFetch<NextDayEffectDto[]>(
     (signal) =>
       getNextDayEffects(range.from, range.to, signal).then((r) =>
         [...r].sort((a, b) => Math.abs(b.nextDayAvgScore) - Math.abs(a.nextDayAvgScore)),
@@ -25,6 +25,7 @@ export function Card7NextDay({ range, isActive }: { range: PeriodRange; isActive
       explanation='Средний балл на следующий день после событий с этим тегом. "После «аргумент» — следующий день в среднем тяжелее."'
       loading={loading}
       error={error}
+      onRetry={retry}
     >
       {data.length === 0 ? (
         <p className="text-sm text-slate-400">Недостаточно данных для анализа.</p>

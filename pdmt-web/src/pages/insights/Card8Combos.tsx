@@ -5,7 +5,7 @@ import { useLazyFetch } from "./useLazyFetch";
 import type { PeriodRange } from "./types";
 
 export function Card8Combos({ range, isActive }: { range: PeriodRange; isActive: boolean }) {
-  const { data, loading, error } = useLazyFetch<TagComboDto[]>(
+  const { data, loading, error, retry } = useLazyFetch<TagComboDto[]>(
     (signal) => getTagCombos(range.from, range.to, signal),
     [],
     [range.from, range.to],
@@ -20,6 +20,7 @@ export function Card8Combos({ range, isActive }: { range: PeriodRange; isActive:
       explanation="Пары тегов, которые часто встречаются вместе, и как комбинация отличается от каждого отдельно."
       loading={loading}
       error={error}
+      onRetry={retry}
     >
       {data.length === 0 ? (
         <p className="text-sm text-slate-400">Нет частых комбинаций тегов за период.</p>

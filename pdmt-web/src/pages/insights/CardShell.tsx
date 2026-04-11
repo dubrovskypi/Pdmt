@@ -1,4 +1,5 @@
 import React from "react";
+import { Button } from "@/components/ui/button";
 
 export interface CardShellProps {
   badge: string;
@@ -7,6 +8,7 @@ export interface CardShellProps {
   explanation: string;
   loading: boolean;
   error: string | null;
+  onRetry?: () => void;
   weekOnly?: boolean;
   children: React.ReactNode;
 }
@@ -18,6 +20,7 @@ export function CardShell({
   explanation,
   loading,
   error,
+  onRetry,
   weekOnly,
   children,
 }: CardShellProps) {
@@ -32,7 +35,14 @@ export function CardShell({
         {loading ? (
           <p className="text-sm text-slate-400">Загрузка…</p>
         ) : error ? (
-          <p className="text-sm text-red-500">{error}</p>
+          <div className="flex items-center gap-2 flex-wrap">
+            <p className="text-sm text-red-500">{error}</p>
+            {onRetry && (
+              <Button variant="outline" size="sm" onClick={onRetry}>
+                Повторить
+              </Button>
+            )}
+          </div>
         ) : (
           children
         )}
