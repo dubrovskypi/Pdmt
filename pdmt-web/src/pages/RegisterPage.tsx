@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/auth/useAuth";
 import { register } from "@/api/auth";
@@ -15,12 +15,11 @@ export function RegisterPage() {
   const { setAccessToken, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
-  if (isAuthenticated) {
-    void navigate("/events", { replace: true });
-    return null;
-  }
+  useEffect(() => {
+    if (isAuthenticated) void navigate("/events", { replace: true });
+  }, [isAuthenticated, navigate]);
 
-  async function handleSubmit(e: React.FormEvent) {
+  const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (password !== confirm) {
       setError("Пароли не совпадают.");
@@ -37,7 +36,9 @@ export function RegisterPage() {
     } finally {
       setLoading(false);
     }
-  }
+  };
+
+  if (isAuthenticated) return null;
 
   return (
     <div className="max-w-sm mx-auto mt-24 flex flex-col gap-5">

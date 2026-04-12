@@ -70,7 +70,7 @@ describe("useEventList", () => {
 
     await waitFor(() => expect(result.current.loading).toBe(false));
 
-    expect(result.current.error).toBe("Не удалось загрузить события.");
+    expect(result.current.error).toBe("Не удалось загрузить данные.");
     expect(result.current.events).toEqual([]);
   });
 

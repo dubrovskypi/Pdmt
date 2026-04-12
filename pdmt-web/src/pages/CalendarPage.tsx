@@ -5,6 +5,7 @@ import type { CalendarDayDetailsDto, EventResponseDto } from "@/api/types";
 import { EventType } from "@/api/types";
 import { Button } from "@/components/ui/button";
 import { getMondayOf, addDays, toDateString, formatDayDisplay } from "@/lib/dateUtils";
+import { isAbortError, getErrorMessage } from "@/lib/utils";
 
 // --- Score display ---
 
@@ -165,17 +166,31 @@ export function CalendarPage() {
   const [dayEvents, setDayEvents] = useState<Record<string, EventResponseDto[]>>({});
   const [expandedDay, setExpandedDay] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [retryKey, setRetryKey] = useState(0);
 
   useEffect(() => {
+    const controller = new AbortController();
+
     void (async () => {
       setLoading(true);
+      setError(null);
       setExpandedDay(null);
       setDayEvents({});
-      const week = await getCalendarWeek(toDateString(weekDate));
-      setCalendarWeek(week.days);
-      setLoading(false);
+      try {
+        const week = await getCalendarWeek(toDateString(weekDate), controller.signal);
+        setCalendarWeek(week.days);
+      } catch (err: unknown) {
+        if (isAbortError(err)) return;
+        setError(getErrorMessage(err));
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
     })();
-  }, [weekDate]);
+
+    return () => controller.abort();
+  }, [weekDate, retryKey]);
 
   async function handleToggleDay(date: string) {
     if (expandedDay === date) {
@@ -246,6 +261,16 @@ export function CalendarPage() {
       </div>
 
       {/* Calendar */}
+      {error && (
+        <div className="flex items-center gap-2">
+          <p className="text-sm text-red-500 bg-red-50 border border-red-200 rounded px-3 py-2">
+            {error}
+          </p>
+          <Button variant="outline" size="sm" onClick={() => setRetryKey((k) => k + 1)}>
+            Повторить
+          </Button>
+        </div>
+      )}
       {loading ? (
         <p className="text-sm text-slate-400">Загрузка…</p>
       ) : (

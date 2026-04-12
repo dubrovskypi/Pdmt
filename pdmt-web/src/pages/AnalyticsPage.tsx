@@ -21,6 +21,7 @@ import {
   formatWeekRange,
   formatShortDate,
 } from "@/lib/dateUtils";
+import { isAbortError, getErrorMessage } from "@/lib/utils";
 
 // --- WeekSelector ---
 
@@ -195,8 +196,7 @@ function DayOfWeekTooltip({
             color: entry.name === "Ср. интенсивность" ? "#94a3b8" : "#666",
           }}
         >
-          {entry.name}:{" "}
-          {entry.name === "Ср. интенсивность" ? entry.value.toFixed(1) : entry.value}
+          {entry.name}: {entry.name === "Ср. интенсивность" ? entry.value.toFixed(1) : entry.value}
         </div>
       ))}
     </div>
@@ -293,34 +293,43 @@ export function AnalyticsPage() {
   const [trends, setTrends] = useState<TrendPeriodDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [retryKey, setRetryKey] = useState(0);
 
   const monday = getMondayOf(weekDate);
   const sunday = addDays(monday, 6);
   const weekRange = `${monday.toLocaleDateString("ru-RU", { day: "numeric", month: "short" })} — ${sunday.toLocaleDateString("ru-RU", { day: "numeric", month: "short" })}`;
 
   useEffect(() => {
+    const controller = new AbortController();
+    const mon = getMondayOf(weekDate);
+    const sun = addDays(mon, 6);
+
     void (async () => {
       setLoading(true);
       setError(null);
       try {
-        const weekOf = toDateString(monday);
-        const trendsFrom = addDays(monday, -7 * 7); // 8 weeks back (7 prior + current)
-        const trendsTo = sunday;
+        const weekOf = toDateString(mon);
+        const trendsFrom = addDays(mon, -7 * 7); // 8 weeks back (7 prior + current)
+        const trendsTo = sun;
 
         const [summaryData, trendsData] = await Promise.all([
-          getWeeklySummary(weekOf),
-          getTrends(trendsFrom.toISOString(), trendsTo.toISOString()),
+          getWeeklySummary(weekOf, controller.signal),
+          getTrends(trendsFrom.toISOString(), trendsTo.toISOString(), controller.signal),
         ]);
 
         setSummary(summaryData);
         setTrends(trendsData);
-      } catch {
-        setError("Не удалось загрузить данные аналитики.");
+      } catch (err: unknown) {
+        if (isAbortError(err)) return;
+        setError(getErrorMessage(err));
+        console.error(err);
       } finally {
         setLoading(false);
       }
     })();
-  }, [weekDate]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    return () => controller.abort();
+  }, [weekDate, retryKey]);
 
   return (
     <div className="flex flex-col gap-5">
@@ -332,9 +341,14 @@ export function AnalyticsPage() {
       />
 
       {error && (
-        <p className="text-sm text-red-500 bg-red-50 border border-red-200 rounded px-3 py-2">
-          {error}
-        </p>
+        <div className="flex items-center gap-2">
+          <p className="text-sm text-red-500 bg-red-50 border border-red-200 rounded px-3 py-2">
+            {error}
+          </p>
+          <Button variant="outline" size="sm" onClick={() => setRetryKey((k) => k + 1)}>
+            Повторить
+          </Button>
+        </div>
       )}
 
       {loading ? (
