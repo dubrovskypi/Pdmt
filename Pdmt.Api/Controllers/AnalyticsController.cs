@@ -28,8 +28,6 @@ public class AnalyticsController(IAnalyticsService analyticsService) : Controlle
         [FromQuery] DateTimeOffset to,
         [FromQuery] TrendGranularity period = TrendGranularity.Week)
     {
-        from = from.ToUniversalTime();
-        to = to.ToUniversalTime();
         if (from > to)
             return BadRequest("'from' must be earlier than 'to'.");
 
@@ -46,8 +44,6 @@ public class AnalyticsController(IAnalyticsService analyticsService) : Controlle
         [FromQuery] DateTimeOffset from,
         [FromQuery] DateTimeOffset to)
     {
-        from = from.ToUniversalTime();
-        to = to.ToUniversalTime();
         if (from > to)
             return BadRequest("'from' must be earlier than 'to'.");
 

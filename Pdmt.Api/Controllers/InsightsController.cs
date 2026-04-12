@@ -20,8 +20,6 @@ public class InsightsController(IInsightsService insightsService) : ControllerBa
         [FromQuery] DateTimeOffset to,
         [FromQuery] int minCount = 3)
     {
-        from = from.ToUniversalTime();
-        to = to.ToUniversalTime();
         if (from > to)
             return BadRequest("'from' must be earlier than 'to'.");
 
@@ -36,8 +34,6 @@ public class InsightsController(IInsightsService insightsService) : ControllerBa
         [FromQuery] DateTimeOffset from,
         [FromQuery] DateTimeOffset to)
     {
-        from = from.ToUniversalTime();
-        to = to.ToUniversalTime();
         if (from > to)
             return BadRequest("'from' must be earlier than 'to'.");
 
@@ -52,8 +48,6 @@ public class InsightsController(IInsightsService insightsService) : ControllerBa
         [FromQuery] DateTimeOffset from,
         [FromQuery] DateTimeOffset to)
     {
-        from = from.ToUniversalTime();
-        to = to.ToUniversalTime();
         if (from > to)
             return BadRequest("'from' must be earlier than 'to'.");
 
@@ -68,8 +62,6 @@ public class InsightsController(IInsightsService insightsService) : ControllerBa
         [FromQuery] DateTimeOffset from,
         [FromQuery] DateTimeOffset to)
     {
-        from = from.ToUniversalTime();
-        to = to.ToUniversalTime();
         if (from > to)
             return BadRequest("'from' must be earlier than 'to'.");
 
@@ -87,8 +79,6 @@ public class InsightsController(IInsightsService insightsService) : ControllerBa
         [FromQuery] DateTimeOffset to,
         [FromQuery] TrendGranularity period = TrendGranularity.Week)
     {
-        from = from.ToUniversalTime();
-        to = to.ToUniversalTime();
         if (from > to)
             return BadRequest("'from' must be earlier than 'to'.");
 
@@ -103,8 +93,6 @@ public class InsightsController(IInsightsService insightsService) : ControllerBa
         [FromQuery] DateTimeOffset from,
         [FromQuery] DateTimeOffset to)
     {
-        from = from.ToUniversalTime();
-        to = to.ToUniversalTime();
         if (from > to)
             return BadRequest("'from' must be earlier than 'to'.");
 

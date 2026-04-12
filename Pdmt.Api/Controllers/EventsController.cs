@@ -22,9 +22,6 @@ namespace Pdmt.Api.Controllers
             [FromQuery] int? minIntensity = null,
             [FromQuery] int? maxIntensity = null)
         {
-            if (from.HasValue) from = from.Value.ToUniversalTime();
-            if (to.HasValue) to = to.Value.ToUniversalTime();
-
             var userId = User.GetUserId();
 
             IReadOnlyList<Guid>? tagIds = null;

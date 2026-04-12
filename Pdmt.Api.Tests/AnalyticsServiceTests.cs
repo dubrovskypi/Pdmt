@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Pdmt.Api.Data;
 using Pdmt.Api.Domain;
 using Pdmt.Api.Dto;
@@ -15,13 +16,18 @@ namespace Pdmt.Api.Tests
                 .UseInMemoryDatabase(Guid.NewGuid().ToString())
                 .Options);
 
+        private IConfiguration CreateConfig() =>
+            new ConfigurationBuilder()
+                .AddInMemoryCollection([new("App:DefaultTimeZone", "Europe/Vilnius")])
+                .Build();
+
         #region GetWeeklySummaryAsync
 
         [Fact]
         public async Task GetWeeklySummaryAsync_NoEvents_ReturnsZeroedSummary()
         {
             var db = CreateDbContext();
-            var service = new AnalyticsService(db);
+            var service = new AnalyticsService(db, CreateConfig());
             var userId = Guid.NewGuid();
 
             var result = await service.GetWeeklySummaryAsync(userId, DateOnly.FromDateTime(DateTime.UtcNow));
@@ -37,7 +43,7 @@ namespace Pdmt.Api.Tests
         public async Task GetWeeklySummaryAsync_MixedEvents_CountsCorrectly()
         {
             var db = CreateDbContext();
-            var service = new AnalyticsService(db);
+            var service = new AnalyticsService(db, CreateConfig());
             var userId = Guid.NewGuid();
 
             var now = DateTimeOffset.UtcNow;
@@ -63,7 +69,7 @@ namespace Pdmt.Api.Tests
         public async Task GetWeeklySummaryAsync_PosToNegRatio_CalculatedCorrectly()
         {
             var db = CreateDbContext();
-            var service = new AnalyticsService(db);
+            var service = new AnalyticsService(db, CreateConfig());
             var userId = Guid.NewGuid();
 
             var now = DateTimeOffset.UtcNow;
@@ -89,7 +95,7 @@ namespace Pdmt.Api.Tests
         public async Task GetWeeklySummaryAsync_NoNegativeEvents_RatioIsZero()
         {
             var db = CreateDbContext();
-            var service = new AnalyticsService(db);
+            var service = new AnalyticsService(db, CreateConfig());
             var userId = Guid.NewGuid();
 
             var now = DateTimeOffset.UtcNow;
@@ -111,7 +117,7 @@ namespace Pdmt.Api.Tests
         public async Task GetWeeklySummaryAsync_TopTags_LimitedToFive()
         {
             var db = CreateDbContext();
-            var service = new AnalyticsService(db);
+            var service = new AnalyticsService(db, CreateConfig());
             var userId = Guid.NewGuid();
 
             var now = DateTimeOffset.UtcNow;
@@ -143,7 +149,7 @@ namespace Pdmt.Api.Tests
         public async Task GetWeeklySummaryAsync_FiltersOutsideWeek_NotCounted()
         {
             var db = CreateDbContext();
-            var service = new AnalyticsService(db);
+            var service = new AnalyticsService(db, CreateConfig());
             var userId = Guid.NewGuid();
 
             var now = DateTimeOffset.UtcNow;
@@ -166,7 +172,7 @@ namespace Pdmt.Api.Tests
         public async Task GetWeeklySummaryAsync_RespectsUserId_OnlyQueriedUserEvents()
         {
             var db = CreateDbContext();
-            var service = new AnalyticsService(db);
+            var service = new AnalyticsService(db, CreateConfig());
             var userId1 = Guid.NewGuid();
             var userId2 = Guid.NewGuid();
 
@@ -193,7 +199,7 @@ namespace Pdmt.Api.Tests
         public async Task GetTrendsAsync_Week_GroupsByMonday()
         {
             var db = CreateDbContext();
-            var service = new AnalyticsService(db);
+            var service = new AnalyticsService(db, CreateConfig());
             var userId = Guid.NewGuid();
 
             var now = DateTimeOffset.UtcNow;
@@ -215,7 +221,7 @@ namespace Pdmt.Api.Tests
         public async Task GetTrendsAsync_Month_GroupsByFirstOfMonth()
         {
             var db = CreateDbContext();
-            var service = new AnalyticsService(db);
+            var service = new AnalyticsService(db, CreateConfig());
             var userId = Guid.NewGuid();
 
             var jan = new DateTimeOffset(2024, 1, 15, 0, 0, 0, TimeSpan.Zero);
@@ -238,7 +244,7 @@ namespace Pdmt.Api.Tests
         public async Task GetTrendsAsync_FiltersOutsideDateRange()
         {
             var db = CreateDbContext();
-            var service = new AnalyticsService(db);
+            var service = new AnalyticsService(db, CreateConfig());
             var userId = Guid.NewGuid();
 
             var start = new DateTimeOffset(2024, 1, 1, 0, 0, 0, TimeSpan.Zero);
@@ -260,7 +266,7 @@ namespace Pdmt.Api.Tests
         public async Task GetTrendsAsync_EmptyRange_ReturnsEmpty()
         {
             var db = CreateDbContext();
-            var service = new AnalyticsService(db);
+            var service = new AnalyticsService(db, CreateConfig());
             var userId = Guid.NewGuid();
 
             var result = await service.GetTrendsAsync(userId, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddDays(30), TrendGranularity.Week);
@@ -276,7 +282,7 @@ namespace Pdmt.Api.Tests
         public async Task GetCorrelationsAsync_TagNotOwnedByUser_ThrowsNotFoundException()
         {
             var db = CreateDbContext();
-            var service = new AnalyticsService(db);
+            var service = new AnalyticsService(db, CreateConfig());
             var userId1 = Guid.NewGuid();
             var userId2 = Guid.NewGuid();
 
@@ -293,7 +299,7 @@ namespace Pdmt.Api.Tests
         public async Task GetCorrelationsAsync_SplitsEventsByTagPresence()
         {
             var db = CreateDbContext();
-            var service = new AnalyticsService(db);
+            var service = new AnalyticsService(db, CreateConfig());
             var userId = Guid.NewGuid();
 
             var tag = new Tag { Id = Guid.NewGuid(), Name = "Work", UserId = userId, CreatedAt = DateTimeOffset.UtcNow };
@@ -327,7 +333,7 @@ namespace Pdmt.Api.Tests
         public async Task GetCorrelationsAsync_NoEventsWithTag_AvgWithTagIsZero()
         {
             var db = CreateDbContext();
-            var service = new AnalyticsService(db);
+            var service = new AnalyticsService(db, CreateConfig());
             var userId = Guid.NewGuid();
 
             var tag = new Tag { Id = Guid.NewGuid(), Name = "Work", UserId = userId, CreatedAt = DateTimeOffset.UtcNow };
@@ -351,7 +357,7 @@ namespace Pdmt.Api.Tests
         public async Task GetCalendarWeekAsync_AlwaysReturnsSevenDays()
         {
             var db = CreateDbContext();
-            var service = new AnalyticsService(db);
+            var service = new AnalyticsService(db, CreateConfig());
             var userId = Guid.NewGuid();
 
             var now = DateTimeOffset.UtcNow;
@@ -366,7 +372,7 @@ namespace Pdmt.Api.Tests
         public async Task GetCalendarWeekAsync_EmptyDay_HasZeroValues()
         {
             var db = CreateDbContext();
-            var service = new AnalyticsService(db);
+            var service = new AnalyticsService(db, CreateConfig());
             var userId = Guid.NewGuid();
 
             var now = DateTimeOffset.UtcNow;
@@ -384,7 +390,7 @@ namespace Pdmt.Api.Tests
         public async Task GetCalendarWeekAsync_DayScore_CalculatedCorrectly()
         {
             var db = CreateDbContext();
-            var service = new AnalyticsService(db);
+            var service = new AnalyticsService(db, CreateConfig());
             var userId = Guid.NewGuid();
 
             var now = DateTimeOffset.UtcNow;
@@ -410,7 +416,7 @@ namespace Pdmt.Api.Tests
         public async Task GetCalendarMonthAsync_FebruaryLeapYear_Returns29Days()
         {
             var db = CreateDbContext();
-            var service = new AnalyticsService(db);
+            var service = new AnalyticsService(db, CreateConfig());
             var userId = Guid.NewGuid();
 
             var result = await service.GetCalendarMonthAsync(userId, 2024, 2);
@@ -422,7 +428,7 @@ namespace Pdmt.Api.Tests
         public async Task GetCalendarMonthAsync_EventOnFirstAndLast_BothPresent()
         {
             var db = CreateDbContext();
-            var service = new AnalyticsService(db);
+            var service = new AnalyticsService(db, CreateConfig());
             var userId = Guid.NewGuid();
 
             var march1 = new DateTimeOffset(2024, 3, 1, 0, 0, 0, TimeSpan.Zero);
@@ -444,7 +450,7 @@ namespace Pdmt.Api.Tests
         public async Task GetCalendarMonthAsync_FiltersOtherMonths()
         {
             var db = CreateDbContext();
-            var service = new AnalyticsService(db);
+            var service = new AnalyticsService(db, CreateConfig());
             var userId = Guid.NewGuid();
 
             var march = new DateTimeOffset(2024, 3, 15, 0, 0, 0, TimeSpan.Zero);

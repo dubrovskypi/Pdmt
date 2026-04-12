@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Pdmt.Api.Data;
 using Pdmt.Api.Domain;
 using Pdmt.Api.Dto.Analytics;
@@ -14,13 +15,18 @@ namespace Pdmt.Api.Tests
                 .UseInMemoryDatabase(Guid.NewGuid().ToString())
                 .Options);
 
+        private IConfiguration CreateConfig() =>
+            new ConfigurationBuilder()
+                .AddInMemoryCollection([new("App:DefaultTimeZone", "Europe/Vilnius")])
+                .Build();
+
         #region GetRepeatingTriggersAsync
 
         [Fact]
         public async Task GetRepeatingTriggersAsync_TagWithExactlyMinCount_IsIncluded()
         {
             var db = CreateDbContext();
-            var service = new InsightsService(db);
+            var service = new InsightsService(db, CreateConfig());
             var userId = Guid.NewGuid();
 
             var tag = new Tag { Id = Guid.NewGuid(), Name = "Work", UserId = userId, CreatedAt = DateTimeOffset.UtcNow };
@@ -45,7 +51,7 @@ namespace Pdmt.Api.Tests
         public async Task GetRepeatingTriggersAsync_TagBelowMinCount_IsExcluded()
         {
             var db = CreateDbContext();
-            var service = new InsightsService(db);
+            var service = new InsightsService(db, CreateConfig());
             var userId = Guid.NewGuid();
 
             var tag = new Tag { Id = Guid.NewGuid(), Name = "Work", UserId = userId, CreatedAt = DateTimeOffset.UtcNow };
@@ -69,7 +75,7 @@ namespace Pdmt.Api.Tests
         public async Task GetRepeatingTriggersAsync_OnlyCountsNegativeEvents()
         {
             var db = CreateDbContext();
-            var service = new InsightsService(db);
+            var service = new InsightsService(db, CreateConfig());
             var userId = Guid.NewGuid();
 
             var tag = new Tag { Id = Guid.NewGuid(), Name = "Work", UserId = userId, CreatedAt = DateTimeOffset.UtcNow };
@@ -100,7 +106,7 @@ namespace Pdmt.Api.Tests
         public async Task GetRepeatingTriggersAsync_OrderedByAvgIntensityDescending()
         {
             var db = CreateDbContext();
-            var service = new InsightsService(db);
+            var service = new InsightsService(db, CreateConfig());
             var userId = Guid.NewGuid();
 
             var tag1 = new Tag { Id = Guid.NewGuid(), Name = "HighIntensity", UserId = userId, CreatedAt = DateTimeOffset.UtcNow };
@@ -129,7 +135,7 @@ namespace Pdmt.Api.Tests
         public async Task GetRepeatingTriggersAsync_NoEvents_ReturnsEmpty()
         {
             var db = CreateDbContext();
-            var service = new InsightsService(db);
+            var service = new InsightsService(db, CreateConfig());
             var userId = Guid.NewGuid();
 
             var now = DateTimeOffset.UtcNow;
@@ -142,7 +148,7 @@ namespace Pdmt.Api.Tests
         public async Task GetRepeatingTriggersAsync_FiltersOutsideDateRange()
         {
             var db = CreateDbContext();
-            var service = new InsightsService(db);
+            var service = new InsightsService(db, CreateConfig());
             var userId = Guid.NewGuid();
 
             var tag = new Tag { Id = Guid.NewGuid(), Name = "Work", UserId = userId, CreatedAt = DateTimeOffset.UtcNow };
@@ -175,7 +181,7 @@ namespace Pdmt.Api.Tests
         public async Task GetRepeatingTriggersAsync_IsolatesByUserId()
         {
             var db = CreateDbContext();
-            var service = new InsightsService(db);
+            var service = new InsightsService(db, CreateConfig());
             var userId1 = Guid.NewGuid();
             var userId2 = Guid.NewGuid();
 
@@ -208,7 +214,7 @@ namespace Pdmt.Api.Tests
         public async Task GetDiscountedPositivesAsync_TagWith5EventsAvgBelow4_IsIncluded()
         {
             var db = CreateDbContext();
-            var service = new InsightsService(db);
+            var service = new InsightsService(db, CreateConfig());
             var userId = Guid.NewGuid();
 
             var tag = new Tag { Id = Guid.NewGuid(), Name = "Achievement", UserId = userId, CreatedAt = DateTimeOffset.UtcNow };
@@ -233,7 +239,7 @@ namespace Pdmt.Api.Tests
         public async Task GetDiscountedPositivesAsync_TagWith4Events_IsExcluded()
         {
             var db = CreateDbContext();
-            var service = new InsightsService(db);
+            var service = new InsightsService(db, CreateConfig());
             var userId = Guid.NewGuid();
 
             var tag = new Tag { Id = Guid.NewGuid(), Name = "Achievement", UserId = userId, CreatedAt = DateTimeOffset.UtcNow };
@@ -257,7 +263,7 @@ namespace Pdmt.Api.Tests
         public async Task GetDiscountedPositivesAsync_TagWithAvgExactly4_IsExcluded()
         {
             var db = CreateDbContext();
-            var service = new InsightsService(db);
+            var service = new InsightsService(db, CreateConfig());
             var userId = Guid.NewGuid();
 
             var tag = new Tag { Id = Guid.NewGuid(), Name = "Achievement", UserId = userId, CreatedAt = DateTimeOffset.UtcNow };
@@ -281,7 +287,7 @@ namespace Pdmt.Api.Tests
         public async Task GetDiscountedPositivesAsync_OnlyPositiveEvents_Considered()
         {
             var db = CreateDbContext();
-            var service = new InsightsService(db);
+            var service = new InsightsService(db, CreateConfig());
             var userId = Guid.NewGuid();
 
             var tag = new Tag { Id = Guid.NewGuid(), Name = "Achievement", UserId = userId, CreatedAt = DateTimeOffset.UtcNow };
@@ -312,7 +318,7 @@ namespace Pdmt.Api.Tests
         public async Task GetDiscountedPositivesAsync_EmptyResult_WhenNoneQualify()
         {
             var db = CreateDbContext();
-            var service = new InsightsService(db);
+            var service = new InsightsService(db, CreateConfig());
             var userId = Guid.NewGuid();
 
             var now = DateTimeOffset.UtcNow;
@@ -329,7 +335,7 @@ namespace Pdmt.Api.Tests
         public async Task GetNextDayEffectsAsync_TagOnExactly3Days_IsIncluded()
         {
             var db = CreateDbContext();
-            var service = new InsightsService(db);
+            var service = new InsightsService(db, CreateConfig());
             var userId = Guid.NewGuid();
 
             var tag = new Tag { Id = Guid.NewGuid(), Name = "Exercise", UserId = userId, CreatedAt = DateTimeOffset.UtcNow };
@@ -361,7 +367,7 @@ namespace Pdmt.Api.Tests
         public async Task GetNextDayEffectsAsync_TagOn2Days_IsExcluded()
         {
             var db = CreateDbContext();
-            var service = new InsightsService(db);
+            var service = new InsightsService(db, CreateConfig());
             var userId = Guid.NewGuid();
 
             var tag = new Tag { Id = Guid.NewGuid(), Name = "Exercise", UserId = userId, CreatedAt = DateTimeOffset.UtcNow };
@@ -386,7 +392,7 @@ namespace Pdmt.Api.Tests
         public async Task GetNextDayEffectsAsync_OrderedByAbsNextDayScore()
         {
             var db = CreateDbContext();
-            var service = new InsightsService(db);
+            var service = new InsightsService(db, CreateConfig());
             var userId = Guid.NewGuid();
 
             var tagA = new Tag { Id = Guid.NewGuid(), Name = "TagA", UserId = userId, CreatedAt = DateTimeOffset.UtcNow };
@@ -441,7 +447,7 @@ namespace Pdmt.Api.Tests
         public async Task GetTagCombosAsync_TwoTagsOnSameDay3Times_IsIncluded()
         {
             var db = CreateDbContext();
-            var service = new InsightsService(db);
+            var service = new InsightsService(db, CreateConfig());
             var userId = Guid.NewGuid();
 
             var tag1 = new Tag { Id = Guid.NewGuid(), Name = "Work", UserId = userId, CreatedAt = DateTimeOffset.UtcNow };
@@ -472,7 +478,7 @@ namespace Pdmt.Api.Tests
         public async Task GetTagCombosAsync_CoOccurrences2_IsExcluded()
         {
             var db = CreateDbContext();
-            var service = new InsightsService(db);
+            var service = new InsightsService(db, CreateConfig());
             var userId = Guid.NewGuid();
 
             var tag1 = new Tag { Id = Guid.NewGuid(), Name = "Work", UserId = userId, CreatedAt = DateTimeOffset.UtcNow };
@@ -502,7 +508,7 @@ namespace Pdmt.Api.Tests
         public async Task GetTagCombosAsync_PairOrdering_AlphabeticalKey()
         {
             var db = CreateDbContext();
-            var service = new InsightsService(db);
+            var service = new InsightsService(db, CreateConfig());
             var userId = Guid.NewGuid();
 
             var tagZ = new Tag { Id = Guid.NewGuid(), Name = "Zebra", UserId = userId, CreatedAt = DateTimeOffset.UtcNow };
@@ -534,7 +540,7 @@ namespace Pdmt.Api.Tests
         public async Task GetTagCombosAsync_NoEvents_ReturnsEmpty()
         {
             var db = CreateDbContext();
-            var service = new InsightsService(db);
+            var service = new InsightsService(db, CreateConfig());
             var userId = Guid.NewGuid();
 
             var dayStart = DateTimeOffset.UtcNow.Date;
@@ -551,7 +557,7 @@ namespace Pdmt.Api.Tests
         public async Task GetTagTrendAsync_TagNotOwnedByUser_ThrowsNotFoundException()
         {
             var db = CreateDbContext();
-            var service = new InsightsService(db);
+            var service = new InsightsService(db, CreateConfig());
             var userId1 = Guid.NewGuid();
             var userId2 = Guid.NewGuid();
 
@@ -568,7 +574,7 @@ namespace Pdmt.Api.Tests
         public async Task GetTagTrendAsync_Week_GroupsByMonday()
         {
             var db = CreateDbContext();
-            var service = new InsightsService(db);
+            var service = new InsightsService(db, CreateConfig());
             var userId = Guid.NewGuid();
 
             var tag = new Tag { Id = Guid.NewGuid(), Name = "Work", UserId = userId, CreatedAt = DateTimeOffset.UtcNow };
@@ -594,7 +600,7 @@ namespace Pdmt.Api.Tests
         public async Task GetTagTrendAsync_Month_GroupsByFirstOfMonth()
         {
             var db = CreateDbContext();
-            var service = new InsightsService(db);
+            var service = new InsightsService(db, CreateConfig());
             var userId = Guid.NewGuid();
 
             var tag = new Tag { Id = Guid.NewGuid(), Name = "Work", UserId = userId, CreatedAt = DateTimeOffset.UtcNow };
@@ -619,7 +625,7 @@ namespace Pdmt.Api.Tests
         public async Task GetTagTrendAsync_OnlyIncludesEventsWithTag()
         {
             var db = CreateDbContext();
-            var service = new InsightsService(db);
+            var service = new InsightsService(db, CreateConfig());
             var userId = Guid.NewGuid();
 
             var tag = new Tag { Id = Guid.NewGuid(), Name = "Work", UserId = userId, CreatedAt = DateTimeOffset.UtcNow };
@@ -652,7 +658,7 @@ namespace Pdmt.Api.Tests
         public async Task GetInfluenceabilitySplitAsync_OnlyNegativeEvents_Considered()
         {
             var db = CreateDbContext();
-            var service = new InsightsService(db);
+            var service = new InsightsService(db, CreateConfig());
             var userId = Guid.NewGuid();
 
             var now = DateTimeOffset.UtcNow;
@@ -679,7 +685,7 @@ namespace Pdmt.Api.Tests
         public async Task GetInfluenceabilitySplitAsync_Split_CalculatedCorrectly()
         {
             var db = CreateDbContext();
-            var service = new InsightsService(db);
+            var service = new InsightsService(db, CreateConfig());
             var userId = Guid.NewGuid();
 
             var now = DateTimeOffset.UtcNow;
@@ -710,7 +716,7 @@ namespace Pdmt.Api.Tests
         public async Task GetInfluenceabilitySplitAsync_AllCanInfluence_CannotIsZero()
         {
             var db = CreateDbContext();
-            var service = new InsightsService(db);
+            var service = new InsightsService(db, CreateConfig());
             var userId = Guid.NewGuid();
 
             var now = DateTimeOffset.UtcNow;
@@ -733,7 +739,7 @@ namespace Pdmt.Api.Tests
         public async Task GetInfluenceabilitySplitAsync_NoNegativeEvents_AllZeros()
         {
             var db = CreateDbContext();
-            var service = new InsightsService(db);
+            var service = new InsightsService(db, CreateConfig());
             var userId = Guid.NewGuid();
 
             var now = DateTimeOffset.UtcNow;

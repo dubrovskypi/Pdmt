@@ -11,4 +11,7 @@ internal static class DateHelper
 
     internal static DateTimeOffset GetMonday(DateOnly date) =>
         GetMonday(new DateTimeOffset(date.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc), TimeSpan.Zero));
+
+    internal static DateOnly ToLocalDate(DateTimeOffset utcTimestamp, TimeZoneInfo tz) =>
+        DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(utcTimestamp.UtcDateTime, tz));
 }

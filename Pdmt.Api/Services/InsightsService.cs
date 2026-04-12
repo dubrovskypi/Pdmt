@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Pdmt.Api.Data;
 using Pdmt.Api.Domain;
 using Pdmt.Api.Dto.Analytics;
@@ -7,8 +8,11 @@ using Pdmt.Api.Infrastructure.Exceptions;
 
 namespace Pdmt.Api.Services;
 
-public class InsightsService(AppDbContext db) : IInsightsService
+public class InsightsService(AppDbContext db, IConfiguration config) : IInsightsService
 {
+    private TimeZoneInfo GetTz() =>
+        TimeZoneInfo.FindSystemTimeZoneById(config["App:DefaultTimeZone"]!);
+
     public async Task<IReadOnlyList<RepeatingTriggerDto>> GetRepeatingTriggersAsync(Guid userId, DateTimeOffset from, DateTimeOffset to, int minCount = 3)
     {
         var events = await db.Events
@@ -53,8 +57,9 @@ public class InsightsService(AppDbContext db) : IInsightsService
             .ToListAsync();
 
         // Вычисляем dayScore для каждого дня
+        var tz = GetTz();
         var dayScores = events
-            .GroupBy(e => e.Timestamp.DateTime.Date)
+            .GroupBy(e => DateHelper.ToLocalDate(e.Timestamp, tz))
             .ToDictionary(
                 g => g.Key,
                 g => (double)(g.Sum(e => e.Type == EventType.Positive ? e.Intensity : 0) - g.Sum(e => e.Type == EventType.Negative ? e.Intensity : 0)) / g.Count());
@@ -62,7 +67,7 @@ public class InsightsService(AppDbContext db) : IInsightsService
         // Собираем теги только из основного периода [from, to]
         var tagDates = events
             .Where(e => e.Timestamp < to.AddDays(1))
-            .SelectMany(e => e.EventTags.Select(et => new { et.Tag.Name, Date = e.Timestamp.DateTime.Date }))
+            .SelectMany(e => e.EventTags.Select(et => new { et.Tag.Name, Date = DateHelper.ToLocalDate(e.Timestamp, tz) }))
             .GroupBy(x => x.Name)
             .ToDictionary(g => g.Key, g => g.Select(x => x.Date).Distinct().ToList());
 
@@ -95,8 +100,9 @@ public class InsightsService(AppDbContext db) : IInsightsService
             .ToListAsync();
 
         // Группируем события по дням
+        var tz = GetTz();
         var byDay = events
-            .GroupBy(e => e.Timestamp.DateTime.Date)
+            .GroupBy(e => DateHelper.ToLocalDate(e.Timestamp, tz))
             .Select(g => new
             {
                 Date = g.Key,

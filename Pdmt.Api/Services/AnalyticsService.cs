@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Pdmt.Api.Data;
 using Pdmt.Api.Domain;
 using Pdmt.Api.Dto.Analytics;
@@ -7,8 +8,11 @@ using Pdmt.Api.Infrastructure.Exceptions;
 
 namespace Pdmt.Api.Services;
 
-public class AnalyticsService(AppDbContext db) : IAnalyticsService
+public class AnalyticsService(AppDbContext db, IConfiguration config) : IAnalyticsService
 {
+    private TimeZoneInfo GetTz() =>
+        TimeZoneInfo.FindSystemTimeZoneById(config["App:DefaultTimeZone"]!);
+
     public async Task<WeeklySummaryDto> GetWeeklySummaryAsync(Guid userId, DateOnly weekOf)
     {
         var monday = DateHelper.GetMonday(weekOf);
@@ -135,13 +139,14 @@ public class AnalyticsService(AppDbContext db) : IAnalyticsService
             .Where(e => e.UserId == userId && e.Timestamp >= monday && e.Timestamp < monday.AddDays(7))
             .ToListAsync();
 
-        var byDay = events.GroupBy(e => e.Timestamp.DateTime.Date).ToDictionary(g => g.Key, g => g.ToList());
+        var tz = GetTz();
+        var byDay = events.GroupBy(e => DateHelper.ToLocalDate(e.Timestamp, tz)).ToDictionary(g => g.Key, g => g.ToList());
 
         var days = new List<CalendarDayDetailsDto>(7);
         for (var i = 0; i < 7; i++)
         {
             var date = monday.AddDays(i);
-            if (!byDay.TryGetValue(date.DateTime.Date, out var dayEvents))
+            if (!byDay.TryGetValue(DateHelper.ToLocalDate(date, tz), out var dayEvents))
             {
                 days.Add(new CalendarDayDetailsDto(date, 0, 0, 0, 0, 0.0, [], []));
                 continue;
@@ -188,13 +193,14 @@ public class AnalyticsService(AppDbContext db) : IAnalyticsService
             .Select(e => new { e.Timestamp, e.Type, e.Intensity })
             .ToListAsync();
 
-        var byDay = raw.GroupBy(e => e.Timestamp.DateTime.Date).ToDictionary(g => g.Key, g => g.ToList());
+        var tz = GetTz();
+        var byDay = raw.GroupBy(e => DateHelper.ToLocalDate(e.Timestamp, tz)).ToDictionary(g => g.Key, g => g.ToList());
 
         var days = new List<CalendarDayLightDto>(DateTime.DaysInMonth(year, month));
         for (var d = 1; d <= DateTime.DaysInMonth(year, month); d++)
         {
             var date = new DateTimeOffset(year, month, d, 0, 0, 0, TimeSpan.Zero);
-            if (!byDay.TryGetValue(date.DateTime.Date, out var dayEvents))
+            if (!byDay.TryGetValue(DateHelper.ToLocalDate(date, tz), out var dayEvents))
             {
                 days.Add(new CalendarDayLightDto(date, 0, 0, 0.0));
                 continue;
