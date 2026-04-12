@@ -152,6 +152,25 @@ export interface TagTrendPointDto {
   avgIntensity: number;
 }
 
+export interface BalanceDto {
+  posCount: number;
+  negCount: number;
+  avgPosIntensity: number;
+  avgNegIntensity: number;
+}
+
+export interface TriggersDto {
+  topPosTags: TagSummaryDto[];
+  topNegTags: TagSummaryDto[];
+}
+
+export interface WeekdayStatsDto {
+  day: string;
+  posCount: number;
+  negCount: number;
+  avgIntensity: number;
+}
+
 export interface InfluenceabilitySplitDto {
   canInfluenceCount: number;
   canInfluenceAvgIntensity: number;

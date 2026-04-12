@@ -99,4 +99,46 @@ public class InsightsController(IInsightsService insightsService) : ControllerBa
         var userId = User.GetUserId();
         return Ok(await insightsService.GetInfluenceabilitySplitAsync(userId, from, to));
     }
+
+    [HttpGet("top-tags")]
+    [ProducesResponseType(typeof(TriggersDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<TriggersDto>> GetTopTags(
+        [FromQuery] DateTimeOffset from,
+        [FromQuery] DateTimeOffset to)
+    {
+        if (from > to)
+            return BadRequest("'from' must be earlier than 'to'.");
+
+        var userId = User.GetUserId();
+        return Ok(await insightsService.GetTriggersAsync(userId, from, to));
+    }
+
+    [HttpGet("balance")]
+    [ProducesResponseType(typeof(BalanceDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<BalanceDto>> GetBalance(
+        [FromQuery] DateTimeOffset from,
+        [FromQuery] DateTimeOffset to)
+    {
+        if (from > to)
+            return BadRequest("'from' must be earlier than 'to'.");
+
+        var userId = User.GetUserId();
+        return Ok(await insightsService.GetBalanceAsync(userId, from, to));
+    }
+
+    [HttpGet("day-of-week")]
+    [ProducesResponseType(typeof(IReadOnlyList<WeekdayStatsDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<IReadOnlyList<WeekdayStatsDto>>> GetDayOfWeekBreakdown(
+        [FromQuery] DateTimeOffset from,
+        [FromQuery] DateTimeOffset to)
+    {
+        if (from > to)
+            return BadRequest("'from' must be earlier than 'to'.");
+
+        var userId = User.GetUserId();
+        return Ok(await insightsService.GetWeekdayStatsAsync(userId, from, to));
+    }
 }

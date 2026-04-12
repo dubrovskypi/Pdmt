@@ -15,4 +15,7 @@ public interface IInsightsService
     Task<IReadOnlyList<TagComboDto>> GetTagCombosAsync(Guid userId, DateTimeOffset from, DateTimeOffset to);
     Task<IReadOnlyList<TagTrendPointDto>> GetTagTrendAsync(Guid userId, Guid tagId, DateTimeOffset from, DateTimeOffset to, TrendGranularity period);
     Task<InfluenceabilitySplitDto> GetInfluenceabilitySplitAsync(Guid userId, DateTimeOffset from, DateTimeOffset to);
+    Task<TriggersDto> GetTriggersAsync(Guid userId, DateTimeOffset from, DateTimeOffset to);
+    Task<BalanceDto> GetBalanceAsync(Guid userId, DateTimeOffset from, DateTimeOffset to);
+    Task<IReadOnlyList<WeekdayStatsDto>> GetWeekdayStatsAsync(Guid userId, DateTimeOffset from, DateTimeOffset to);
 }

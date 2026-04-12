@@ -1,19 +1,18 @@
-import { getWeeklySummary } from "@/api/analytics";
-import type { WeeklySummaryDto } from "@/api/types";
+import { getDayOfWeek } from "@/api/analytics";
+import type { WeekdayStatsDto } from "@/api/types";
 import { CardShell, HBar } from "./CardShell";
 import { useLazyFetch } from "./useLazyFetch";
 import type { PeriodRange } from "./types";
 
 export function Card6DayOfWeek({ range, isActive }: { range: PeriodRange; isActive: boolean }) {
-  const { data, loading, error, retry } = useLazyFetch<WeeklySummaryDto | null>(
-    (signal) => getWeeklySummary(range.weekOf, signal),
-    null,
-    [range.weekOf],
+  const { data, loading, error, retry } = useLazyFetch<WeekdayStatsDto[]>(
+    (signal) => getDayOfWeek(range.from, range.to, signal),
+    [],
+    [range.from, range.to],
     isActive,
   );
 
-  const days = data?.byDayOfWeek ?? [];
-  const max = Math.max(...days.map((d) => Math.abs(d.avgIntensity)), 1);
+  const max = Math.max(...data.map((d) => Math.abs(d.avgIntensity)), 1);
 
   return (
     <CardShell
@@ -24,13 +23,12 @@ export function Card6DayOfWeek({ range, isActive }: { range: PeriodRange; isActi
       loading={loading}
       error={error}
       onRetry={retry}
-      weekOnly
     >
-      {days.length === 0 ? (
+      {data.length === 0 ? (
         <p className="text-sm text-slate-400">Недостаточно данных.</p>
       ) : (
         <div className="flex flex-col gap-2">
-          {days.map((d) => (
+          {data.map((d) => (
             <HBar
               key={d.day}
               label={d.day}

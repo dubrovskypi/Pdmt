@@ -9,6 +9,9 @@ import type {
   TagComboDto,
   TagTrendPointDto,
   InfluenceabilitySplitDto,
+  TriggersDto,
+  BalanceDto,
+  WeekdayStatsDto,
 } from "./types";
 
 export const getCalendarWeek = (weekOf: string, signal?: AbortSignal) =>
@@ -62,5 +65,23 @@ export const getTagTrend = (tagId: string, from: string, to: string, signal?: Ab
 export const getInfluenceability = (from: string, to: string, signal?: AbortSignal) =>
   apiGet<InfluenceabilitySplitDto>(
     `/api/analytics/insights/influenceability?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
+    signal,
+  );
+
+export const getTopTags = (from: string, to: string, signal?: AbortSignal) =>
+  apiGet<TriggersDto>(
+    `/api/analytics/insights/top-tags?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
+    signal,
+  );
+
+export const getBalance = (from: string, to: string, signal?: AbortSignal) =>
+  apiGet<BalanceDto>(
+    `/api/analytics/insights/balance?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
+    signal,
+  );
+
+export const getDayOfWeek = (from: string, to: string, signal?: AbortSignal) =>
+  apiGet<WeekdayStatsDto[]>(
+    `/api/analytics/insights/day-of-week?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
     signal,
   );
