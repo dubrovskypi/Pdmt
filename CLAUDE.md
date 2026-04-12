@@ -34,7 +34,15 @@ dotnet build Pdmt.Maui/Pdmt.Maui.csproj
 
 # Run React SPA dev server (from pdmt-web/)
 npm run dev   # https://localhost:5173 (HTTPS via @vitejs/plugin-basic-ssl)
+
+# Build React SPA for production (from pdmt-web/)
+npm run build  # Output: dist/ directory; requires VITE_PDMT_API_BASE_URL env var
+
+# Access Swagger UI for API exploration (development only)
+# https://localhost:7031/swagger
 ```
+
+> Migrations are applied automatically on API startup (`db.Database.Migrate()` in `Program.cs`).
  
 ## Code Style (.NET 8 / C# 12)
  
@@ -68,7 +76,7 @@ npm run dev   # https://localhost:5173 (HTTPS via @vitejs/plugin-basic-ssl)
 - `AnalyticsController` routes: `/weekly-summary`, `/trends`, `/correlations`, `/calendar/week`, `/calendar/month`
 - `InsightsController` routes (all under `/api/analytics/insights/`): `repeating-triggers`, `discounted-positives`, `next-day-effects`, `tag-combos`, `tag-trend`, `influenceability`
 - Add `[ProducesResponseType]` and response code attributes to action methods for Swagger documentation
-- `TokenCleanupBgService` — background service that purges expired refresh tokens
+- `TokenCleanupBgService` — background service that purges expired refresh tokens (currently commented out in `Program.cs` — uncomment to enable automatic cleanup of stale refresh tokens)
 - Global exception handling via `ExceptionHandlingMiddleware` — do not add try/catch in controllers
 
 ### Exception → HTTP Status
@@ -177,6 +185,70 @@ Integration tests in `EventControllerTests.cs` cover auth enforcement, CRUD, fil
 - **Page sub-components**: Declare in same file above main component
 - **Data loading**: `useState` + `useEffect`; no custom hooks for read-only data; parallel requests via `Promise.all` when independent
 - **AnalyticsPage**: sub-components in same file; no custom hooks for read-only data; `Promise.all` for parallel independent requests
+
+## Production Configuration
+
+Configuration uses `appsettings.json` (base) + `appsettings.{Environment}.json` (overrides). Dev values are in `appsettings.Development.json` — do not commit production secrets.
+
+**Secrets management:**
+- **Dev**: `dotnet user-secrets set "Jwt:Secret" "..."` — stored outside repo, never committed
+- **Prod**: environment variables — never in `appsettings.Production.json`
+
+**Required for production (env vars):**
+- `Jwt:Secret` — JWT signing key (min. 32 chars)
+- `ConnectionStrings:Postgres` — PostgreSQL connection string
+- `ConnectionStrings:Redis` — Redis connection string
+- `Cors:AllowedOrigins` — production frontend origins (array)
+- `OpenTelemetry:Endpoint` — OTLP collector endpoint
+
+**Docker Compose** — requires `POSTGRES_PASSWORD` env var (used by `docker-compose.yml`).
+
+**pdmt-web** — requires `VITE_PDMT_API_BASE_URL` in `.env` (see `.env.example`).
+
+## Observability
+
+**Seq Structured Logging**
+
+- Seq UI: `http://localhost:5080` (available after `docker compose up -d`)
+- Structured logs from Pdmt.Api are automatically ingested
+- Search and filter logs by level, logger, properties, or event type
+- Useful for debugging request flows, auth issues, and service interactions
+
+**Health Checks**
+
+- `/health` endpoint provides API health status (available without authentication)
+- Used by load balancers and monitoring systems to detect service availability
+
+## Docker Compose
+
+**Infrastructure stack:** PostgreSQL, Redis, Seq
+
+```bash
+# Start all services (PostgreSQL, Redis, Seq) in background
+docker compose up -d
+
+# View logs from all services
+docker compose logs -f
+
+# Stop services without removing data
+docker compose stop
+
+# Stop and remove containers (keep volumes)
+docker compose down
+
+# Remove and reinitialize database (destructive)
+docker compose down -v
+docker compose up -d
+# Then start the API — migrations run automatically on startup
+
+# View specific service logs
+docker compose logs -f postgres    # PostgreSQL logs
+docker compose logs -f seq         # Seq logs
+docker compose logs -f redis       # Redis logs
+```
+
+**Common issues:**
+- Port conflicts: Change ports in `docker-compose.yml` if 5432 (PostgreSQL), 6379 (Redis), or 5080 (Seq) are in use
 
 ## Commits
 
