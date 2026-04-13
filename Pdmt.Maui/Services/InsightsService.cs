@@ -3,7 +3,7 @@ using System.Net.Http.Json;
 
 namespace Pdmt.Maui.Services;
 
-public class InsightsService(IHttpClientFactory factory, TagService tagService)
+public class InsightsService(IHttpClientFactory factory)
 {
     // ── Insights endpoints ─────────────────────────────────────────────────
 
@@ -43,13 +43,13 @@ public class InsightsService(IHttpClientFactory factory, TagService tagService)
             $"api/analytics/insights/tag-combos?from={f}&to={t}", ct) ?? [];
     }
 
-    public async Task<List<TagTrendPointDto>> GetTagTrendAsync(
-        Guid tagId, DateTimeOffset from, DateTimeOffset to, string period = "week", CancellationToken ct = default)
+    public async Task<List<TagTrendSeriesDto>> GetTagTrendAsync(
+        DateTimeOffset from, DateTimeOffset to, string period = "week", CancellationToken ct = default)
     {
         var http = factory.CreateClient("PdmtApi");
         var (f, t) = FormatRange(from, to);
-        return await http.GetFromJsonAsync<List<TagTrendPointDto>>(
-            $"api/analytics/insights/tag-trend?tagId={tagId}&from={f}&to={t}&period={period}", ct) ?? [];
+        return await http.GetFromJsonAsync<List<TagTrendSeriesDto>>(
+            $"api/analytics/insights/tag-trend?from={f}&to={t}&period={period}", ct) ?? [];
     }
 
     public async Task<InfluenceabilitySplitDto?> GetInfluenceabilityAsync(
@@ -78,14 +78,6 @@ public class InsightsService(IHttpClientFactory factory, TagService tagService)
         var (f, t) = FormatRange(from, to);
         return await http.GetFromJsonAsync<List<TrendPeriodDto>>(
             $"api/analytics/trends?from={f}&to={t}&period={groupBy}", ct) ?? [];
-    }
-
-    // ── Tag name → ID lookup ───────────────────────────────────────────────
-
-    public async Task<Guid?> FindTagIdByNameAsync(string name)
-    {
-        var tags = await tagService.GetTagsAsync();
-        return tags.FirstOrDefault(t => t.Name == name)?.Id;
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────

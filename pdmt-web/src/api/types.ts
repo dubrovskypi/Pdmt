@@ -152,6 +152,11 @@ export interface TagTrendPointDto {
   avgIntensity: number;
 }
 
+export interface TagTrendSeriesDto {
+  tagName: string;
+  points: TagTrendPointDto[];
+}
+
 export interface BalanceDto {
   posCount: number;
   negCount: number;

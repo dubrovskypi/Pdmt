@@ -20,26 +20,17 @@ public partial class Card09TagTrendViewModel(InsightsService insightsService) : 
         TagName = null;
         try
         {
-            var triggers = await insightsService.GetRepeatingTriggersAsync(from, to, minCount: 1, ct: ct);
-            var topTrigger = triggers.MaxBy(t => t.Count);
-            if (topTrigger is null)
+            var seriesList = await insightsService.GetTagTrendAsync(from, to, "week", ct);
+            var top = seriesList.FirstOrDefault();
+            if (top is null)
             {
                 ErrorMessage = "Нет данных для тренда тега.";
                 return;
             }
 
-            var tagId = await insightsService.FindTagIdByNameAsync(topTrigger.TagName);
-            if (tagId is null)
-            {
-                ErrorMessage = "Тег не найден.";
-                return;
-            }
-
-            TagName = topTrigger.TagName;
-            var rawPoints = await insightsService.GetTagTrendAsync(tagId.Value, from, to, "week", ct);
-
-            double maxCount = rawPoints.Count > 0 ? rawPoints.Max(p => (double)p.Count) : 1;
-            Points = rawPoints.Select(p => new TagTrendBarItem(
+            TagName = top.TagName;
+            double maxCount = top.Points.Count > 0 ? top.Points.Max(p => (double)p.Count) : 1;
+            Points = top.Points.Select(p => new TagTrendBarItem(
                 p.PeriodStart.ToString("dd.MM"),
                 p.Count,
                 maxCount > 0 ? p.Count / maxCount * DesignMaxHeight : 4)).ToList();

@@ -7,7 +7,7 @@ import type {
   DiscountedPositiveDto,
   NextDayEffectDto,
   TagComboDto,
-  TagTrendPointDto,
+  TagTrendSeriesDto,
   InfluenceabilitySplitDto,
   TriggersDto,
   BalanceDto,
@@ -56,9 +56,9 @@ export const getTagCombos = (from: string, to: string, signal?: AbortSignal) =>
     signal,
   );
 
-export const getTagTrend = (tagId: string, from: string, to: string, signal?: AbortSignal) =>
-  apiGet<TagTrendPointDto[]>(
-    `/api/analytics/insights/tag-trend?tagId=${encodeURIComponent(tagId)}&from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&period=week`,
+export const getTagTrend = (from: string, to: string, signal?: AbortSignal) =>
+  apiGet<TagTrendSeriesDto[]>(
+    `/api/analytics/insights/tag-trend?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&period=week`,
     signal,
   );
 

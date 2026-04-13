@@ -554,23 +554,6 @@ namespace Pdmt.Api.Tests
         #region GetTagTrendAsync
 
         [Fact]
-        public async Task GetTagTrendAsync_TagNotOwnedByUser_ThrowsNotFoundException()
-        {
-            var db = CreateDbContext();
-            var service = new InsightsService(db, CreateConfig());
-            var userId1 = Guid.NewGuid();
-            var userId2 = Guid.NewGuid();
-
-            var tag = new Tag { Id = Guid.NewGuid(), Name = "Work", UserId = userId2, CreatedAt = DateTimeOffset.UtcNow };
-            db.Tags.Add(tag);
-            await db.SaveChangesAsync();
-
-            var now = DateTimeOffset.UtcNow;
-            await Assert.ThrowsAsync<NotFoundException>(() =>
-                service.GetTagTrendAsync(userId1, tag.Id, now, now.AddDays(7), TrendGranularity.Week));
-        }
-
-        [Fact]
         public async Task GetTagTrendAsync_Week_GroupsByMonday()
         {
             var db = CreateDbContext();
@@ -591,9 +574,10 @@ namespace Pdmt.Api.Tests
             db.EventTags.Add(new EventTag { EventId = ev2.Id, TagId = tag.Id });
             await db.SaveChangesAsync();
 
-            var result = await service.GetTagTrendAsync(userId, tag.Id, monday1, monday2.AddDays(6), TrendGranularity.Week);
+            var result = await service.GetTagTrendAsync(userId, monday1, monday2.AddDays(6), TrendGranularity.Week);
 
-            Assert.Equal(2, result.Count);
+            Assert.Single(result);
+            Assert.Equal(2, result[0].Points.Count);
         }
 
         [Fact]
@@ -616,9 +600,10 @@ namespace Pdmt.Api.Tests
             db.EventTags.Add(new EventTag { EventId = ev2.Id, TagId = tag.Id });
             await db.SaveChangesAsync();
 
-            var result = await service.GetTagTrendAsync(userId, tag.Id, jan, feb.AddDays(15), TrendGranularity.Month);
+            var result = await service.GetTagTrendAsync(userId, jan, feb.AddDays(15), TrendGranularity.Month);
 
-            Assert.Equal(2, result.Count);
+            Assert.Single(result);
+            Assert.Equal(2, result[0].Points.Count);
         }
 
         [Fact]
@@ -644,10 +629,10 @@ namespace Pdmt.Api.Tests
             // ev3 is not tagged
             await db.SaveChangesAsync();
 
-            var result = await service.GetTagTrendAsync(userId, tag.Id, monday, monday.AddDays(7), TrendGranularity.Week);
+            var result = await service.GetTagTrendAsync(userId, monday, monday.AddDays(7), TrendGranularity.Week);
 
             Assert.Single(result);
-            Assert.Equal(2, result[0].Count);
+            Assert.Equal(2, result[0].Points[0].Count);
         }
 
         #endregion

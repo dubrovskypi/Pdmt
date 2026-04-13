@@ -27,7 +27,7 @@ public class AnalyticsControllerTests : IClassFixture<CustomWebAppFactory>
     [InlineData("/api/analytics/insights/discounted-positives?from=2026-01-01&to=2026-01-31")]
     [InlineData("/api/analytics/insights/next-day-effects?from=2026-01-01&to=2026-01-31")]
     [InlineData("/api/analytics/insights/tag-combos?from=2026-01-01&to=2026-01-31")]
-    [InlineData("/api/analytics/insights/tag-trend?tagId=00000000-0000-0000-0000-000000000099&from=2026-01-01&to=2026-01-31")]
+    [InlineData("/api/analytics/insights/tag-trend?from=2026-01-01&to=2026-01-31")]
     [InlineData("/api/analytics/insights/influenceability?from=2026-01-01&to=2026-01-31")]
     public async Task InsightEndpoints_Should_Return_401_For_Anonymous(string url)
     {
@@ -366,60 +366,53 @@ public class AnalyticsControllerTests : IClassFixture<CustomWebAppFactory>
     // ── TagTrend ──────────────────────────────────────────────────────────────
 
     [Fact]
-    public async Task GetTagTrend_Should_Return_404_For_Nonexistent_Tag()
+    public async Task GetTagTrend_Should_Return_Top3_Tags_Ordered_By_Count()
     {
-        var client = CreateTestAuthClient();
-        var nonExistentTagId = Guid.NewGuid();
-
-        var response = await client.GetAsync($"/api/analytics/insights/tag-trend?tagId={nonExistentTagId}&from=2026-01-01&to=2026-01-31");
-
-        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
-    }
-
-    [Fact]
-    public async Task GetTagTrend_Should_Return_404_For_Other_Users_Tag()
-    {
-        var otherTag = await SeedTagAsync(OtherUserId, "tt_other_user_tag");
-        var client = CreateTestAuthClient();
-
-        var response = await client.GetAsync($"/api/analytics/insights/tag-trend?tagId={otherTag.Id}&from=2026-01-01&to=2026-01-31");
-
-        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
-    }
-
-    [Fact]
-    public async Task GetTagTrend_Should_Group_Events_By_Week()
-    {
-        var tag = await SeedTagAsync(TestUserId, "tt_weekly_tag");
-        // Week 1: 2 events, Week 2: 3 events
+        var tag1 = await SeedTagAsync(TestUserId, "tt_top1_tag");
+        var tag2 = await SeedTagAsync(TestUserId, "tt_top2_tag");
+        var tag3 = await SeedTagAsync(TestUserId, "tt_top3_tag");
+        // tag1: 3 events, tag2: 2 events, tag3: 1 event
         using (var scope = _factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            var dates = new[]
+            var tag1Dates = new[]
             {
-                new DateTime(2026, 10, 1, 0, 0, 0, DateTimeKind.Utc), // Week 1
-                new DateTime(2026, 10, 2, 0, 0, 0, DateTimeKind.Utc), // Week 1
-                new DateTime(2026, 10, 8, 0, 0, 0, DateTimeKind.Utc), // Week 2
-                new DateTime(2026, 10, 9, 0, 0, 0, DateTimeKind.Utc), // Week 2
-                new DateTime(2026, 10, 10, 0, 0, 0, DateTimeKind.Utc) // Week 2
+                new DateTime(2026, 10, 1, 0, 0, 0, DateTimeKind.Utc),
+                new DateTime(2026, 10, 2, 0, 0, 0, DateTimeKind.Utc),
+                new DateTime(2026, 10, 8, 0, 0, 0, DateTimeKind.Utc),
             };
-            foreach (var (date, idx) in dates.Select((d, i) => (d, i)))
+            foreach (var (date, idx) in tag1Dates.Select((d, i) => (d, i)))
             {
-                var ev = new Event { Id = Guid.NewGuid(), UserId = TestUserId, Timestamp = date, Type = EventType.Negative, Intensity = 5, Title = $"tt_ev_{idx}" };
+                var ev = new Event { Id = Guid.NewGuid(), UserId = TestUserId, Timestamp = date, Type = EventType.Negative, Intensity = 5, Title = $"tt_t1_{idx}" };
                 db.Events.Add(ev);
-                db.EventTags.Add(new EventTag { EventId = ev.Id, TagId = tag.Id });
+                db.EventTags.Add(new EventTag { EventId = ev.Id, TagId = tag1.Id });
             }
+            var tag2Dates = new[] {
+                new DateTime(2026, 10, 1, 0, 0, 0, DateTimeKind.Utc),
+                new DateTime(2026, 10, 8, 0, 0, 0, DateTimeKind.Utc),
+            };
+            foreach (var (date, idx) in tag2Dates.Select((d, i) => (d, i)))
+            {
+                var ev = new Event { Id = Guid.NewGuid(), UserId = TestUserId, Timestamp = date, Type = EventType.Negative, Intensity = 5, Title = $"tt_t2_{idx}" };
+                db.Events.Add(ev);
+                db.EventTags.Add(new EventTag { EventId = ev.Id, TagId = tag2.Id });
+            }
+            var ev3 = new Event { Id = Guid.NewGuid(), UserId = TestUserId, Timestamp = new DateTime(2026, 10, 1, 0, 0, 0, DateTimeKind.Utc), Type = EventType.Negative, Intensity = 5, Title = "tt_t3_0" };
+            db.Events.Add(ev3);
+            db.EventTags.Add(new EventTag { EventId = ev3.Id, TagId = tag3.Id });
             await db.SaveChangesAsync();
         }
 
         var client = CreateTestAuthClient();
-        var response = await client.GetAsync($"/api/analytics/insights/tag-trend?tagId={tag.Id}&from=2026-10-01&to=2026-10-14&period=Week");
-        var result = await response.Content.ReadFromJsonAsync<IReadOnlyList<TagTrendPointDto>>();
+        var response = await client.GetAsync("/api/analytics/insights/tag-trend?from=2026-10-01&to=2026-10-14&period=Week");
+        var result = await response.Content.ReadFromJsonAsync<IReadOnlyList<TagTrendSeriesDto>>();
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Equal(2, result!.Count);
-        Assert.Equal(2, result[0].Count);
-        Assert.Equal(3, result[1].Count);
+        Assert.Equal(3, result!.Count);
+        Assert.Equal("tt_top1_tag", result[0].TagName);
+        Assert.Equal(2, result[0].Points.Count); // 2 weeks
+        Assert.Equal("tt_top2_tag", result[1].TagName);
+        Assert.Equal("tt_top3_tag", result[2].TagName);
     }
 
     // ── InfluenceabilitySplit ─────────────────────────────────────────────────

@@ -13,6 +13,33 @@ public class InsightsService(AppDbContext db, IConfiguration config) : IInsights
     private TimeZoneInfo GetTz() =>
         TimeZoneInfo.FindSystemTimeZoneById(config["App:DefaultTimeZone"]!);
 
+    public async Task<TriggersDto> GetMaxIntensiveTagsAsync(Guid userId, DateTimeOffset from, DateTimeOffset to)
+    {
+        var events = db.Events
+            .AsNoTracking()
+            .Include(e => e.EventTags).ThenInclude(et => et.Tag)
+            .Where(e => e.UserId == userId && e.Timestamp >= from && e.Timestamp < to.AddDays(1));
+
+        var pos = await events.Where(e => e.Type == EventType.Positive).ToListAsync();
+        var neg = await events.Where(e => e.Type == EventType.Negative).ToListAsync();
+
+        var posTags = pos
+            .SelectMany(e => e.EventTags.Select(et => new { et.Tag.Name, e.Intensity }))
+            .GroupBy(x => x.Name)
+            .OrderByDescending(g => g.Average(x => (double)x.Intensity))
+            .Take(5)
+            .Select(g => new TagSummaryDto(g.Key, g.Count(), g.Average(x => (double)x.Intensity)))
+            .ToList();
+        var negTags = neg
+            .SelectMany(e => e.EventTags.Select(et => new { et.Tag.Name, e.Intensity }))
+            .GroupBy(x => x.Name)
+            .OrderByDescending(g => g.Average(x => (double)x.Intensity))
+            .Take(5)
+            .Select(g => new TagSummaryDto(g.Key, g.Count(), g.Average(x => (double)x.Intensity)))
+            .ToList();
+        return new TriggersDto(posTags, negTags);
+    }
+
     public async Task<IReadOnlyList<RepeatingTriggerDto>> GetRepeatingTriggersAsync(Guid userId, DateTimeOffset from, DateTimeOffset to, int minCount = 3)
     {
         var events = await db.Events
@@ -30,6 +57,47 @@ public class InsightsService(AppDbContext db, IConfiguration config) : IInsights
             .ToList();
     }
 
+    public async Task<BalanceDto> GetBalanceAsync(Guid userId, DateTimeOffset from, DateTimeOffset to)
+    {
+        var events = await db.Events
+            .AsNoTracking()
+            .Where(e => e.UserId == userId && e.Timestamp >= from && e.Timestamp < to.AddDays(1))
+            .Select(e => new { e.Type, e.Intensity })
+            .ToListAsync();
+
+        var pos = events.Where(e => e.Type == EventType.Positive).ToList();
+        var neg = events.Where(e => e.Type == EventType.Negative).ToList();
+
+        return new BalanceDto(
+            pos.Count,
+            neg.Count,
+            pos.Count == 0 ? 0.0 : pos.Average(e => (double)e.Intensity),
+            neg.Count == 0 ? 0.0 : neg.Average(e => (double)e.Intensity));
+    }
+
+    public async Task<IReadOnlyList<TrendPeriodDto>> GetTrendsAsync(Guid userId, DateTimeOffset from, DateTimeOffset to, TrendGranularity period)
+    {
+        var raw = await db.Events
+            .AsNoTracking()
+            .Where(e => e.UserId == userId && e.Timestamp >= from && e.Timestamp < to.AddDays(1))
+            .Select(e => new { e.Timestamp, e.Type, e.Intensity })
+            .ToListAsync();
+
+        Func<DateTimeOffset, DateTimeOffset> getKey = period == TrendGranularity.Week
+            ? date => DateHelper.GetMonday(date)
+            : date => new DateTimeOffset(date.Year, date.Month, 1, 0, 0, 0, TimeSpan.Zero);
+
+        return raw
+            .GroupBy(e => getKey(e.Timestamp))
+            .OrderBy(g => g.Key)
+            .Select(g => new TrendPeriodDto(
+                g.Key,
+                g.Count(e => e.Type == EventType.Positive),
+                g.Count(e => e.Type == EventType.Negative),
+                g.Average(e => (double)e.Intensity)))
+            .ToList();
+    }
+
     public async Task<IReadOnlyList<DiscountedPositiveDto>> GetDiscountedPositivesAsync(Guid userId, DateTimeOffset from, DateTimeOffset to)
     {
         var events = await db.Events
@@ -44,6 +112,27 @@ public class InsightsService(AppDbContext db, IConfiguration config) : IInsights
             .Where(g => g.Count() >= 5 && g.Average(x => (double)x.Intensity) < 4.0)
             .OrderByDescending(g => g.Count())
             .Select(g => new DiscountedPositiveDto(g.Key, g.Average(x => (double)x.Intensity), g.Count()))
+            .ToList();
+    }
+
+    public async Task<IReadOnlyList<WeekdayStatsDto>> GetWeekdayStatsAsync(Guid userId, DateTimeOffset from, DateTimeOffset to)
+    {
+        var events = await db.Events
+            .AsNoTracking()
+            .Where(e => e.UserId == userId && e.Timestamp >= from && e.Timestamp < to.AddDays(1))
+            .Select(e => new { e.Type, e.Intensity, e.Timestamp })
+            .ToListAsync();
+
+        var tz = GetTz();
+
+        return events
+            .GroupBy(e => DateHelper.ToLocalDate(e.Timestamp, tz).DayOfWeek)
+            .OrderBy(g => ((int)g.Key + 6) % 7)
+            .Select(g => new WeekdayStatsDto(
+                g.Key.ToString(),
+                g.Count(e => e.Type == EventType.Positive),
+                g.Count(e => e.Type == EventType.Negative),
+                g.Average(e => (double)e.Intensity)))
             .ToList();
     }
 
@@ -169,30 +258,39 @@ public class InsightsService(AppDbContext db, IConfiguration config) : IInsights
             .ToList();
     }
 
-    public async Task<IReadOnlyList<TagTrendPointDto>> GetTagTrendAsync(Guid userId, Guid tagId, DateTimeOffset from, DateTimeOffset to, TrendGranularity period)
+    public async Task<IReadOnlyList<TagTrendSeriesDto>> GetTagTrendAsync(Guid userId, DateTimeOffset from, DateTimeOffset to, TrendGranularity period)
     {
-        _ = await db.Tags
+        var events = await db.Events
             .AsNoTracking()
-            .FirstOrDefaultAsync(t => t.Id == tagId && t.UserId == userId)
-            ?? throw new NotFoundException("Tag not found.");
-
-        var raw = await db.Events
-            .AsNoTracking()
-            .Where(e => e.UserId == userId
-                && e.Timestamp >= from && e.Timestamp < to.AddDays(1)
-                && e.EventTags.Any(et => et.TagId == tagId))
-            .Select(e => new { e.Timestamp, e.Intensity })
+            .Include(e => e.EventTags).ThenInclude(et => et.Tag)
+            .Where(e => e.UserId == userId && e.Timestamp >= from && e.Timestamp < to.AddDays(1))
             .ToListAsync();
+
+        var tagEntries = events
+            .SelectMany(e => e.EventTags.Select(et => new { et.TagId, et.Tag.Name, e.Timestamp, e.Intensity }))
+            .ToList();
+
+        var top3 = tagEntries
+            .GroupBy(x => x.TagId)
+            .Select(g => new { TagId = g.Key, TagName = g.First().Name, Count = g.Count() })
+            .OrderByDescending(t => t.Count)
+            .Take(3)
+            .ToList();
 
         Func<DateTimeOffset, DateTimeOffset> getKey = period == TrendGranularity.Week
             ? date => DateHelper.GetMonday(date)
             : date => new DateTimeOffset(date.Year, date.Month, 1, 0, 0, 0, TimeSpan.Zero);
 
-        return raw
-            .GroupBy(e => getKey(e.Timestamp))
-            .OrderBy(g => g.Key)
-            .Select(g => new TagTrendPointDto(g.Key, g.Count(), g.Average(e => (double)e.Intensity)))
-            .ToList();
+        return top3.Select(tag =>
+        {
+            var points = tagEntries
+                .Where(e => e.TagId == tag.TagId)
+                .GroupBy(e => getKey(e.Timestamp))
+                .OrderBy(g => g.Key)
+                .Select(g => new TagTrendPointDto(g.Key, g.Count(), g.Average(e => (double)e.Intensity)))
+                .ToList();
+            return new TagTrendSeriesDto(tag.TagName, points);
+        }).ToList();
     }
 
     public async Task<InfluenceabilitySplitDto> GetInfluenceabilitySplitAsync(Guid userId, DateTimeOffset from, DateTimeOffset to)
@@ -211,70 +309,5 @@ public class InsightsService(AppDbContext db, IConfiguration config) : IInsights
             canInfluence.Count == 0 ? 0.0 : canInfluence.Average(e => (double)e.Intensity),
             cannotInfluence.Count,
             cannotInfluence.Count == 0 ? 0.0 : cannotInfluence.Average(e => (double)e.Intensity));
-    }
-
-    public async Task<TriggersDto> GetTriggersAsync(Guid userId, DateTimeOffset from, DateTimeOffset to)
-    {
-        var events = db.Events
-            .AsNoTracking()
-            .Include(e => e.EventTags).ThenInclude(et => et.Tag)
-            .Where(e => e.UserId == userId && e.Timestamp >= from && e.Timestamp < to.AddDays(1));
-        var pos = await events.Where(e => e.Type == EventType.Positive).ToListAsync();
-        var neg = await events.Where(e => e.Type == EventType.Negative).ToListAsync();
-
-        var posTags = pos
-            .SelectMany(e => e.EventTags.Select(et => new { et.Tag.Name, e.Intensity }))
-            .GroupBy(x => x.Name)
-            .OrderByDescending(g => g.Average(x => (double)x.Intensity))
-            .Take(5)
-            .Select(g => new TagSummaryDto(g.Key, g.Count(), g.Average(x => (double)x.Intensity)))
-            .ToList();
-        var negTags = neg
-            .SelectMany(e => e.EventTags.Select(et => new { et.Tag.Name, e.Intensity }))
-            .GroupBy(x => x.Name)
-            .OrderByDescending(g => g.Average(x => (double)x.Intensity))
-            .Take(5)
-            .Select(g => new TagSummaryDto(g.Key, g.Count(), g.Average(x => (double)x.Intensity)))
-            .ToList();
-        return new TriggersDto(posTags, negTags);
-    }
-
-    public async Task<BalanceDto> GetBalanceAsync(Guid userId, DateTimeOffset from, DateTimeOffset to)
-    {
-        var events = await db.Events
-            .AsNoTracking()
-            .Where(e => e.UserId == userId && e.Timestamp >= from && e.Timestamp < to.AddDays(1))
-            .Select(e => new { e.Type, e.Intensity })
-            .ToListAsync();
-
-        var pos = events.Where(e => e.Type == EventType.Positive).ToList();
-        var neg = events.Where(e => e.Type == EventType.Negative).ToList();
-
-        return new BalanceDto(
-            pos.Count,
-            neg.Count,
-            pos.Count == 0 ? 0.0 : pos.Average(e => (double)e.Intensity),
-            neg.Count == 0 ? 0.0 : neg.Average(e => (double)e.Intensity));
-    }
-
-    public async Task<IReadOnlyList<WeekdayStatsDto>> GetWeekdayStatsAsync(Guid userId, DateTimeOffset from, DateTimeOffset to)
-    {
-        var events = await db.Events
-            .AsNoTracking()
-            .Where(e => e.UserId == userId && e.Timestamp >= from && e.Timestamp < to.AddDays(1))
-            .Select(e => new { e.Type, e.Intensity, e.Timestamp })
-            .ToListAsync();
-
-        var tz = GetTz();
-
-        return events
-            .GroupBy(e => DateHelper.ToLocalDate(e.Timestamp, tz).DayOfWeek)
-            .OrderBy(g => ((int)g.Key + 6) % 7)
-            .Select(g => new WeekdayStatsDto(
-                g.Key.ToString(),
-                g.Count(e => e.Type == EventType.Positive),
-                g.Count(e => e.Type == EventType.Negative),
-                g.Average(e => (double)e.Intensity)))
-            .ToList();
     }
 }

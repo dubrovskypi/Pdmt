@@ -18,6 +18,8 @@ public record TagComboDto(
 
 public record TagTrendPointDto(DateTimeOffset PeriodStart, int Count, double AvgIntensity);
 
+public record TagTrendSeriesDto(string TagName, List<TagTrendPointDto> Points);
+
 public record InfluenceabilitySplitDto(
     int CanInfluenceCount,
     double CanInfluenceAvgIntensity,
