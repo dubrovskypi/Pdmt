@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Pdmt.Api.Dto.Analytics;
+using Pdmt.Api.Dto.Insights;
 using Pdmt.Api.Infrastructure.Extensions;
 using Pdmt.Api.Services;
 
@@ -8,14 +8,14 @@ namespace Pdmt.Api.Controllers;
 
 [Authorize]
 [ApiController]
-[Route("api/analytics/[controller]")]
+[Route("api/[controller]")]
 [ProducesResponseType(StatusCodes.Status401Unauthorized)]
 public class InsightsController(IInsightsService insightsService) : ControllerBase
 {
-    [HttpGet("top-tags")]
-    [ProducesResponseType(typeof(TriggersDto), StatusCodes.Status200OK)]
+    [HttpGet("most-intense-tags")]
+    [ProducesResponseType(typeof(MostIntenseTagsDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<TriggersDto>> GetTopTags(
+    public async Task<ActionResult<MostIntenseTagsDto>> GetMostIntenseTags(
         [FromQuery] DateTimeOffset from,
         [FromQuery] DateTimeOffset to)
     {
@@ -23,7 +23,7 @@ public class InsightsController(IInsightsService insightsService) : ControllerBa
             return BadRequest("'from' must be earlier than 'to'.");
 
         var userId = User.GetUserId();
-        return Ok(await insightsService.GetMaxIntensiveTagsAsync(userId, from, to));
+        return Ok(await insightsService.GetMostIntenseTagsAsync(userId, from, to));
     }
 
     [HttpGet("repeating-triggers")]
@@ -42,9 +42,9 @@ public class InsightsController(IInsightsService insightsService) : ControllerBa
     }
 
     [HttpGet("balance")]
-    [ProducesResponseType(typeof(BalanceDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(PosNegBalanceDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<BalanceDto>> GetBalance(
+    public async Task<ActionResult<PosNegBalanceDto>> GetBalance(
         [FromQuery] DateTimeOffset from,
         [FromQuery] DateTimeOffset to)
     {
@@ -53,6 +53,21 @@ public class InsightsController(IInsightsService insightsService) : ControllerBa
 
         var userId = User.GetUserId();
         return Ok(await insightsService.GetBalanceAsync(userId, from, to));
+    }
+
+    [HttpGet("trends")]
+    [ProducesResponseType(typeof(IReadOnlyList<TrendPeriodDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<IReadOnlyList<TrendPeriodDto>>> GetTrends(
+    [FromQuery] DateTimeOffset from,
+    [FromQuery] DateTimeOffset to,
+    [FromQuery] Granularity period = Granularity.Week)
+    {
+        if (from > to)
+            return BadRequest("'from' must be earlier than 'to'.");
+
+        var userId = User.GetUserId();
+        return Ok(await insightsService.GetTrendsAsync(userId, from, to, period));
     }
 
     [HttpGet("discounted-positives")]
@@ -69,10 +84,10 @@ public class InsightsController(IInsightsService insightsService) : ControllerBa
         return Ok(await insightsService.GetDiscountedPositivesAsync(userId, from, to));
     }
 
-    [HttpGet("day-of-week")]
-    [ProducesResponseType(typeof(IReadOnlyList<WeekdayStatsDto>), StatusCodes.Status200OK)]
+    [HttpGet("weekday-stats")]
+    [ProducesResponseType(typeof(IReadOnlyList<WeekdayStatDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<IReadOnlyList<WeekdayStatsDto>>> GetDayOfWeekBreakdown(
+    public async Task<ActionResult<IReadOnlyList<WeekdayStatDto>>> GetWeekdayStats(
         [FromQuery] DateTimeOffset from,
         [FromQuery] DateTimeOffset to)
     {
@@ -117,7 +132,7 @@ public class InsightsController(IInsightsService insightsService) : ControllerBa
     public async Task<ActionResult<IReadOnlyList<TagTrendSeriesDto>>> GetTagTrend(
         [FromQuery] DateTimeOffset from,
         [FromQuery] DateTimeOffset to,
-        [FromQuery] TrendGranularity period = TrendGranularity.Week)
+        [FromQuery] Granularity period = Granularity.Week)
     {
         if (from > to)
             return BadRequest("'from' must be earlier than 'to'.");

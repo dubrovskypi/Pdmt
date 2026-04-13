@@ -1,4 +1,4 @@
-namespace Pdmt.Api.Dto.Analytics;
+namespace Pdmt.Api.Dto.Insights;
 
 public record TagComboDto(
     string Tag1,
