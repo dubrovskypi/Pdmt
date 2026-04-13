@@ -20,19 +20,3 @@ InsightsPage — несоответствия и ограничения бэка
    ROADMAP явно отмечает: «aggregated across the selected period — may need a period-aware variant».
    Вариант для произвольного диапазона отсутствует.
    Решение на бэке: то же, что в пункте 2 (period-aware summary endpoint).
-
-4. [Card 9 — TagTrend] RepeatingTriggerDto содержит tagName, но не tagId (Guid).
-   GET /api/analytics/insights/tag-trend требует tagId. Резолв: дополнительный GET /api/tags +
-   поиск по имени. Поиск по имени хрупкий (регистр, пробелы).
-   Решение на бэке: добавить tagId в RepeatingTriggerDto.
-
---- ИЗБЫТОЧНЫЕ ПОЛЯ В DTO (вычисляются и передаются, но не используются в карточках) ---
-
-5. WeeklySummaryDto: поля topPosEvents, topNegEvents, posToNegRatio
-   — ни одна из 10 карточек не использует эти поля.
-
-6. DayOfWeekBreakdownDto: поля posCount, negCount
-   — Card 6 отображает только avgIntensity по дням.
-
-7. TrendPeriodDto: поле avgIntensity
-   — Card 4 использует только posCount / negCount.

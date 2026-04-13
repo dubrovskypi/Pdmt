@@ -4,8 +4,25 @@ import { CardShell, HBar } from "./CardShell";
 import { useLazyFetch } from "./useLazyFetch";
 import type { PeriodRange } from "./types";
 
+const COLOR_SCALE: [number, string][] = [
+  [0.85, "bg-green-500"],
+  [0.70, "bg-green-400"],
+  [0.55, "bg-lime-400"],
+  [0.45, "bg-amber-400"],
+  [0.30, "bg-orange-400"],
+  [0.15, "bg-red-400"],
+  [0.00, "bg-red-500"],
+];
+
+function barColor({ posCount, negCount }: WeekdayStatDto): string {
+  const total = posCount + negCount;
+  if (total === 0) return "bg-slate-300";
+  const r = posCount / total;
+  return COLOR_SCALE.find(([threshold]) => r >= threshold)![1];
+}
+
 export function Card6Weekdays({ range, isActive }: { range: PeriodRange; isActive: boolean }) {
-  const { data, loading, error, retry } = useLazyFetch<WeekdayStatDto[]>(
+  const { data, loading, error, retry } = useLazyFetch(
     (signal) => getWeekdayStats(range.from, range.to, signal),
     [],
     [range.from, range.to],
@@ -19,7 +36,7 @@ export function Card6Weekdays({ range, isActive }: { range: PeriodRange; isActiv
       badge="Patterns"
       badgeClass="bg-purple-100 text-purple-700"
       title="Паттерны по дням недели"
-      explanation="Средняя интенсивность событий по каждому дню недели."
+      explanation="Средняя интенсивность событий по каждому дню недели. Цвет — соотношение позитивных и негативных событий."
       loading={loading}
       error={error}
       onRetry={retry}
@@ -34,8 +51,18 @@ export function Card6Weekdays({ range, isActive }: { range: PeriodRange; isActiv
               label={d.day}
               value={d.avgIntensity}
               max={max}
-              annotation={d.avgIntensity.toFixed(1)}
-              color={d.avgIntensity >= 0 ? "bg-green-400" : "bg-red-400"}
+              annotation={
+                <span className="flex items-center gap-2">
+                  <span>{d.avgIntensity.toFixed(1)}</span>
+                  <span className="flex items-center gap-0.5">
+                    <span className="text-green-500">{d.posCount}</span>
+                    <span className="text-slate-300">/</span>
+                    <span className="text-red-400">{d.negCount}</span>
+                  </span>
+                </span>
+              }
+              annotationClass="w-24"
+              color={barColor(d)}
             />
           ))}
         </div>
