@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Pdmt.Api.Data;
 using Pdmt.Api.Domain;
 using Pdmt.Api.Dto.Analytics;
+using Pdmt.Api.Dto.Insights;
 using Pdmt.Api.Infrastructure.Exceptions;
 using Pdmt.Api.Services;
 
@@ -574,7 +575,7 @@ namespace Pdmt.Api.Tests
             db.EventTags.Add(new EventTag { EventId = ev2.Id, TagId = tag.Id });
             await db.SaveChangesAsync();
 
-            var result = await service.GetTagTrendAsync(userId, monday1, monday2.AddDays(6), TrendGranularity.Week);
+            var result = await service.GetTagTrendAsync(userId, monday1, monday2.AddDays(6), Granularity.Week);
 
             Assert.Single(result);
             Assert.Equal(2, result[0].Points.Count);
@@ -600,7 +601,7 @@ namespace Pdmt.Api.Tests
             db.EventTags.Add(new EventTag { EventId = ev2.Id, TagId = tag.Id });
             await db.SaveChangesAsync();
 
-            var result = await service.GetTagTrendAsync(userId, jan, feb.AddDays(15), TrendGranularity.Month);
+            var result = await service.GetTagTrendAsync(userId, jan, feb.AddDays(15), Granularity.Month);
 
             Assert.Single(result);
             Assert.Equal(2, result[0].Points.Count);
@@ -629,7 +630,7 @@ namespace Pdmt.Api.Tests
             // ev3 is not tagged
             await db.SaveChangesAsync();
 
-            var result = await service.GetTagTrendAsync(userId, monday, monday.AddDays(7), TrendGranularity.Week);
+            var result = await service.GetTagTrendAsync(userId, monday, monday.AddDays(7), Granularity.Week);
 
             Assert.Single(result);
             Assert.Equal(2, result[0].Points[0].Count);

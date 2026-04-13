@@ -82,9 +82,10 @@ public class InsightsService(AppDbContext db, IConfiguration config) : IInsights
             .Select(e => new { e.Timestamp, e.Type, e.Intensity })
             .ToListAsync();
 
+        var tz = GetTz();
         Func<DateTimeOffset, DateTimeOffset> getKey = period == Granularity.Week
-            ? date => DateHelper.GetMonday(date)
-            : date => new DateTimeOffset(date.Year, date.Month, 1, 0, 0, 0, TimeSpan.Zero);
+            ? date => DateHelper.GetMonday(date, tz)
+            : date => DateHelper.GetFirstDayOfMonth(date, tz);
 
         return events
             .GroupBy(e => getKey(e.Timestamp))
@@ -276,9 +277,10 @@ public class InsightsService(AppDbContext db, IConfiguration config) : IInsights
             .Take(3)
             .ToList();
 
+        var tz = GetTz();
         Func<DateTimeOffset, DateTimeOffset> getKey = period == Granularity.Week
-            ? date => DateHelper.GetMonday(date)
-            : date => new DateTimeOffset(date.Year, date.Month, 1, 0, 0, 0, TimeSpan.Zero);
+            ? date => DateHelper.GetMonday(date, tz)
+            : date => DateHelper.GetFirstDayOfMonth(date, tz);
 
         return top3.Select(tag =>
         {
