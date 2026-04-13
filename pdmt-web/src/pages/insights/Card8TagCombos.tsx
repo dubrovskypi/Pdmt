@@ -1,10 +1,10 @@
-import { getTagCombos } from "@/api/analytics";
+import { getTagCombos } from "@/api/insights";
 import type { TagComboDto } from "@/api/types";
 import { CardShell, HBar } from "./CardShell";
 import { useLazyFetch } from "./useLazyFetch";
 import type { PeriodRange } from "./types";
 
-export function Card8Combos({ range, isActive }: { range: PeriodRange; isActive: boolean }) {
+export function Card8TagCombos({ range, isActive }: { range: PeriodRange; isActive: boolean }) {
   const { data, loading, error, retry } = useLazyFetch<TagComboDto[]>(
     (signal) => getTagCombos(range.from, range.to, signal),
     [],
@@ -14,7 +14,7 @@ export function Card8Combos({ range, isActive }: { range: PeriodRange; isActive:
 
   return (
     <CardShell
-      badge="Combos"
+      badge="Tag combos"
       badgeClass="bg-purple-100 text-purple-700"
       title="Комбинации тегов"
       explanation="Пары тегов, которые часто встречаются вместе, и как комбинация отличается от каждого отдельно."

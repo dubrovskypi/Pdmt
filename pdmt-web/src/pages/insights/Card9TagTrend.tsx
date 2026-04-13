@@ -1,54 +1,30 @@
-import { useEffect, useState } from "react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { getTagTrend } from "@/api/analytics";
+import { getTagTrend } from "@/api/insights";
 import type { TagTrendSeriesDto } from "@/api/types";
 import { formatWeekRange } from "@/lib/dateUtils";
-import { isAbortError, getErrorMessage } from "@/lib/utils";
 import { CardShell } from "./CardShell";
+import { useLazyFetch } from "./useLazyFetch";
 import type { PeriodRange } from "./types";
 
 const SERIES_COLORS = ["#93c5fd", "#86efac", "#fca5a5"];
 
 export function Card9TagTrend({ range, isActive }: { range: PeriodRange; isActive: boolean }) {
-  const [series, setSeries] = useState<TagTrendSeriesDto[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [shouldLoad, setShouldLoad] = useState(false);
-  const [retryKey, setRetryKey] = useState(0);
-
-  useEffect(() => {
-    if (isActive) setShouldLoad(true);
-  }, [isActive]);
-
-  useEffect(() => {
-    if (!shouldLoad) return;
-    const controller = new AbortController();
-    void (async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const data = await getTagTrend(range.from, range.to, controller.signal);
-        setSeries(data);
-      } catch (err: unknown) {
-        if (isAbortError(err)) return;
-        setError(getErrorMessage(err));
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    })();
-    return () => controller.abort();
-  }, [shouldLoad, retryKey, range.from, range.to]);
+  const { data: series, loading, error, retry } = useLazyFetch<TagTrendSeriesDto[]>(
+    (signal) => getTagTrend(range.from, range.to, signal),
+    [],
+    [range.from, range.to],
+    isActive,
+  );
 
   return (
     <CardShell
-      badge="Trends"
+      badge="Tags trend"
       badgeClass="bg-blue-100 text-blue-700"
       title="Тренд тегов"
       explanation="Как менялась частота трёх самых распространённых тегов неделя за неделей."
       loading={loading}
       error={error}
-      onRetry={() => setRetryKey((k) => k + 1)}
+      onRetry={retry}
     >
       {series.length === 0 ? (
         <p className="text-sm text-slate-400">Недостаточно данных для анализа.</p>

@@ -1,12 +1,12 @@
-import { getDayOfWeek } from "@/api/analytics";
-import type { WeekdayStatsDto } from "@/api/types";
+import { getWeekdayStats } from "@/api/insights";
+import type { WeekdayStatDto } from "@/api/types";
 import { CardShell, HBar } from "./CardShell";
 import { useLazyFetch } from "./useLazyFetch";
 import type { PeriodRange } from "./types";
 
-export function Card6DayOfWeek({ range, isActive }: { range: PeriodRange; isActive: boolean }) {
-  const { data, loading, error, retry } = useLazyFetch<WeekdayStatsDto[]>(
-    (signal) => getDayOfWeek(range.from, range.to, signal),
+export function Card6Weekdays({ range, isActive }: { range: PeriodRange; isActive: boolean }) {
+  const { data, loading, error, retry } = useLazyFetch<WeekdayStatDto[]>(
+    (signal) => getWeekdayStats(range.from, range.to, signal),
     [],
     [range.from, range.to],
     isActive,

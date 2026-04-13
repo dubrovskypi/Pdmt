@@ -157,19 +157,19 @@ export interface TagTrendSeriesDto {
   points: TagTrendPointDto[];
 }
 
-export interface BalanceDto {
+export interface PosNegBalanceDto {
   posCount: number;
   negCount: number;
   avgPosIntensity: number;
   avgNegIntensity: number;
 }
 
-export interface TriggersDto {
+export interface MostIntenseTagsDto {
   topPosTags: TagSummaryDto[];
   topNegTags: TagSummaryDto[];
 }
 
-export interface WeekdayStatsDto {
+export interface WeekdayStatDto {
   day: string;
   posCount: number;
   negCount: number;

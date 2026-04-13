@@ -1,4 +1,4 @@
-import { getInfluenceability } from "@/api/analytics";
+import { getInfluenceability } from "@/api/insights";
 import type { InfluenceabilitySplitDto } from "@/api/types";
 import { CardShell } from "./CardShell";
 import { useLazyFetch } from "./useLazyFetch";

@@ -1,4 +1,4 @@
-import { getNextDayEffects } from "@/api/analytics";
+import { getNextDayEffects } from "@/api/insights";
 import type { NextDayEffectDto } from "@/api/types";
 import { CardShell, HBar } from "./CardShell";
 import { useLazyFetch } from "./useLazyFetch";
@@ -19,7 +19,7 @@ export function Card7NextDay({ range, isActive }: { range: PeriodRange; isActive
 
   return (
     <CardShell
-      badge="Next day effect"
+      badge="Next day"
       badgeClass="bg-blue-100 text-blue-700"
       title="Эффект следующего дня"
       explanation='Средний балл на следующий день после событий с этим тегом. "После «аргумент» — следующий день в среднем тяжелее."'

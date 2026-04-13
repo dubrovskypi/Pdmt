@@ -1,12 +1,12 @@
-import { getTopTags } from "@/api/analytics";
-import type { TriggersDto } from "@/api/types";
+import { getMostIntenseTags } from "@/api/insights";
+import type { MostIntenseTagsDto } from "@/api/types";
 import { CardShell, HBar } from "./CardShell";
 import { useLazyFetch } from "./useLazyFetch";
 import type { PeriodRange } from "./types";
 
-export function Card1Triggers({ range, isActive }: { range: PeriodRange; isActive: boolean }) {
-  const { data, loading, error, retry } = useLazyFetch<TriggersDto | null>(
-    (signal) => getTopTags(range.from, range.to, signal),
+export function Card1IntenseTags({ range, isActive }: { range: PeriodRange; isActive: boolean }) {
+  const { data, loading, error, retry } = useLazyFetch<MostIntenseTagsDto | null>(
+    (signal) => getMostIntenseTags(range.from, range.to, signal),
     null,
     [range.from, range.to],
     isActive,
@@ -17,7 +17,7 @@ export function Card1Triggers({ range, isActive }: { range: PeriodRange; isActiv
 
   return (
     <CardShell
-      badge="Triggers"
+      badge="Intense"
       badgeClass="bg-red-100 text-red-700"
       title="Сильнейшие триггеры"
       explanation="Топ тегов по средней интенсивности за период."

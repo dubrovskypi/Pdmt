@@ -1,10 +1,10 @@
-import { getDiscountedPositives } from "@/api/analytics";
+import { getDiscountedPositives } from "@/api/insights";
 import type { DiscountedPositiveDto } from "@/api/types";
 import { CardShell, HBar } from "./CardShell";
 import { useLazyFetch } from "./useLazyFetch";
 import type { PeriodRange } from "./types";
 
-export function Card5BlindSpot({ range, isActive }: { range: PeriodRange; isActive: boolean }) {
+export function Card5DiscountedPos({ range, isActive }: { range: PeriodRange; isActive: boolean }) {
   const { data, loading, error, retry } = useLazyFetch<DiscountedPositiveDto[]>(
     (signal) => getDiscountedPositives(range.from, range.to, signal),
     [],
@@ -16,7 +16,7 @@ export function Card5BlindSpot({ range, isActive }: { range: PeriodRange; isActi
 
   return (
     <CardShell
-      badge="Blind spot"
+      badge="Discounted positives"
       badgeClass="bg-amber-100 text-amber-700"
       title="Недооценённые позитивные события"
       explanation="Теги с высокой частотой, но низкой средней интенсивностью. Хорошее есть — просто ты его недооцениваешь."

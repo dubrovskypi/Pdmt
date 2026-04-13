@@ -1,11 +1,11 @@
-import { getBalance } from "@/api/analytics";
-import type { BalanceDto } from "@/api/types";
+import { getBalance } from "@/api/insights";
+import type { PosNegBalanceDto } from "@/api/types";
 import { CardShell } from "./CardShell";
 import { useLazyFetch } from "./useLazyFetch";
 import type { PeriodRange } from "./types";
 
 export function Card3Balance({ range, isActive }: { range: PeriodRange; isActive: boolean }) {
-  const { data, loading, error, retry } = useLazyFetch<BalanceDto | null>(
+  const { data, loading, error, retry } = useLazyFetch<PosNegBalanceDto | null>(
     (signal) => getBalance(range.from, range.to, signal),
     null,
     [range.from, range.to],

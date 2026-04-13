@@ -1,5 +1,5 @@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { getTrends } from "@/api/analytics";
+import { getTrends } from "@/api/insights";
 import type { TrendPeriodDto } from "@/api/types";
 import { formatWeekRange } from "@/lib/dateUtils";
 import { CardShell } from "./CardShell";
