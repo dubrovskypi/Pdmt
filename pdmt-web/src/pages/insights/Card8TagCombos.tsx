@@ -1,11 +1,10 @@
 import { getTagCombos } from "@/api/insights";
-import type { TagComboDto } from "@/api/types";
 import { CardShell, HBar } from "./CardShell";
 import { useLazyFetch } from "./useLazyFetch";
 import type { PeriodRange } from "./types";
 
 export function Card8TagCombos({ range, isActive }: { range: PeriodRange; isActive: boolean }) {
-  const { data, loading, error, retry } = useLazyFetch<TagComboDto[]>(
+  const { data, loading, error, retry } = useLazyFetch(
     (signal) => getTagCombos(range.from, range.to, signal),
     [],
     [range.from, range.to],
@@ -27,10 +26,10 @@ export function Card8TagCombos({ range, isActive }: { range: PeriodRange; isActi
       ) : (
         <div className="flex flex-col gap-3">
           {data.slice(0, 3).map((c, i) => {
-            const max = Math.max(
-              Math.abs(c.combinedAvgScore),
-              Math.abs(c.tag1AloneAvgScore),
-              Math.abs(c.tag2AloneAvgScore),
+            const max: number = Math.max(
+              Math.abs(c.combinedAvgScore as number),
+              Math.abs(c.tag1AloneAvgScore as number),
+              Math.abs(c.tag2AloneAvgScore as number),
               0.1,
             );
             const fmt = (v: number) => (v >= 0 ? "+" : "") + v.toFixed(1);
@@ -42,23 +41,23 @@ export function Card8TagCombos({ range, isActive }: { range: PeriodRange; isActi
                 </span>
                 <HBar
                   label="Вместе"
-                  value={Math.abs(c.combinedAvgScore)}
+                  value={Math.abs(c.combinedAvgScore as number)}
                   max={max}
-                  annotation={fmt(c.combinedAvgScore)}
+                  annotation={fmt(c.combinedAvgScore as number)}
                   color="bg-purple-400"
                 />
                 <HBar
                   label={c.tag1}
-                  value={Math.abs(c.tag1AloneAvgScore)}
+                  value={Math.abs(c.tag1AloneAvgScore as number)}
                   max={max}
-                  annotation={fmt(c.tag1AloneAvgScore)}
+                  annotation={fmt(c.tag1AloneAvgScore as number)}
                   color="bg-slate-400"
                 />
                 <HBar
                   label={c.tag2}
-                  value={Math.abs(c.tag2AloneAvgScore)}
+                  value={Math.abs(c.tag2AloneAvgScore as number)}
                   max={max}
-                  annotation={fmt(c.tag2AloneAvgScore)}
+                  annotation={fmt(c.tag2AloneAvgScore as number)}
                   color="bg-slate-400"
                 />
               </div>

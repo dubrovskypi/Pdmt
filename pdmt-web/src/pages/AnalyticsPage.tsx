@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import {
   ComposedChart,
-  BarChart,
   Bar,
   Line,
   XAxis,
@@ -11,14 +10,13 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
-import { getWeeklySummary, getTrends } from "@/api/analytics";
-import type { WeeklySummaryDto, TrendPeriodDto } from "@/api/types";
+import { getWeeklySummary } from "@/api/analytics";
+import type { WeeklySummaryDto } from "@/api/types";
 import { Button } from "@/components/ui/button";
 import {
   getMondayOf,
   addDays,
   toDateString,
-  formatWeekRange,
   formatShortDate,
 } from "@/lib/dateUtils";
 import { isAbortError, getErrorMessage } from "@/lib/utils";
@@ -249,48 +247,11 @@ function DayOfWeekSection({ summary }: { summary: WeeklySummaryDto }) {
   );
 }
 
-// --- TrendChartSection ---
-
-function TrendChartSection({ trends }: { trends: TrendPeriodDto[] }) {
-  if (trends.length === 0) {
-    return (
-      <div className="flex flex-col gap-2">
-        <h3 className="text-sm font-semibold text-slate-700">Тренд (8 недель)</h3>
-        <p className="text-sm text-slate-400">Нет данных за период.</p>
-      </div>
-    );
-  }
-
-  const data = trends.map((t) => ({
-    week: formatWeekRange(t.periodStart),
-    posCount: t.posCount,
-    negCount: t.negCount,
-  }));
-
-  return (
-    <div className="flex flex-col gap-2">
-      <h3 className="text-sm font-semibold text-slate-700">Тренд (8 недель)</h3>
-      <ResponsiveContainer width="100%" height={220}>
-        <BarChart data={data} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-          <XAxis dataKey="week" tick={{ fontSize: 11 }} />
-          <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
-          <Tooltip />
-          <Legend wrapperStyle={{ fontSize: 12 }} />
-          <Bar dataKey="posCount" name="Позитивных" fill="#4ade80" radius={[2, 2, 0, 0]} />
-          <Bar dataKey="negCount" name="Негативных" fill="#f87171" radius={[2, 2, 0, 0]} />
-        </BarChart>
-      </ResponsiveContainer>
-    </div>
-  );
-}
-
 // --- AnalyticsPage ---
 
 export function AnalyticsPage() {
   const [weekDate, setWeekDate] = useState<Date>(new Date());
   const [summary, setSummary] = useState<WeeklySummaryDto | null>(null);
-  const [trends, setTrends] = useState<TrendPeriodDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [retryKey, setRetryKey] = useState(0);
@@ -302,23 +263,14 @@ export function AnalyticsPage() {
   useEffect(() => {
     const controller = new AbortController();
     const mon = getMondayOf(weekDate);
-    const sun = addDays(mon, 6);
 
     void (async () => {
       setLoading(true);
       setError(null);
       try {
         const weekOf = toDateString(mon);
-        const trendsFrom = addDays(mon, -7 * 7); // 8 weeks back (7 prior + current)
-        const trendsTo = sun;
-
-        const [summaryData, trendsData] = await Promise.all([
-          getWeeklySummary(weekOf, controller.signal),
-          getTrends(trendsFrom.toISOString(), trendsTo.toISOString(), controller.signal),
-        ]);
-
+        const summaryData = await getWeeklySummary(weekOf, controller.signal);
         setSummary(summaryData);
-        setTrends(trendsData);
       } catch (err: unknown) {
         if (isAbortError(err)) return;
         setError(getErrorMessage(err));
@@ -359,7 +311,6 @@ export function AnalyticsPage() {
           <TopTagsSection summary={summary} />
           <TopEventsSection summary={summary} />
           <DayOfWeekSection summary={summary} />
-          <TrendChartSection trends={trends} />
         </>
       ) : null}
     </div>

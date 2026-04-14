@@ -73,29 +73,6 @@ public class AnalyticsService(AppDbContext db, IConfiguration config) : IAnalyti
             byDayOfWeek);
     }
 
-    public async Task<IReadOnlyList<TrendPeriodDto>> GetTrendsAsync(Guid userId, DateTimeOffset from, DateTimeOffset to, TrendGranularity period)
-    {
-        var raw = await db.Events
-            .AsNoTracking()
-            .Where(e => e.UserId == userId && e.Timestamp >= from && e.Timestamp < to.AddDays(1))
-            .Select(e => new { e.Timestamp, e.Type, e.Intensity })
-            .ToListAsync();
-
-        Func<DateTimeOffset, DateTimeOffset> getKey = period == TrendGranularity.Week
-            ? date => DateHelper.GetMonday(date)
-            : date => new DateTimeOffset(date.Year, date.Month, 1, 0, 0, 0, TimeSpan.Zero);
-
-        return raw
-            .GroupBy(e => getKey(e.Timestamp))
-            .OrderBy(g => g.Key)
-            .Select(g => new TrendPeriodDto(
-                DateOnly.FromDateTime(g.Key.DateTime),
-                g.Count(e => e.Type == EventType.Positive),
-                g.Count(e => e.Type == EventType.Negative),
-                g.Average(e => (double)e.Intensity)))
-            .ToList();
-    }
-
     public async Task<CorrelationsDto> GetCorrelationsAsync(Guid userId, Guid tagId, DateTimeOffset from, DateTimeOffset to)
     {
         var tag = await db.Tags

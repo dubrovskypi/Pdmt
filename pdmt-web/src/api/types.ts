@@ -110,14 +110,14 @@ export interface WeeklySummaryDto {
   byDayOfWeek: DayOfWeekBreakdownDto[];
 }
 
+// --- Insights ---
+
 export interface TrendPeriodDto {
   periodStart: string;
   posCount: number;
   negCount: number;
   avgIntensity: number;
 }
-
-// --- Insights ---
 
 export interface RepeatingTriggerDto {
   tagName: string;

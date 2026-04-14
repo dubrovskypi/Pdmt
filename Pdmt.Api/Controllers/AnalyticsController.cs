@@ -20,21 +20,6 @@ public class AnalyticsController(IAnalyticsService analyticsService) : Controlle
         return Ok(await analyticsService.GetWeeklySummaryAsync(userId, weekOf));
     }
 
-    [HttpGet("trends")]
-    [ProducesResponseType(typeof(IReadOnlyList<TrendPeriodDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<IReadOnlyList<TrendPeriodDto>>> GetTrends(
-        [FromQuery] DateTimeOffset from,
-        [FromQuery] DateTimeOffset to,
-        [FromQuery] TrendGranularity period = TrendGranularity.Week)
-    {
-        if (from > to)
-            return BadRequest("'from' must be earlier than 'to'.");
-
-        var userId = User.GetUserId();
-        return Ok(await analyticsService.GetTrendsAsync(userId, from, to, period));
-    }
-
     [HttpGet("correlations")]
     [ProducesResponseType(typeof(CorrelationsDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]

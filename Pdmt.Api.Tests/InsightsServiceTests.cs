@@ -2,7 +2,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Pdmt.Api.Data;
 using Pdmt.Api.Domain;
-using Pdmt.Api.Dto.Analytics;
 using Pdmt.Api.Dto.Insights;
 using Pdmt.Api.Infrastructure.Exceptions;
 using Pdmt.Api.Services;
@@ -634,6 +633,89 @@ namespace Pdmt.Api.Tests
 
             Assert.Single(result);
             Assert.Equal(2, result[0].Points[0].Count);
+        }
+
+        #endregion
+
+        #region GetTrendsAsync
+
+        [Fact]
+        public async Task GetTrendsAsync_Week_GroupsByMonday()
+        {
+            var db = CreateDbContext();
+            var service = new InsightsService(db, CreateConfig());
+            var userId = Guid.NewGuid();
+
+            var now = DateTimeOffset.UtcNow;
+            var monday1 = now.AddDays(-(int)now.DayOfWeek + 1);
+            var monday2 = monday1.AddDays(7);
+
+            db.Events.AddRange(
+                new Event { Id = Guid.NewGuid(), UserId = userId, Timestamp = monday1, Type = EventType.Positive, Title = "E1", Intensity = 5 },
+                new Event { Id = Guid.NewGuid(), UserId = userId, Timestamp = monday2, Type = EventType.Positive, Title = "E2", Intensity = 5 }
+            );
+            await db.SaveChangesAsync();
+
+            var result = await service.GetTrendsAsync(userId, monday1, monday2.AddDays(6), Granularity.Week);
+
+            Assert.Equal(2, result.Count);
+        }
+
+        [Fact]
+        public async Task GetTrendsAsync_Month_GroupsByFirstOfMonth()
+        {
+            var db = CreateDbContext();
+            var service = new InsightsService(db, CreateConfig());
+            var userId = Guid.NewGuid();
+
+            var jan = new DateTimeOffset(2024, 1, 15, 0, 0, 0, TimeSpan.Zero);
+            var feb = new DateTimeOffset(2024, 2, 15, 0, 0, 0, TimeSpan.Zero);
+
+            db.Events.AddRange(
+                new Event { Id = Guid.NewGuid(), UserId = userId, Timestamp = jan, Type = EventType.Positive, Title = "E1", Intensity = 5 },
+                new Event { Id = Guid.NewGuid(), UserId = userId, Timestamp = feb, Type = EventType.Positive, Title = "E2", Intensity = 5 }
+            );
+            await db.SaveChangesAsync();
+
+            var result = await service.GetTrendsAsync(userId, jan, feb.AddDays(15), Granularity.Month);
+
+            Assert.Equal(2, result.Count);
+            Assert.Equal(1, result[0].PeriodStart.Day);
+            Assert.Equal(1, result[1].PeriodStart.Day);
+        }
+
+        [Fact]
+        public async Task GetTrendsAsync_FiltersOutsideDateRange()
+        {
+            var db = CreateDbContext();
+            var service = new InsightsService(db, CreateConfig());
+            var userId = Guid.NewGuid();
+
+            var start = new DateTimeOffset(2024, 1, 1, 0, 0, 0, TimeSpan.Zero);
+            var end = new DateTimeOffset(2024, 1, 31, 0, 0, 0, TimeSpan.Zero);
+            var outside = new DateTimeOffset(2024, 2, 1, 0, 0, 0, TimeSpan.Zero);
+
+            db.Events.AddRange(
+                new Event { Id = Guid.NewGuid(), UserId = userId, Timestamp = start.AddDays(5), Type = EventType.Positive, Title = "E1", Intensity = 5 },
+                new Event { Id = Guid.NewGuid(), UserId = userId, Timestamp = outside, Type = EventType.Positive, Title = "E2", Intensity = 5 }
+            );
+            await db.SaveChangesAsync();
+
+            var result = await service.GetTrendsAsync(userId, start, end, Granularity.Week);
+
+            Assert.Single(result);
+        }
+
+        [Fact]
+        public async Task GetTrendsAsync_EmptyRange_ReturnsEmpty()
+        {
+            var db = CreateDbContext();
+            var service = new InsightsService(db, CreateConfig());
+            var userId = Guid.NewGuid();
+
+            var result = await service.GetTrendsAsync(userId, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddDays(30), Granularity.Week);
+
+            Assert.Empty(result);
         }
 
         #endregion
