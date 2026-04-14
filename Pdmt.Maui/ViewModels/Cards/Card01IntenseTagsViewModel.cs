@@ -5,7 +5,7 @@ namespace Pdmt.Maui.ViewModels.Cards;
 
 public record TriggerBarItem(string TagName, double AvgIntensity, double BarWidth);
 
-public partial class Card01TriggersViewModel(InsightsService insightsService) : InsightCardViewModel
+public partial class Card01IntenseTagsViewModel(InsightsService insightsService) : InsightCardViewModel
 {
     private const double DesignMaxWidth = 160.0;
 

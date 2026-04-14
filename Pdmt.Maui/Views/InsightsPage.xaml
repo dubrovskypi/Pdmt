@@ -13,8 +13,8 @@
 
     <ContentPage.Resources>
 
-        <DataTemplate x:Key="Card01Template" x:DataType="cards:Card01TriggersViewModel">
-            <ic:Card01TriggersView />
+        <DataTemplate x:Key="Card01Template" x:DataType="cards:Card01IntenseTagsViewModel">
+            <ic:Card01IntenseTagsView />
         </DataTemplate>
         <DataTemplate x:Key="Card02Template" x:DataType="cards:Card02RepeatingViewModel">
             <ic:Card02RepeatingView />
@@ -22,20 +22,20 @@
         <DataTemplate x:Key="Card03Template" x:DataType="cards:Card03BalanceViewModel">
             <ic:Card03BalanceView />
         </DataTemplate>
-        <DataTemplate x:Key="Card04Template" x:DataType="cards:Card04TrendRatioViewModel">
-            <ic:Card04TrendRatioView />
+        <DataTemplate x:Key="Card04Template" x:DataType="cards:Card04TrendViewModel">
+            <ic:Card04TrendView />
         </DataTemplate>
-        <DataTemplate x:Key="Card05Template" x:DataType="cards:Card05BlindSpotViewModel">
-            <ic:Card05BlindSpotView />
+        <DataTemplate x:Key="Card05Template" x:DataType="cards:Card05DiscountedPosViewModel">
+            <ic:Card05DiscountedPosView />
         </DataTemplate>
-        <DataTemplate x:Key="Card06Template" x:DataType="cards:Card06DayOfWeekViewModel">
-            <ic:Card06DayOfWeekView />
+        <DataTemplate x:Key="Card06Template" x:DataType="cards:Card06WeekdaysViewModel">
+            <ic:Card06WeekdaysView />
         </DataTemplate>
         <DataTemplate x:Key="Card07Template" x:DataType="cards:Card07NextDayViewModel">
             <ic:Card07NextDayView />
         </DataTemplate>
-        <DataTemplate x:Key="Card08Template" x:DataType="cards:Card08CombosViewModel">
-            <ic:Card08CombosView />
+        <DataTemplate x:Key="Card08Template" x:DataType="cards:Card08TagCombosViewModel">
+            <ic:Card08TagCombosView />
         </DataTemplate>
         <DataTemplate x:Key="Card09Template" x:DataType="cards:Card09TagTrendViewModel">
             <ic:Card09TagTrendView />

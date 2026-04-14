@@ -5,13 +5,13 @@ namespace Pdmt.Maui.ViewModels.Cards;
 
 public record ComboItem(
     string Label,
-    double CombinedAvgIntensity,
-    double AloneAvgIntensity,
+    double CombinedAvgScore,
+    double AloneAvgScore,
     double CombinedBarWidth,
     double AloneBarWidth,
     int CoOccurrences);
 
-public partial class Card08CombosViewModel(InsightsService insightsService) : InsightCardViewModel
+public partial class Card08TagCombosViewModel(InsightsService insightsService) : InsightCardViewModel
 {
     private const double DesignMaxWidth = 130.0;
 
@@ -25,20 +25,21 @@ public partial class Card08CombosViewModel(InsightsService insightsService) : In
         try
         {
             var combos = await insightsService.GetTagCombosAsync(from, to, ct);
-            double max = combos.Count > 0
-                ? combos.Max(c => Math.Max(c.CombinedAvgIntensity,
-                    Math.Max(c.Tag1AloneAvgIntensity, c.Tag2AloneAvgIntensity)))
+            double maxAbs = combos.Count > 0
+                ? combos.Max(c => Math.Max(Math.Abs(c.CombinedAvgScore),
+                    Math.Max(Math.Abs(c.Tag1AloneAvgScore), Math.Abs(c.Tag2AloneAvgScore))))
                 : 1;
+            if (maxAbs == 0) maxAbs = 1;
 
             Items = combos.Take(5).Select(c =>
             {
-                var alone = (c.Tag1AloneAvgIntensity + c.Tag2AloneAvgIntensity) / 2;
+                var aloneScore = (c.Tag1AloneAvgScore + c.Tag2AloneAvgScore) / 2;
                 return new ComboItem(
                     $"{c.Tag1} + {c.Tag2}",
-                    c.CombinedAvgIntensity,
-                    alone,
-                    max > 0 ? c.CombinedAvgIntensity / max * DesignMaxWidth : 0,
-                    max > 0 ? alone / max * DesignMaxWidth : 0,
+                    c.CombinedAvgScore,
+                    aloneScore,
+                    Math.Abs(c.CombinedAvgScore) / maxAbs * DesignMaxWidth,
+                    Math.Abs(aloneScore) / maxAbs * DesignMaxWidth,
                     c.CoOccurrences);
             }).ToList();
         }

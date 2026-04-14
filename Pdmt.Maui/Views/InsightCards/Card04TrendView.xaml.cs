@@ -1,8 +1,8 @@
 namespace Pdmt.Maui.Views.InsightCards;
 
-public partial class Card01TriggersView : ContentView
+public partial class Card04TrendView : ContentView
 {
-    public Card01TriggersView()
+    public Card04TrendView()
     {
         InitializeComponent();
     }

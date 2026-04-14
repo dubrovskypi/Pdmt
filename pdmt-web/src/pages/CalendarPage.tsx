@@ -204,8 +204,8 @@ export function CalendarPage() {
     const dateStr = date.includes("T") ? toDateString(new Date(date)) : date;
 
     const evts = await getEvents({
-      from: new Date(dateStr + "T00:00:00Z").toISOString(),
-      to: new Date(dateStr + "T23:59:59.999Z").toISOString(),
+      from: new Date(dateStr + "T00:00:00").toISOString(),
+      to: new Date(dateStr + "T23:59:59.999").toISOString(),
     });
     setDayEvents((prev) => ({ ...prev, [date]: evts }));
   }

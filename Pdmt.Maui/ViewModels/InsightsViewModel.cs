@@ -38,14 +38,14 @@ public partial class InsightsViewModel : ObservableObject
         _selectedPeriod = PeriodOptions[0];
 
         Cards = [
-            new Card01TriggersViewModel(insightsService),
+            new Card01IntenseTagsViewModel(insightsService),
             new Card02RepeatingViewModel(insightsService),
             new Card03BalanceViewModel(insightsService),
-            new Card04TrendRatioViewModel(insightsService),
-            new Card05BlindSpotViewModel(insightsService),
-            new Card06DayOfWeekViewModel(insightsService),
+            new Card04TrendViewModel(insightsService),
+            new Card05DiscountedPosViewModel(insightsService),
+            new Card06WeekdaysViewModel(insightsService),
             new Card07NextDayViewModel(insightsService),
-            new Card08CombosViewModel(insightsService),
+            new Card08TagCombosViewModel(insightsService),
             new Card09TagTrendViewModel(insightsService),
             new Card10InfluenceViewModel(insightsService),
         ];

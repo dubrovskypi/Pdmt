@@ -5,7 +5,7 @@ namespace Pdmt.Maui.ViewModels.Cards;
 
 public record DayBarItem(string DayLabel, double AvgScore, double BarWidth, bool IsPositive);
 
-public partial class Card06DayOfWeekViewModel(InsightsService insightsService) : InsightCardViewModel
+public partial class Card06WeekdaysViewModel(InsightsService insightsService) : InsightCardViewModel
 {
     private const double DesignMaxWidth = 140.0;
 

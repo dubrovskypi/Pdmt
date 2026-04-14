@@ -18,16 +18,16 @@ public class InsightCardTemplateSelector : DataTemplateSelector
     protected override DataTemplate? OnSelectTemplate(object item, BindableObject container) =>
         item switch
         {
-            Card01TriggersViewModel  => Card01Template,
-            Card02RepeatingViewModel => Card02Template,
-            Card03BalanceViewModel   => Card03Template,
-            Card04TrendRatioViewModel => Card04Template,
-            Card05BlindSpotViewModel => Card05Template,
-            Card06DayOfWeekViewModel => Card06Template,
-            Card07NextDayViewModel   => Card07Template,
-            Card08CombosViewModel    => Card08Template,
-            Card09TagTrendViewModel  => Card09Template,
-            Card10InfluenceViewModel => Card10Template,
-            _                        => null
+            Card01IntenseTagsViewModel  => Card01Template,
+            Card02RepeatingViewModel    => Card02Template,
+            Card03BalanceViewModel      => Card03Template,
+            Card04TrendViewModel        => Card04Template,
+            Card05DiscountedPosViewModel => Card05Template,
+            Card06WeekdaysViewModel     => Card06Template,
+            Card07NextDayViewModel      => Card07Template,
+            Card08TagCombosViewModel    => Card08Template,
+            Card09TagTrendViewModel     => Card09Template,
+            Card10InfluenceViewModel    => Card10Template,
+            _                           => null
         };
 }

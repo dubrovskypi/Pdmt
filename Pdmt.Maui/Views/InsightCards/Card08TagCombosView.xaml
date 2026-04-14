@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentView
-    x:Class="Pdmt.Maui.Views.InsightCards.Card08CombosView"
+    x:Class="Pdmt.Maui.Views.InsightCards.Card08TagCombosView"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:cards="clr-namespace:Pdmt.Maui.ViewModels.Cards"
-    x:DataType="cards:Card08CombosViewModel">
+    x:DataType="cards:Card08TagCombosViewModel">
 
     <Border Margin="4,0" Padding="16" BackgroundColor="{StaticResource Surface}">
         <Grid RowDefinitions="Auto,Auto,Auto,*,Auto" RowSpacing="0">
@@ -15,7 +15,7 @@
             </Border>
             <Label Grid.Row="1" Text="Комбинации тегов"
                    FontAttributes="Bold" FontSize="16" Margin="0,8,0,2" />
-            <Label Grid.Row="2" Text="Теги, которые появляются вместе и как это влияет на интенсивность"
+            <Label Grid.Row="2" Text="Теги, которые появляются вместе, и как комбинация влияет на качество дня"
                    Style="{StaticResource MutedLabel}" Margin="0,0,0,10" />
             <CollectionView Grid.Row="3" ItemsSource="{Binding Items}">
                 <CollectionView.ItemsLayout>
@@ -32,7 +32,7 @@
                                          HeightRequest="12" Color="#f87171" CornerRadius="2"
                                          HorizontalOptions="Start" VerticalOptions="Center" />
                                 <Label Grid.Column="2"
-                                       Text="{Binding CombinedAvgIntensity, StringFormat='{0:0.1}'}"
+                                       Text="{Binding CombinedAvgScore, StringFormat='{0:+0.0;-0.0;0.0}'}"
                                        FontSize="11" TextColor="{StaticResource Muted}" VerticalOptions="Center" />
                             </Grid>
                             <Grid ColumnDefinitions="46,*,36" ColumnSpacing="6">
@@ -42,7 +42,7 @@
                                          HeightRequest="12" Color="#94a3b8" CornerRadius="2"
                                          HorizontalOptions="Start" VerticalOptions="Center" />
                                 <Label Grid.Column="2"
-                                       Text="{Binding AloneAvgIntensity, StringFormat='{0:0.1}'}"
+                                       Text="{Binding AloneAvgScore, StringFormat='{0:+0.0;-0.0;0.0}'}"
                                        FontSize="11" TextColor="{StaticResource Muted}" VerticalOptions="Center" />
                             </Grid>
                         </VerticalStackLayout>

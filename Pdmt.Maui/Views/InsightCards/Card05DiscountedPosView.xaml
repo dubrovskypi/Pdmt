@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentView
-    x:Class="Pdmt.Maui.Views.InsightCards.Card05BlindSpotView"
+    x:Class="Pdmt.Maui.Views.InsightCards.Card05DiscountedPosView"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:cards="clr-namespace:Pdmt.Maui.ViewModels.Cards"
-    x:DataType="cards:Card05BlindSpotViewModel">
+    x:DataType="cards:Card05DiscountedPosViewModel">
 
     <Border Margin="4,0" Padding="16" BackgroundColor="{StaticResource Surface}">
         <Grid RowDefinitions="Auto,Auto,Auto,*,Auto" RowSpacing="0">

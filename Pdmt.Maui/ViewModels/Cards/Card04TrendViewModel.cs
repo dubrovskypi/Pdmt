@@ -5,7 +5,7 @@ namespace Pdmt.Maui.ViewModels.Cards;
 
 public record WeekBarItem(string WeekLabel, int PosCount, int NegCount, double BarHeight, bool IsPositive);
 
-public partial class Card04TrendRatioViewModel(InsightsService insightsService) : InsightCardViewModel
+public partial class Card04TrendViewModel(InsightsService insightsService) : InsightCardViewModel
 {
     private const double DesignMaxHeight = 80.0;
 

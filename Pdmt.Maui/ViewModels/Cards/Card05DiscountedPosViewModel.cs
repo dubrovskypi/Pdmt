@@ -5,7 +5,7 @@ namespace Pdmt.Maui.ViewModels.Cards;
 
 public record BlindSpotBarItem(string TagName, double AvgIntensity, int Count, double BarWidth);
 
-public partial class Card05BlindSpotViewModel(InsightsService insightsService) : InsightCardViewModel
+public partial class Card05DiscountedPosViewModel(InsightsService insightsService) : InsightCardViewModel
 {
     private const double DesignMaxWidth = 160.0;
 

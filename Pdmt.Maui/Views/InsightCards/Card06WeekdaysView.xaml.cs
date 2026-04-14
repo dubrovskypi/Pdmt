@@ -1,8 +1,8 @@
 namespace Pdmt.Maui.Views.InsightCards;
 
-public partial class Card06DayOfWeekView : ContentView
+public partial class Card06WeekdaysView : ContentView
 {
-    public Card06DayOfWeekView()
+    public Card06WeekdaysView()
     {
         InitializeComponent();
     }
