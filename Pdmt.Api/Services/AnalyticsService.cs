@@ -51,8 +51,9 @@ public class AnalyticsService(AppDbContext db, IConfiguration config) : IAnalyti
             .Select(e => new TopEventDto(e.Title, e.Intensity, e.Timestamp))
             .ToList();
 
+        var tz = GetTz();
         var byDayOfWeek = events
-            .GroupBy(e => e.Timestamp.DayOfWeek)
+            .GroupBy(e => DateHelper.ToLocalDate(e.Timestamp, tz).DayOfWeek)
             .OrderBy(g => ((int)g.Key + 6) % 7)
             .Select(g => new DayOfWeekBreakdownDto(
                 g.Key.ToString(),
@@ -80,6 +81,7 @@ public class AnalyticsService(AppDbContext db, IConfiguration config) : IAnalyti
             .FirstOrDefaultAsync(t => t.Id == tagId && t.UserId == userId)
             ?? throw new NotFoundException("Tag not found.");
 
+        var tz = GetTz();
         var allEvents = await db.Events
             .AsNoTracking()
             .Where(e => e.UserId == userId && e.Timestamp >= from && e.Timestamp < to.AddDays(1))
@@ -98,7 +100,7 @@ public class AnalyticsService(AppDbContext db, IConfiguration config) : IAnalyti
         var avgIntensityWithoutTag = withoutTagEvents.Count == 0 ? 0.0 : withoutTagEvents.Average(e => (double)e.Intensity);
 
         var daysOfWeek = withTagEvents
-            .GroupBy(e => e.Timestamp.DayOfWeek)
+            .GroupBy(e => DateHelper.ToLocalDate(e.Timestamp, tz).DayOfWeek)
             .OrderBy(g => ((int)g.Key + 6) % 7)
             .Select(g => new DayFrequencyDto(g.Key.ToString(), g.Count()))
             .ToList();
