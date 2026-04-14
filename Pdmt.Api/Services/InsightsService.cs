@@ -193,20 +193,20 @@ public class InsightsService(AppDbContext db, IConfiguration config) : IInsights
             .Where(e => e.UserId == userId && e.Timestamp >= from && e.Timestamp < to.AddDays(1))
             .ToListAsync();
 
-        // Группируем события по дням
+        // Группируем события по дням; dayScore знаковый: позитивная интенсивность плюс, негативная минус
         var tz = GetTz();
         var byDay = events
             .GroupBy(e => DateHelper.ToLocalDate(e.Timestamp, tz))
             .Select(g => new
             {
-                Date = g.Key,
                 Tags = g.SelectMany(e => e.EventTags.Select(et => et.Tag.Name)).Distinct().ToList(),
-                AllIntensities = g.Select(e => e.Intensity).ToList()
+                DayScore = (double)(g.Sum(e => e.Type == EventType.Positive ? e.Intensity : 0)
+                                  - g.Sum(e => e.Type == EventType.Negative ? e.Intensity : 0)) / g.Count()
             })
             .ToList();
 
         // Агрегируем данные по парам тегов
-        var comboData = new Dictionary<(string, string), (List<int> CombinedDayIntensities, List<int> Tag1AloneDayIntensities, List<int> Tag2AloneDayIntensities)>();
+        var comboData = new Dictionary<(string, string), (List<double> CombinedDayScores, List<double> Tag1AloneDayScores, List<double> Tag2AloneDayScores)>();
 
         foreach (var day in byDay)
         {
@@ -222,12 +222,12 @@ public class InsightsService(AppDbContext db, IConfiguration config) : IInsights
                     if (!comboData.ContainsKey(key))
                         comboData[key] = ([], [], []);
 
-                    comboData[key].CombinedDayIntensities.AddRange(day.AllIntensities);
+                    comboData[key].CombinedDayScores.Add(day.DayScore);
                 }
             }
         }
 
-        // Второй проход: заполняем alone intensities для дней, где один тег есть, а другой нет
+        // Второй проход: заполняем alone scores для дней, где один тег есть, а другого нет
         foreach (var day in byDay)
         {
             var tagSet = day.Tags.ToHashSet();
@@ -238,26 +238,20 @@ public class InsightsService(AppDbContext db, IConfiguration config) : IInsights
                 var hasT1 = tagSet.Contains(t1);
                 var hasT2 = tagSet.Contains(t2);
                 if (hasT1 && !hasT2)
-                    kvp.Value.Tag1AloneDayIntensities.AddRange(day.AllIntensities);
+                    kvp.Value.Tag1AloneDayScores.Add(day.DayScore);
                 else if (hasT2 && !hasT1)
-                    kvp.Value.Tag2AloneDayIntensities.AddRange(day.AllIntensities);
+                    kvp.Value.Tag2AloneDayScores.Add(day.DayScore);
             }
         }
 
         return comboData
-            .Where(kvp => kvp.Value.CombinedDayIntensities.Count > 0)
-            .Select(kvp =>
-            {
-                var combinedDays = byDay.Count(d =>
-                    d.Tags.Contains(kvp.Key.Item1) && d.Tags.Contains(kvp.Key.Item2));
-                return new TagComboDto(
-                    kvp.Key.Item1,
-                    kvp.Key.Item2,
-                    kvp.Value.CombinedDayIntensities.Average(x => (double)x),
-                    kvp.Value.Tag1AloneDayIntensities.Count == 0 ? 0.0 : kvp.Value.Tag1AloneDayIntensities.Average(x => (double)x),
-                    kvp.Value.Tag2AloneDayIntensities.Count == 0 ? 0.0 : kvp.Value.Tag2AloneDayIntensities.Average(x => (double)x),
-                    combinedDays);
-            })
+            .Select(kvp => new TagComboDto(
+                kvp.Key.Item1,
+                kvp.Key.Item2,
+                kvp.Value.CombinedDayScores.Average(),
+                kvp.Value.Tag1AloneDayScores.Count == 0 ? 0.0 : kvp.Value.Tag1AloneDayScores.Average(),
+                kvp.Value.Tag2AloneDayScores.Count == 0 ? 0.0 : kvp.Value.Tag2AloneDayScores.Average(),
+                kvp.Value.CombinedDayScores.Count))
             .Where(c => c.CoOccurrences >= 3)
             .OrderByDescending(c => c.CoOccurrences)
             .ToList();

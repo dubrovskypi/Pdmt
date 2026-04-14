@@ -140,9 +140,9 @@ export interface NextDayEffectDto {
 export interface TagComboDto {
   tag1: string;
   tag2: string;
-  combinedAvgIntensity: number;
-  tag1AloneAvgIntensity: number;
-  tag2AloneAvgIntensity: number;
+  combinedAvgScore: number;
+  tag1AloneAvgScore: number;
+  tag2AloneAvgScore: number;
   coOccurrences: number;
 }
 

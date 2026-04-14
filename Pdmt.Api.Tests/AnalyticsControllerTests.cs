@@ -291,9 +291,9 @@ public class AnalyticsControllerTests : IClassFixture<CustomWebAppFactory>
         Assert.NotNull(combo);
 
         // Both alone intensities should be 0, since they never appear separately
-        Assert.Equal(0.0, combo.Tag1AloneAvgIntensity);
-        Assert.Equal(0.0, combo.Tag2AloneAvgIntensity);
-        Assert.Equal(8.0, combo.CombinedAvgIntensity);
+        Assert.Equal(0.0, combo.Tag1AloneAvgScore);
+        Assert.Equal(0.0, combo.Tag2AloneAvgScore);
+        Assert.Equal(8.0, combo.CombinedAvgScore);
     }
 
     [Fact]
@@ -345,21 +345,21 @@ public class AnalyticsControllerTests : IClassFixture<CustomWebAppFactory>
         Assert.NotNull(combo);
         Assert.Equal(3, combo.CoOccurrences);
 
-        // Combined days: avg intensity = (8 + 8 + 8 + 8 + 8 + 8) / 6 = 8.0
-        Assert.Equal(8.0, combo.CombinedAvgIntensity);
+        // Combined days: dayScore = (8+8)/2 = 8.0 per day, avg = 8.0
+        Assert.Equal(8.0, combo.CombinedAvgScore);
 
-        // Tag1 alone (intensity 4 on 2 days)
-        // Tag2 alone (intensity 6 on 1 day)
+        // Tag1 alone (intensity 4, positive only → dayScore 4.0)
+        // Tag2 alone (intensity 6, positive only → dayScore 6.0)
         // Order can vary, so check both possibilities
         if (combo.Tag1 == "tc_calc_a")
         {
-            Assert.Equal(4.0, combo.Tag1AloneAvgIntensity);
-            Assert.Equal(6.0, combo.Tag2AloneAvgIntensity);
+            Assert.Equal(4.0, combo.Tag1AloneAvgScore);
+            Assert.Equal(6.0, combo.Tag2AloneAvgScore);
         }
         else
         {
-            Assert.Equal(6.0, combo.Tag1AloneAvgIntensity);
-            Assert.Equal(4.0, combo.Tag2AloneAvgIntensity);
+            Assert.Equal(6.0, combo.Tag1AloneAvgScore);
+            Assert.Equal(4.0, combo.Tag2AloneAvgScore);
         }
     }
 
