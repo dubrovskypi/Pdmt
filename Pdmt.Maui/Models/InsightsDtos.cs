@@ -16,7 +16,7 @@ public record TagComboDto(
     double Tag2AloneAvgIntensity,
     int CoOccurrences);
 
-public record TagTrendPointDto(DateTimeOffset PeriodStart, int Count, double AvgIntensity);
+public record TagTrendPointDto(DateOnly PeriodStart, int Count, double AvgIntensity);
 
 public record TagTrendSeriesDto(string TagName, List<TagTrendPointDto> Points);
 
@@ -55,7 +55,7 @@ public class DayOfWeekSummaryDto
 
 public class TrendPeriodDto
 {
-    public DateTimeOffset PeriodStart { get; set; }
+    public DateOnly PeriodStart { get; set; }
     public int PosCount { get; set; }
     public int NegCount { get; set; }
     public double AvgIntensity { get; set; }

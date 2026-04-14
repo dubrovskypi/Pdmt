@@ -89,7 +89,7 @@ public class AnalyticsService(AppDbContext db, IConfiguration config) : IAnalyti
             .GroupBy(e => getKey(e.Timestamp))
             .OrderBy(g => g.Key)
             .Select(g => new TrendPeriodDto(
-                g.Key,
+                DateOnly.FromDateTime(g.Key.DateTime),
                 g.Count(e => e.Type == EventType.Positive),
                 g.Count(e => e.Type == EventType.Negative),
                 g.Average(e => (double)e.Intensity)))

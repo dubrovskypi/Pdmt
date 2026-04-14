@@ -1,7 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Pdmt.Api.Data;
 using Pdmt.Api.Domain;
-using Pdmt.Api.Dto.Analytics;
+using Pdmt.Api.Dto.Insights;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;

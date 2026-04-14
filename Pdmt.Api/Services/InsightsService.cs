@@ -91,7 +91,7 @@ public class InsightsService(AppDbContext db, IConfiguration config) : IInsights
             .GroupBy(e => getKey(e.Timestamp))
             .OrderBy(g => g.Key)
             .Select(g => new TrendPeriodDto(
-                g.Key,
+                DateOnly.FromDateTime(g.Key.DateTime),
                 g.Count(e => e.Type == EventType.Positive),
                 g.Count(e => e.Type == EventType.Negative),
                 g.Average(e => (double)e.Intensity)))
@@ -125,14 +125,19 @@ public class InsightsService(AppDbContext db, IConfiguration config) : IInsights
 
         var tz = GetTz();
 
-        return events
+        var grouped = events
             .GroupBy(e => DateHelper.ToLocalDate(e.Timestamp, tz).DayOfWeek)
-            .OrderBy(g => ((int)g.Key + 6) % 7)
-            .Select(g => new WeekdayStatDto(
-                g.Key.ToString(),
-                g.Count(e => e.Type == EventType.Positive),
-                g.Count(e => e.Type == EventType.Negative),
-                g.Average(e => (double)e.Intensity)))
+            .ToDictionary(g => g.Key, g => g.ToList());
+
+        return Enum.GetValues<DayOfWeek>()
+            .OrderBy(d => ((int)d + 6) % 7)
+            .Select(dow => grouped.TryGetValue(dow, out var g)
+                ? new WeekdayStatDto(
+                    dow.ToString(),
+                    g.Count(e => e.Type == EventType.Positive),
+                    g.Count(e => e.Type == EventType.Negative),
+                    g.Average(e => (double)e.Intensity))
+                : new WeekdayStatDto(dow.ToString(), 0, 0, 0.0))
             .ToList();
     }
 
@@ -288,7 +293,7 @@ public class InsightsService(AppDbContext db, IConfiguration config) : IInsights
                 .Where(e => e.TagId == tag.TagId)
                 .GroupBy(e => getKey(e.Timestamp))
                 .OrderBy(g => g.Key)
-                .Select(g => new TagTrendPointDto(g.Key, g.Count(), g.Average(e => (double)e.Intensity)))
+                .Select(g => new TagTrendPointDto(DateOnly.FromDateTime(g.Key.DateTime), g.Count(), g.Average(e => (double)e.Intensity)))
                 .ToList();
             return new TagTrendSeriesDto(tag.TagName, points);
         }).ToList();

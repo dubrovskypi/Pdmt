@@ -739,5 +739,47 @@ namespace Pdmt.Api.Tests
         }
 
         #endregion
+
+        #region GetWeekdayStatsAsync
+
+        [Fact]
+        public async Task GetWeekdayStatsAsync_AlwaysReturnsSevenDays()
+        {
+            var db = CreateDbContext();
+            var service = new InsightsService(db, CreateConfig());
+            var userId = Guid.NewGuid();
+
+            // Events only on Monday 2024-04-01 and Wednesday 2024-04-03 (noon UTC — stays same calendar day in Vilnius UTC+3)
+            var monday = new DateTimeOffset(2024, 4, 1, 12, 0, 0, TimeSpan.Zero);
+            var wednesday = new DateTimeOffset(2024, 4, 3, 12, 0, 0, TimeSpan.Zero);
+
+            db.Events.Add(new Event { Id = Guid.NewGuid(), UserId = userId, Timestamp = monday, Type = EventType.Positive, Title = "Mon", Intensity = 5 });
+            db.Events.Add(new Event { Id = Guid.NewGuid(), UserId = userId, Timestamp = wednesday, Type = EventType.Negative, Title = "Wed", Intensity = 3 });
+            await db.SaveChangesAsync();
+
+            var result = await service.GetWeekdayStatsAsync(userId, monday, wednesday.AddDays(4));
+
+            Assert.Equal(7, result.Count);
+            var tuesday = result.First(d => d.Day == "Tuesday");
+            Assert.Equal(0, tuesday.PosCount);
+            Assert.Equal(0, tuesday.NegCount);
+            Assert.Equal(0.0, tuesday.AvgIntensity);
+        }
+
+        [Fact]
+        public async Task GetWeekdayStatsAsync_OrderIsMonToSun()
+        {
+            var db = CreateDbContext();
+            var service = new InsightsService(db, CreateConfig());
+            var userId = Guid.NewGuid();
+
+            var result = await service.GetWeekdayStatsAsync(userId, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddDays(30));
+
+            Assert.Equal(7, result.Count);
+            Assert.Equal("Monday", result[0].Day);
+            Assert.Equal("Sunday", result[6].Day);
+        }
+
+        #endregion
     }
 }
