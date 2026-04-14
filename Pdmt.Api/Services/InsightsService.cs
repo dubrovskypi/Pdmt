@@ -14,13 +14,14 @@ public class InsightsService(AppDbContext db, IConfiguration config) : IInsights
 
     public async Task<MostIntenseTagsDto> GetMostIntenseTagsAsync(Guid userId, DateTimeOffset from, DateTimeOffset to)
     {
-        var events = db.Events
+        var events = await db.Events
             .AsNoTracking()
             .Include(e => e.EventTags).ThenInclude(et => et.Tag)
-            .Where(e => e.UserId == userId && e.Timestamp >= from && e.Timestamp < to.AddDays(1));
+            .Where(e => e.UserId == userId && e.Timestamp >= from && e.Timestamp < to.AddDays(1))
+            .ToListAsync();
 
-        var pos = await events.Where(e => e.Type == EventType.Positive).ToListAsync();
-        var neg = await events.Where(e => e.Type == EventType.Negative).ToListAsync();
+        var pos = events.Where(e => e.Type == EventType.Positive).ToList();
+        var neg = events.Where(e => e.Type == EventType.Negative).ToList();
 
         var posTags = pos
             .SelectMany(e => e.EventTags.Select(et => new { et.Tag.Name, e.Intensity }))
