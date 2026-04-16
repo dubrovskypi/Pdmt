@@ -20,7 +20,7 @@ export function Card10Influence({ range, isActive }: { range: PeriodRange; isAct
     <CardShell
       badge="Control"
       badgeClass="bg-teal-100 text-teal-700"
-      title="Что в твоей власти"
+      title="Что в твоих силах"
       explanation="Какой процент негативных событий ты можешь изменить. Сосредоточься на том, что в твоей власти."
       loading={loading}
       error={error}

@@ -11,11 +11,11 @@
             <Border Grid.Row="0" BackgroundColor="#f3e8ff" Stroke="Transparent" StrokeThickness="0"
                     Padding="8,3" HorizontalOptions="Start">
                 <Border.StrokeShape><RoundRectangle CornerRadius="10" /></Border.StrokeShape>
-                <Label Text="Паттерны" TextColor="#6b21a8" FontSize="12" FontAttributes="Bold" />
+                <Label Text="Patterns" TextColor="#6b21a8" FontSize="12" FontAttributes="Bold" />
             </Border>
-            <Label Grid.Row="1" Text="Паттерн по дням недели"
+            <Label Grid.Row="1" Text="Паттерны по дням недели"
                    FontAttributes="Bold" FontSize="16" Margin="0,8,0,2" />
-            <Label Grid.Row="2" Text="В какие дни чаще случается позитивное и негативное"
+            <Label Grid.Row="2" Text="Средняя интенсивность событий по каждому дню недели. Цвет — соотношение позитивных и негативных событий"
                    Style="{StaticResource MutedLabel}" Margin="0,0,0,10" />
             <CollectionView Grid.Row="3" ItemsSource="{Binding Days}">
                 <CollectionView.ItemsLayout>

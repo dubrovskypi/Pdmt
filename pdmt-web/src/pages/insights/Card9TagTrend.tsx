@@ -21,7 +21,7 @@ export function Card9TagTrend({ range, isActive }: { range: PeriodRange; isActiv
       badge="Tags trend"
       badgeClass="bg-blue-100 text-blue-700"
       title="Тренд тегов"
-      explanation="Как менялась частота трёх самых распространённых тегов неделя за неделей."
+      explanation="Как менялась частота трёх самых распространённых тегов."
       loading={loading}
       error={error}
       onRetry={retry}

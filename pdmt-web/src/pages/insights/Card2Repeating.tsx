@@ -19,7 +19,7 @@ export function Card2Repeating({ range, isActive }: { range: PeriodRange; isActi
       badge="Repeats"
       badgeClass="bg-purple-100 text-purple-700"
       title="Повторяющиеся триггеры"
-      explanation="Теги, которые встречались 3 и более раз. Это не случайность — это паттерн."
+      explanation="Теги, которые встречались 3 и более раз."
       loading={loading}
       error={error}
       onRetry={retry}

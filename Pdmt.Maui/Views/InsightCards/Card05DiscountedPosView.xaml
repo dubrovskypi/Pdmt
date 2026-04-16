@@ -11,11 +11,11 @@
             <Border Grid.Row="0" BackgroundColor="#fef3c7" Stroke="Transparent" StrokeThickness="0"
                     Padding="8,3" HorizontalOptions="Start">
                 <Border.StrokeShape><RoundRectangle CornerRadius="10" /></Border.StrokeShape>
-                <Label Text="Слепое пятно" TextColor="#92400e" FontSize="12" FontAttributes="Bold" />
+                <Label Text="Discounted positives" TextColor="#92400e" FontSize="12" FontAttributes="Bold" />
             </Border>
-            <Label Grid.Row="1" Text="Недооценённые позитивы"
+            <Label Grid.Row="1" Text="Недооценённые позитивные события"
                    FontAttributes="Bold" FontSize="16" Margin="0,8,0,2" />
-            <Label Grid.Row="2" Text="Частые события с низкой интенсивностью — хорошее, которое вы не замечаете"
+            <Label Grid.Row="2" Text="Теги с высокой частотой, но низкой средней интенсивностью. Хорошее есть — просто ты его недооцениваешь."
                    Style="{StaticResource MutedLabel}" Margin="0,0,0,10" />
             <CollectionView Grid.Row="3" ItemsSource="{Binding Items}">
                 <CollectionView.ItemsLayout>

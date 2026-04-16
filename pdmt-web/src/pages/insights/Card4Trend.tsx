@@ -42,7 +42,7 @@ export function Card4Trend({ range, isActive }: { range: PeriodRange; isActive: 
       badge="Trends"
       badgeClass="bg-blue-100 text-blue-700"
       title="Тренд соотношения по неделям"
-      explanation="Высота полоски — количество событий. Яркость — средняя интенсивность за неделю."
+      explanation="Высота полоски — количество событий. Яркость — средняя интенсивность."
       loading={loading}
       error={error}
       onRetry={retry}

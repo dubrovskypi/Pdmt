@@ -11,11 +11,11 @@
             <Border Grid.Row="0" BackgroundColor="#ccfbf1" Stroke="Transparent" StrokeThickness="0"
                     Padding="8,3" HorizontalOptions="Start">
                 <Border.StrokeShape><RoundRectangle CornerRadius="10" /></Border.StrokeShape>
-                <Label Text="Контроль" TextColor="#134e4a" FontSize="12" FontAttributes="Bold" />
+                <Label Text="Control" TextColor="#134e4a" FontSize="12" FontAttributes="Bold" />
             </Border>
-            <Label Grid.Row="1" Text="Что в ваших силах"
+            <Label Grid.Row="1" Text="Что в твоих силах"
                    FontAttributes="Bold" FontSize="16" Margin="0,8,0,2" />
-            <Label Grid.Row="2" Text="Разбивка негативных событий по возможности повлиять"
+            <Label Grid.Row="2" Text="Какой процент негативных событий ты можешь изменить. Сосредоточься на том, что в твоей власти."
                    Style="{StaticResource MutedLabel}" Margin="0,0,0,10" />
             <VerticalStackLayout Grid.Row="3" Spacing="16">
                 <Grid ColumnDefinitions="Auto,Auto" ColumnSpacing="0" HeightRequest="28">

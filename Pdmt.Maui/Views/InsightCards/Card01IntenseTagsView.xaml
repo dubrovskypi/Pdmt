@@ -11,11 +11,11 @@
             <Border Grid.Row="0" BackgroundColor="#fee2e2" Stroke="Transparent" StrokeThickness="0"
                     Padding="8,3" HorizontalOptions="Start">
                 <Border.StrokeShape><RoundRectangle CornerRadius="10" /></Border.StrokeShape>
-                <Label Text="Триггеры" TextColor="#991b1b" FontSize="12" FontAttributes="Bold" />
+                <Label Text="Intense" TextColor="#991b1b" FontSize="12" FontAttributes="Bold" />
             </Border>
-            <Label Grid.Row="1" Text="Интенсивные триггеры"
+            <Label Grid.Row="1" Text="Сильнейшие триггеры"
                    FontAttributes="Bold" FontSize="16" Margin="0,8,0,2" />
-            <Label Grid.Row="2" Text="Теги с наибольшей средней интенсивностью по периоду"
+            <Label Grid.Row="2" Text="Топ тегов по средней интенсивности за период."
                    Style="{StaticResource MutedLabel}" Margin="0,0,0,10" />
 
             <VerticalStackLayout Grid.Row="3" Spacing="12">

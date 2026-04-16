@@ -11,11 +11,11 @@
             <Border Grid.Row="0" BackgroundColor="#dbeafe" Stroke="Transparent" StrokeThickness="0"
                     Padding="8,3" HorizontalOptions="Start">
                 <Border.StrokeShape><RoundRectangle CornerRadius="10" /></Border.StrokeShape>
-                <Label Text="Следующий день" TextColor="#1e40af" FontSize="12" FontAttributes="Bold" />
+                <Label Text="Next day" TextColor="#1e40af" FontSize="12" FontAttributes="Bold" />
             </Border>
             <Label Grid.Row="1" Text="Эффект следующего дня"
                    FontAttributes="Bold" FontSize="16" Margin="0,8,0,2" />
-            <Label Grid.Row="2" Text="Как события сегодня влияют на завтра"
+            <Label Grid.Row="2" Text="Средний балл на следующий день после событий с этим тегом. &quot;После «аргумент» — следующий день в среднем тяжелее.&quot;"
                    Style="{StaticResource MutedLabel}" Margin="0,0,0,10" />
             <CollectionView Grid.Row="3" ItemsSource="{Binding Items}">
                 <CollectionView.ItemsLayout>
