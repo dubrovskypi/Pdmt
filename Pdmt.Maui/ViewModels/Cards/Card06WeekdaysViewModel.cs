@@ -18,16 +18,15 @@ public partial class Card06WeekdaysViewModel(InsightsService insightsService) : 
         ErrorMessage = null;
         try
         {
-            var summary = await insightsService.GetWeeklySummaryAsync(from, ct);
-            if (summary is null) return;
+            var stats = await insightsService.GetWeekdayStatsAsync(from, to, ct);
 
-            double maxAbs = summary.ByDayOfWeek.Count > 0
-                ? summary.ByDayOfWeek.Max(d => Math.Abs(d.PosCount - d.NegCount) > 0
+            double maxAbs = stats.Count > 0
+                ? stats.Max(d => Math.Abs(d.PosCount - d.NegCount) > 0
                     ? (double)Math.Abs(d.PosCount - d.NegCount)
                     : 1)
                 : 1;
 
-            Days = summary.ByDayOfWeek.Select(day =>
+            Days = stats.Select(day =>
             {
                 var net = day.PosCount - day.NegCount;
                 return new DayBarItem(

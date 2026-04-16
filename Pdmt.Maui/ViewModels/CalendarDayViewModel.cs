@@ -21,6 +21,7 @@ public partial class CalendarDayViewModel : ObservableObject
     public int PosCount => _dto.PosCount;
     public int NegCount => _dto.NegCount;
     public bool HasEvents => _dto.PosCount + _dto.NegCount > 0;
+    public bool IsEmpty => _dto.PosCount == 0 && _dto.NegCount == 0;
     public string DayAbbrev => _dto.Date.ToString("ddd").ToUpperInvariant();
     public string DayNumber => _dto.Date.Day.ToString();
     public string PosCountText => _dto.PosCount > 0 ? _dto.PosCount.ToString() : "";

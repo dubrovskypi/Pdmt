@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Pdmt.Maui.Models;
 using Pdmt.Maui.Services;
 
 namespace Pdmt.Maui.ViewModels;
@@ -13,7 +14,6 @@ public partial class WeeklyCalendarViewModel(
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(WeekLabel))]
-    [NotifyPropertyChangedFor(nameof(IsCurrentWeek))]
     private DateTimeOffset _weekStart;
 
     [ObservableProperty]
@@ -23,7 +23,6 @@ public partial class WeeklyCalendarViewModel(
     [ObservableProperty] private bool _isBusy;
     [ObservableProperty] private string? _errorMessage;
 
-    public bool IsCurrentWeek => WeekStart >= GetMonday(DateTimeOffset.UtcNow);
     public string WeekLabel => $"{WeekStart:dd MMM} \u2014 {WeekEnd:dd MMM yyyy}";
 
     [RelayCommand]
@@ -45,7 +44,6 @@ public partial class WeeklyCalendarViewModel(
     [RelayCommand]
     private async Task NextWeekAsync()
     {
-        if (IsCurrentWeek) return;
         WeekStart = WeekStart.AddDays(7);
         WeekEnd = WeekStart.AddDays(6);
         await LoadWeekAsync();
@@ -72,9 +70,11 @@ public partial class WeeklyCalendarViewModel(
         day.IsExpandedLoading = true;
         try
         {
-            var dateTime = day.Date.Date;
-            var dayStart = new DateTimeOffset(dateTime, TimeSpan.Zero);
-            var dayEnd = new DateTimeOffset(dateTime.AddDays(1).AddTicks(-1), TimeSpan.Zero);
+            // API encodes local dates as UTC midnight (2026-04-14T00:00:00Z = local April 14).
+            // SpecifyKind=Local so DateTimeOffset constructor picks up the device timezone offset.
+            var localDate = DateTime.SpecifyKind(day.Date.UtcDateTime.Date, DateTimeKind.Local);
+            var dayStart = new DateTimeOffset(localDate);
+            var dayEnd = dayStart.AddDays(1).AddTicks(-1);
             var events = await eventService.GetEventsAsync(from: dayStart, to: dayEnd);
 
             day.ExpandedEvents.Clear();
@@ -100,14 +100,17 @@ public partial class WeeklyCalendarViewModel(
         try
         {
             var week = await analyticsService.GetCalendarWeekAsync(WeekStart);
-            if (week is not null)
-            {
-                double maxSum = week.Days.Count > 0
-                    ? week.Days.Max(d => (double)Math.Max(d.PositiveIntensitySum, d.NegativeIntensitySum))
-                    : 0;
 
-                foreach (var day in week.Days)
-                    Days.Add(new CalendarDayViewModel(day, maxSum));
+            var dayDict = week?.Days.ToDictionary(d => d.Date.Date) ?? [];
+            double maxSum = week?.Days.Count > 0
+                ? week.Days.Max(d => (double)Math.Max(d.PositiveIntensitySum, d.NegativeIntensitySum))
+                : 0;
+
+            for (int i = 0; i < 7; i++)
+            {
+                var date = WeekStart.AddDays(i);
+                var dto = dayDict.GetValueOrDefault(date.Date, new CalendarDayDetailsDto { Date = date });
+                Days.Add(new CalendarDayViewModel(dto, maxSum));
             }
         }
         catch
@@ -120,16 +123,14 @@ public partial class WeeklyCalendarViewModel(
         }
     }
 
-    private static DateTimeOffset StartOfDayUtc(DateTimeOffset date)
-    {
-        return new DateTimeOffset(date.UtcDateTime.Date, TimeSpan.Zero);
-    }
-
     private static DateTimeOffset GetMonday(DateTimeOffset date)
     {
-        var utcDate = date.ToUniversalTime();
-        int daysToMonday = ((int)utcDate.DayOfWeek - (int)DayOfWeek.Monday + 7) % 7;
-        var mondayDate = utcDate.AddDays(-daysToMonday).Date;
-        return new DateTimeOffset(mondayDate, TimeSpan.Zero);
+        // Use local device time to determine correct day of week.
+        // Early morning in UTC+ timezones would give wrong week if we used UTC.
+        var local = date.ToLocalTime();
+        int daysToMonday = ((int)local.DayOfWeek - (int)DayOfWeek.Monday + 7) % 7;
+        var localMondayDate = local.AddDays(-daysToMonday).Date;
+        // API convention: local dates are encoded as UTC midnight (e.g. local Apr 14 → 2026-04-14T00:00:00Z)
+        return new DateTimeOffset(localMondayDate, TimeSpan.Zero);
     }
 }

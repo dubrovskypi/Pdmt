@@ -1,6 +1,6 @@
 namespace Pdmt.Maui.Models;
 
-// ── New insights endpoints ─────────────────────────────────────────────────
+// ── Insights endpoints ─────────────────────────────────────────────────────
 
 public record RepeatingTriggerDto(string TagName, int Count, double AvgIntensity);
 
@@ -26,37 +26,12 @@ public record InfluenceabilitySplitDto(
     int CannotInfluenceCount,
     double CannotInfluenceAvgIntensity);
 
-// ── Existing analytics endpoints (not yet in MAUI models) ─────────────────
+public record TagSummaryDto(string TagName, int Count, double AvgIntensity);
 
-public class WeeklySummaryDto
-{
-    public int PosCount { get; set; }
-    public int NegCount { get; set; }
-    public double AvgPosIntensity { get; set; }
-    public double AvgNegIntensity { get; set; }
-    public List<WeeklySummaryTagDto> TopTags { get; set; } = [];
-    public List<DayOfWeekSummaryDto> ByDayOfWeek { get; set; } = [];
-}
+public record MostIntenseTagsDto(List<TagSummaryDto> TopPosTags, List<TagSummaryDto> TopNegTags);
 
-public class WeeklySummaryTagDto
-{
-    public required string TagName { get; set; }
-    public int Count { get; set; }
-    public double AvgIntensity { get; set; }
-}
+public record PosNegBalanceDto(int PosCount, int NegCount, double AvgPosIntensity, double AvgNegIntensity);
 
-public class DayOfWeekSummaryDto
-{
-    public required string Day { get; set; }
-    public int NegCount { get; set; }
-    public int PosCount { get; set; }
-    public double AvgIntensity { get; set; }
-}
+public record WeekdayStatDto(string Day, int PosCount, int NegCount, double AvgIntensity);
 
-public class TrendPeriodDto
-{
-    public DateOnly PeriodStart { get; set; }
-    public int PosCount { get; set; }
-    public int NegCount { get; set; }
-    public double AvgIntensity { get; set; }
-}
+public record TrendPeriodDto(DateOnly PeriodStart, int PosCount, int NegCount, double AvgIntensity);

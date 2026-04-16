@@ -13,32 +13,61 @@
                 <Border.StrokeShape><RoundRectangle CornerRadius="10" /></Border.StrokeShape>
                 <Label Text="Триггеры" TextColor="#991b1b" FontSize="12" FontAttributes="Bold" />
             </Border>
-            <Label Grid.Row="1" Text="Сильнейшие негативные триггеры"
+            <Label Grid.Row="1" Text="Интенсивные триггеры"
                    FontAttributes="Bold" FontSize="16" Margin="0,8,0,2" />
-            <VerticalStackLayout Grid.Row="2" Spacing="2" Margin="0,0,0,10">
-                <Label Text="Теги с наибольшей средней интенсивностью"
-                       Style="{StaticResource MutedLabel}" />
-                <Label Text="⚠ Только недельный период" FontSize="11" TextColor="#f59e0b" />
+            <Label Grid.Row="2" Text="Теги с наибольшей средней интенсивностью по периоду"
+                   Style="{StaticResource MutedLabel}" Margin="0,0,0,10" />
+
+            <VerticalStackLayout Grid.Row="3" Spacing="12">
+                <!-- Позитивные -->
+                <VerticalStackLayout Spacing="6">
+                    <Label Text="Позитивные" FontSize="12" FontAttributes="Bold" TextColor="#16a34a" />
+                    <CollectionView ItemsSource="{Binding PosItems}">
+                        <CollectionView.ItemsLayout>
+                            <LinearItemsLayout Orientation="Vertical" ItemSpacing="8" />
+                        </CollectionView.ItemsLayout>
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate x:DataType="cards:TriggerBarItem">
+                                <Grid ColumnDefinitions="90,*,36" ColumnSpacing="8">
+                                    <Label Grid.Column="0" Text="{Binding TagName}"
+                                           FontSize="13" LineBreakMode="TailTruncation" VerticalOptions="Center" />
+                                    <BoxView Grid.Column="1" WidthRequest="{Binding BarWidth}" HeightRequest="14"
+                                             Color="#4ade80" CornerRadius="2"
+                                             HorizontalOptions="Start" VerticalOptions="Center" />
+                                    <Label Grid.Column="2"
+                                           Text="{Binding AvgIntensity, StringFormat='{0:0.0}'}"
+                                           FontSize="12" TextColor="{StaticResource Muted}" VerticalOptions="Center" />
+                                </Grid>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </VerticalStackLayout>
+
+                <!-- Негативные -->
+                <VerticalStackLayout Spacing="6">
+                    <Label Text="Негативные" FontSize="12" FontAttributes="Bold" TextColor="#dc2626" />
+                    <CollectionView ItemsSource="{Binding NegItems}">
+                        <CollectionView.ItemsLayout>
+                            <LinearItemsLayout Orientation="Vertical" ItemSpacing="8" />
+                        </CollectionView.ItemsLayout>
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate x:DataType="cards:TriggerBarItem">
+                                <Grid ColumnDefinitions="90,*,36" ColumnSpacing="8">
+                                    <Label Grid.Column="0" Text="{Binding TagName}"
+                                           FontSize="13" LineBreakMode="TailTruncation" VerticalOptions="Center" />
+                                    <BoxView Grid.Column="1" WidthRequest="{Binding BarWidth}" HeightRequest="14"
+                                             Color="#f87171" CornerRadius="2"
+                                             HorizontalOptions="Start" VerticalOptions="Center" />
+                                    <Label Grid.Column="2"
+                                           Text="{Binding AvgIntensity, StringFormat='{0:0.0}'}"
+                                           FontSize="12" TextColor="{StaticResource Muted}" VerticalOptions="Center" />
+                                </Grid>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </VerticalStackLayout>
             </VerticalStackLayout>
-            <CollectionView Grid.Row="3" ItemsSource="{Binding Items}">
-                <CollectionView.ItemsLayout>
-                    <LinearItemsLayout Orientation="Vertical" ItemSpacing="8" />
-                </CollectionView.ItemsLayout>
-                <CollectionView.ItemTemplate>
-                    <DataTemplate x:DataType="cards:TriggerBarItem">
-                        <Grid ColumnDefinitions="90,*,36" ColumnSpacing="8">
-                            <Label Grid.Column="0" Text="{Binding TagName}"
-                                   FontSize="13" LineBreakMode="TailTruncation" VerticalOptions="Center" />
-                            <BoxView Grid.Column="1" WidthRequest="{Binding BarWidth}" HeightRequest="14"
-                                     Color="#f87171" CornerRadius="2"
-                                     HorizontalOptions="Start" VerticalOptions="Center" />
-                            <Label Grid.Column="2"
-                                   Text="{Binding AvgIntensity, StringFormat='{0:0.0}'}"
-                                   FontSize="12" TextColor="{StaticResource Muted}" VerticalOptions="Center" />
-                        </Grid>
-                    </DataTemplate>
-                </CollectionView.ItemTemplate>
-            </CollectionView>
+
             <ActivityIndicator Grid.Row="4" IsRunning="{Binding IsLoading}" IsVisible="{Binding IsLoading}"
                                Color="{StaticResource Primary}" HorizontalOptions="Center" Margin="0,8" />
             <Label Grid.Row="4" Style="{StaticResource ErrorLabel}" Text="{Binding ErrorMessage}"

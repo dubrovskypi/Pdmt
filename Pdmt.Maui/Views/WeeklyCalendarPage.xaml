@@ -12,7 +12,6 @@
 
     <ContentPage.Resources>
         <conv:NotNullToBoolConverter x:Key="NotNullToBool" />
-        <conv:InvertBoolConverter x:Key="InvertBool" />
     </ContentPage.Resources>
 
     <Grid RowDefinitions="Auto,Auto,*">
@@ -49,7 +48,6 @@
                     Grid.Column="2"
                     Text="&#8594;"
                     Command="{Binding NextWeekCommand}"
-                    IsEnabled="{Binding IsCurrentWeek, Converter={StaticResource InvertBool}}"
                     Padding="14,8"
                     FontSize="18"
                     WidthRequest="48"
@@ -63,27 +61,14 @@
             ItemsSource="{Binding Days}"
             Margin="12,0,12,12">
 
-            <CollectionView.EmptyView>
-                <Label
-                    Style="{StaticResource MutedLabel}"
-                    Text="Нет данных за эту неделю."
-                    HorizontalOptions="Center"
-                    VerticalOptions="Center"
-                    Margin="0,32" />
-            </CollectionView.EmptyView>
-
             <CollectionView.ItemTemplate>
                 <DataTemplate x:DataType="vm:CalendarDayViewModel">
                     <VerticalStackLayout Margin="0,4,0,0" Spacing="0">
 
                         <!-- Day card header -->
                         <Border Padding="10,8"
-                                StrokeShape="{OnIdiom Phone='RoundRectangle 8,8,0,0', Default='RoundRectangle 8,8,0,0'}"
+                                StrokeShape="RoundRectangle 8,8,0,0"
                                 BackgroundColor="{StaticResource Surface}">
-
-                            <Border.StrokeShape>
-                                <RoundRectangle CornerRadius="8,8,0,0" />
-                            </Border.StrokeShape>
 
                             <Border.GestureRecognizers>
                                 <TapGestureRecognizer
@@ -143,8 +128,17 @@
                                         </HorizontalStackLayout>
                                     </Grid>
 
+                                    <!-- Empty day label -->
+                                    <Label
+                                        Text="нет событий"
+                                        FontSize="11"
+                                        TextColor="{StaticResource Muted}"
+                                        HorizontalOptions="Center"
+                                        IsVisible="{Binding IsEmpty}" />
+
                                     <!-- Histogram -->
-                                    <Grid ColumnDefinitions="18,*,2,*,18" HeightRequest="22">
+                                    <Grid ColumnDefinitions="18,*,2,*,18" HeightRequest="22"
+                                          IsVisible="{Binding HasEvents}">
 
                                         <!-- Positive count -->
                                         <Label

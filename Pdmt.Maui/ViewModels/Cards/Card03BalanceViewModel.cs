@@ -21,17 +21,17 @@ public partial class Card03BalanceViewModel(InsightsService insightsService) : I
         ErrorMessage = null;
         try
         {
-            var summary = await insightsService.GetWeeklySummaryAsync(from, ct);
-            if (summary is null) return;
+            var balance = await insightsService.GetBalanceAsync(from, to, ct);
+            if (balance is null) return;
 
-            PosCount = summary.PosCount;
-            NegCount = summary.NegCount;
-            AvgPosIntensity = summary.AvgPosIntensity;
-            AvgNegIntensity = summary.AvgNegIntensity;
+            PosCount = balance.PosCount;
+            NegCount = balance.NegCount;
+            AvgPosIntensity = balance.AvgPosIntensity;
+            AvgNegIntensity = balance.AvgNegIntensity;
 
-            double maxIntensity = Math.Max(summary.AvgPosIntensity, summary.AvgNegIntensity);
-            PosBarWidth = maxIntensity > 0 ? summary.AvgPosIntensity / maxIntensity * DesignMaxWidth : 0;
-            NegBarWidth = maxIntensity > 0 ? summary.AvgNegIntensity / maxIntensity * DesignMaxWidth : 0;
+            double maxIntensity = Math.Max(balance.AvgPosIntensity, balance.AvgNegIntensity);
+            PosBarWidth = maxIntensity > 0 ? balance.AvgPosIntensity / maxIntensity * DesignMaxWidth : 0;
+            NegBarWidth = maxIntensity > 0 ? balance.AvgNegIntensity / maxIntensity * DesignMaxWidth : 0;
         }
         catch (OperationCanceledException)
         {

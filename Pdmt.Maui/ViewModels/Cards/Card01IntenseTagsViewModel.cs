@@ -9,7 +9,8 @@ public partial class Card01IntenseTagsViewModel(InsightsService insightsService)
 {
     private const double DesignMaxWidth = 160.0;
 
-    [ObservableProperty] private IReadOnlyList<TriggerBarItem> _items = [];
+    [ObservableProperty] private IReadOnlyList<TriggerBarItem> _posItems = [];
+    [ObservableProperty] private IReadOnlyList<TriggerBarItem> _negItems = [];
 
     public override async Task LoadAsync(DateTimeOffset from, DateTimeOffset to, bool showLoading = true, CancellationToken ct = default)
     {
@@ -18,19 +19,11 @@ public partial class Card01IntenseTagsViewModel(InsightsService insightsService)
         ErrorMessage = null;
         try
         {
-            var summary = await insightsService.GetWeeklySummaryAsync(from, ct);
-            if (summary is null) return;
+            var result = await insightsService.GetMostIntenseTagsAsync(from, to, ct);
+            if (result is null) return;
 
-            var topNeg = summary.TopTags
-                .OrderByDescending(t => t.AvgIntensity)
-                .Take(5)
-                .ToList();
-
-            double max = topNeg.Count > 0 ? topNeg.Max(t => t.AvgIntensity) : 1;
-            Items = topNeg.Select(tag => new TriggerBarItem(
-                tag.TagName,
-                tag.AvgIntensity,
-                max > 0 ? tag.AvgIntensity / max * DesignMaxWidth : 0)).ToList();
+            PosItems = BuildBars(result.TopPosTags);
+            NegItems = BuildBars(result.TopNegTags);
         }
         catch (OperationCanceledException)
         {
@@ -48,5 +41,14 @@ public partial class Card01IntenseTagsViewModel(InsightsService insightsService)
         {
             IsLoading = false;
         }
+    }
+
+    private IReadOnlyList<TriggerBarItem> BuildBars(IReadOnlyList<Models.TagSummaryDto> tags)
+    {
+        double max = tags.Count > 0 ? tags.Max(t => t.AvgIntensity) : 1;
+        return tags.Select(tag => new TriggerBarItem(
+            tag.TagName,
+            tag.AvgIntensity,
+            max > 0 ? tag.AvgIntensity / max * DesignMaxWidth : 0)).ToList();
     }
 }
