@@ -46,7 +46,8 @@
                         <Picker
                             ItemsSource="{Binding EventTypeFilters}"
                             SelectedItem="{Binding SelectedTypeFilter}"
-                            ItemDisplayBinding="{Binding Label}" />
+                            ItemDisplayBinding="{Binding Label}"
+                            Title="Все типы" />
                     </VerticalStackLayout>
                     <VerticalStackLayout Grid.Column="1" Spacing="2">
                         <Label Style="{StaticResource MutedLabel}" Text="Тег" />

@@ -55,7 +55,26 @@
     <Style TargetType="Editor">
         <Setter Property="BackgroundColor" Value="White" />
         <Setter Property="TextColor" Value="{StaticResource OnSurface}" />
+        <Setter Property="PlaceholderColor" Value="{StaticResource Muted}" />
         <Setter Property="FontSize" Value="15" />
+    </Style>
+
+    <Style TargetType="Picker">
+        <Setter Property="BackgroundColor" Value="White" />
+        <Setter Property="TextColor" Value="{StaticResource OnSurface}" />
+        <Setter Property="TitleColor" Value="{StaticResource Muted}" />
+        <Setter Property="FontSize" Value="14" />
+    </Style>
+
+    <Style TargetType="DatePicker">
+        <Setter Property="BackgroundColor" Value="White" />
+        <Setter Property="TextColor" Value="{StaticResource OnSurface}" />
+        <Setter Property="FontSize" Value="14" />
+    </Style>
+
+    <Style TargetType="RadioButton">
+        <Setter Property="BackgroundColor" Value="Transparent" />
+        <Setter Property="TextColor" Value="{StaticResource OnSurface}" />
     </Style>
 
     <Style TargetType="Label">

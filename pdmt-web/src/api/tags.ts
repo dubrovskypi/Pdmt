@@ -6,13 +6,13 @@ const TAGS_TTL = 60_000;
 let tagsCache: { data: TagResponseDto[]; ts: number } | null = null;
 let tagsInflight: Promise<TagResponseDto[]> | null = null;
 
-export function getTags(signal?: AbortSignal): Promise<TagResponseDto[]> {
+export function getTags(): Promise<TagResponseDto[]> {
   if (tagsCache && Date.now() - tagsCache.ts < TAGS_TTL) {
     return Promise.resolve(tagsCache.data);
   }
   if (tagsInflight) return tagsInflight;
 
-  tagsInflight = apiGet<TagResponseDto[]>("/api/tags", signal)
+  tagsInflight = apiGet<TagResponseDto[]>("/api/tags")
     .then((data) => {
       tagsCache = { data, ts: Date.now() };
       return data;
