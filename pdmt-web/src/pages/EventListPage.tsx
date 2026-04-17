@@ -1,4 +1,5 @@
 import { useState, useCallback, useMemo } from "react";
+import { Pencil, X } from "lucide-react";
 import { EventType } from "@/api/types";
 import type { EventResponseDto, TagResponseDto } from "@/api/types";
 import { deleteEvent } from "@/api/events";
@@ -155,7 +156,7 @@ function EventCard({ event, onEdit, onDelete }: EventCardProps) {
   return (
     <div
       className={cn(
-        "flex gap-3 p-3 rounded-lg border text-sm",
+        "relative flex gap-3 p-3 rounded-lg border text-sm",
         event.type === EventType.Positive
           ? "border-green-200 bg-green-50"
           : "border-red-200 bg-red-50",
@@ -171,11 +172,8 @@ function EventCard({ event, onEdit, onDelete }: EventCardProps) {
 
       {/* Content */}
       <div className="flex-1 min-w-0">
-        <div className="flex items-start justify-between gap-2">
+        <div className="flex items-start">
           <span className="font-medium text-slate-900 truncate">{event.title}</span>
-          <span className="text-xs text-slate-400 flex-shrink-0">
-            {formatTimestamp(event.timestamp)}
-          </span>
         </div>
 
         <div className="flex items-center gap-2 mt-0.5 text-xs text-slate-500">
@@ -207,22 +205,27 @@ function EventCard({ event, onEdit, onDelete }: EventCardProps) {
       </div>
 
       {/* Actions */}
-      <div className="flex flex-col gap-1 flex-shrink-0">
+      <div className="absolute top-2 right-2 flex items-center gap-0.5">
         <button
           type="button"
           onClick={() => onEdit(event)}
-          className="text-xs text-slate-400 hover:text-slate-700 px-1"
+          className="p-1 text-slate-400 hover:text-indigo-500 transition-colors cursor-pointer"
         >
-          ✎
+          <Pencil size={15} />
         </button>
         <button
           type="button"
           onClick={() => onDelete(event)}
-          className="text-xs text-slate-400 hover:text-red-500 px-1"
+          className="p-1 text-slate-400 hover:text-red-500 transition-colors cursor-pointer"
         >
-          ✕
+          <X size={18} />
         </button>
       </div>
+
+      {/* Timestamp */}
+      <span className="absolute bottom-3 right-3 text-xs text-slate-400">
+        {formatTimestamp(event.timestamp)}
+      </span>
     </div>
   );
 }
