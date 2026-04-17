@@ -3,11 +3,11 @@ using Pdmt.Maui.Services;
 
 namespace Pdmt.Maui.ViewModels.Cards;
 
-public record WeekBarItem(string WeekLabel, int PosCount, int NegCount, double BarHeight, bool IsPositive);
+public record WeekBarItem(string WeekLabel, double PosBarHeight, double NegBarHeight, double Opacity);
 
 public partial class Card04TrendViewModel(InsightsService insightsService) : InsightCardViewModel
 {
-    private const double DesignMaxHeight = 80.0;
+    private const double DesignMaxHeight = 160.0;
 
     [ObservableProperty] private IReadOnlyList<WeekBarItem> _weeks = [];
     [ObservableProperty] private bool _isEmpty;
@@ -19,24 +19,21 @@ public partial class Card04TrendViewModel(InsightsService insightsService) : Ins
         ErrorMessage = null;
         try
         {
-            var rangeFrom = to.AddDays(-42);
-            var periods = await insightsService.GetTrendsAsync(rangeFrom, to, "week", ct);
+            var periods = await insightsService.GetTrendsAsync(from, to, "week", ct);
 
             IsEmpty = periods.Count == 0;
-            double maxNet = periods.Count > 0
-                ? periods.Max(p => (double)Math.Abs(p.PosCount - p.NegCount))
+            double maxCount = periods.Count > 0
+                ? (double)Math.Max(periods.Max(p => p.PosCount), periods.Max(p => p.NegCount))
                 : 1;
+            if (maxCount == 0) maxCount = 1;
+            double maxIntensity = periods.Count > 0 ? periods.Max(p => p.AvgIntensity) : 1;
+            if (maxIntensity == 0) maxIntensity = 1;
 
-            Weeks = periods.TakeLast(6).Select(p =>
-            {
-                var net = p.PosCount - p.NegCount;
-                return new WeekBarItem(
-                    p.PeriodStart.ToString("dd.MM"),
-                    p.PosCount,
-                    p.NegCount,
-                    maxNet > 0 ? Math.Abs(net) / maxNet * DesignMaxHeight : 4,
-                    net >= 0);
-            }).ToList();
+            Weeks = periods.Select(p => new WeekBarItem(
+                $"{p.PeriodStart:dd.MM}–{p.PeriodStart.AddDays(6):dd.MM}",
+                p.PosCount > 0 ? Math.Max(p.PosCount / maxCount * DesignMaxHeight, 4) : 0,
+                p.NegCount > 0 ? Math.Max(p.NegCount / maxCount * DesignMaxHeight, 4) : 0,
+                0.2 + 0.8 * p.AvgIntensity / maxIntensity)).ToList();
         }
         catch (OperationCanceledException)
         {

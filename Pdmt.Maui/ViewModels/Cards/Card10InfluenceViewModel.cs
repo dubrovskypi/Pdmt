@@ -5,14 +5,12 @@ namespace Pdmt.Maui.ViewModels.Cards;
 
 public partial class Card10InfluenceViewModel(InsightsService insightsService) : InsightCardViewModel
 {
-    private const double DesignTotalWidth = 240.0;
-
     [ObservableProperty] private int _canInfluenceCount;
     [ObservableProperty] private double _canInfluenceAvgIntensity;
     [ObservableProperty] private int _cannotInfluenceCount;
     [ObservableProperty] private double _cannotInfluenceAvgIntensity;
-    [ObservableProperty] private double _canBarWidth;
-    [ObservableProperty] private double _cannotBarWidth;
+    [ObservableProperty] private GridLength _canGridLength = new(1, GridUnitType.Star);
+    [ObservableProperty] private GridLength _cannotGridLength = new(1, GridUnitType.Star);
 
     public override async Task LoadAsync(DateTimeOffset from, DateTimeOffset to, bool showLoading = true, CancellationToken ct = default)
     {
@@ -28,18 +26,8 @@ public partial class Card10InfluenceViewModel(InsightsService insightsService) :
             CanInfluenceAvgIntensity = split.CanInfluenceAvgIntensity;
             CannotInfluenceCount = split.CannotInfluenceCount;
             CannotInfluenceAvgIntensity = split.CannotInfluenceAvgIntensity;
-
-            var total = (double)(split.CanInfluenceCount + split.CannotInfluenceCount);
-            if (total > 0)
-            {
-                CanBarWidth    = split.CanInfluenceCount    / total * DesignTotalWidth;
-                CannotBarWidth = split.CannotInfluenceCount / total * DesignTotalWidth;
-            }
-            else
-            {
-                CanBarWidth    = 0;
-                CannotBarWidth = 0;
-            }
+            CanGridLength = new GridLength(split.CanInfluenceCount, GridUnitType.Star);
+            CannotGridLength = new GridLength(split.CannotInfluenceCount, GridUnitType.Star);
         }
         catch (OperationCanceledException)
         {

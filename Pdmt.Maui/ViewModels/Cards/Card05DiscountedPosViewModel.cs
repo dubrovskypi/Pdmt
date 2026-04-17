@@ -3,7 +3,10 @@ using Pdmt.Maui.Services;
 
 namespace Pdmt.Maui.ViewModels.Cards;
 
-public record BlindSpotBarItem(string TagName, double AvgIntensity, int Count, double BarWidth);
+public record BlindSpotBarItem(string TagName, double AvgIntensity, int Count, double BarWidth)
+{
+    public string FormattedAnnotation => $"{Count}× / {AvgIntensity:F1}";
+}
 
 public partial class Card05DiscountedPosViewModel(InsightsService insightsService) : InsightCardViewModel
 {

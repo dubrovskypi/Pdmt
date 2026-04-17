@@ -39,7 +39,7 @@
                     <Label Text="Средняя интенсивность" Style="{StaticResource MutedLabel}" />
                     <Grid ColumnDefinitions="70,*,36" ColumnSpacing="8">
                         <Label Grid.Column="0" Text="Позитивные" FontSize="12" VerticalOptions="Center" />
-                        <BoxView Grid.Column="1" WidthRequest="{Binding PosBarWidth}" HeightRequest="12"
+                        <BoxView Grid.Column="1" WidthRequest="{Binding PosBarWidth}" HeightRequest="14"
                                  Color="#4ade80" CornerRadius="2"
                                  HorizontalOptions="Start" VerticalOptions="Center" />
                         <Label Grid.Column="2"
@@ -48,7 +48,7 @@
                     </Grid>
                     <Grid ColumnDefinitions="70,*,36" ColumnSpacing="8">
                         <Label Grid.Column="0" Text="Негативные" FontSize="12" VerticalOptions="Center" />
-                        <BoxView Grid.Column="1" WidthRequest="{Binding NegBarWidth}" HeightRequest="12"
+                        <BoxView Grid.Column="1" WidthRequest="{Binding NegBarWidth}" HeightRequest="14"
                                  Color="#f87171" CornerRadius="2"
                                  HorizontalOptions="Start" VerticalOptions="Center" />
                         <Label Grid.Column="2"

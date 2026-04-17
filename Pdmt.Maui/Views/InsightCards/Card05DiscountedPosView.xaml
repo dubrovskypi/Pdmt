@@ -23,18 +23,14 @@
                 </CollectionView.ItemsLayout>
                 <CollectionView.ItemTemplate>
                     <DataTemplate x:DataType="cards:BlindSpotBarItem">
-                        <Grid ColumnDefinitions="90,*,52" ColumnSpacing="8">
+                        <Grid ColumnDefinitions="90,*,64" ColumnSpacing="8">
                             <Label Grid.Column="0" Text="{Binding TagName}"
                                    FontSize="13" LineBreakMode="TailTruncation" VerticalOptions="Center" />
                             <BoxView Grid.Column="1" WidthRequest="{Binding BarWidth}" HeightRequest="14"
                                      Color="#fcd34d" CornerRadius="2"
                                      HorizontalOptions="Start" VerticalOptions="Center" />
-                            <VerticalStackLayout Grid.Column="2" Spacing="1" VerticalOptions="Center">
-                                <Label Text="{Binding Count, StringFormat='{0}×'}"
-                                       FontSize="12" TextColor="{StaticResource Muted}" />
-                                <Label Text="{Binding AvgIntensity, StringFormat='{0:F1}'}"
-                                       FontSize="11" TextColor="{StaticResource Muted}" Margin="0,-2,0,0" />
-                            </VerticalStackLayout>
+                            <Label Grid.Column="2" Text="{Binding FormattedAnnotation}"
+                                   FontSize="12" TextColor="{StaticResource Muted}" VerticalOptions="Center" />
                         </Grid>
                     </DataTemplate>
                 </CollectionView.ItemTemplate>

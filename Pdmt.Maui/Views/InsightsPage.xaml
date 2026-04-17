@@ -58,64 +58,59 @@
 
     </ContentPage.Resources>
 
-    <Grid RowDefinitions="Auto,Auto,*,Auto">
+    <Grid RowDefinitions="Auto,*,Auto">
 
-        <!-- Row 0: Title -->
-        <Label Grid.Row="0"
-               Style="{StaticResource PageTitle}"
-               Text="Инсайты"
-               Margin="16,16,16,4" />
+        <!-- Row 0: Period selector -->
+        <Border Grid.Row="0" Margin="24,4,24,4" Padding="8">
+            <Grid ColumnDefinitions="*,*,*" ColumnSpacing="8">
 
-        <!-- Row 1: Period selector -->
-        <Grid Grid.Row="1" ColumnDefinitions="*,*,*" ColumnSpacing="8" Margin="16,4,16,8">
+                <Button Grid.Column="0"
+                        Text="Неделя"
+                        Style="{StaticResource SecondaryButton}"
+                        Command="{Binding SelectPeriodCommand}"
+                        CommandParameter="{Binding PeriodOptions[0]}">
+                    <Button.Triggers>
+                        <DataTrigger TargetType="Button" Binding="{Binding IsWeekSelected}" Value="True">
+                            <Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
+                            <Setter Property="TextColor" Value="White" />
+                            <Setter Property="BorderColor" Value="{StaticResource Primary}" />
+                        </DataTrigger>
+                    </Button.Triggers>
+                </Button>
 
-            <Button Grid.Column="0"
-                    Text="Неделя"
-                    Style="{StaticResource SecondaryButton}"
-                    Command="{Binding SelectPeriodCommand}"
-                    CommandParameter="{Binding PeriodOptions[0]}">
-                <Button.Triggers>
-                    <DataTrigger TargetType="Button" Binding="{Binding IsWeekSelected}" Value="True">
-                        <Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
-                        <Setter Property="TextColor" Value="White" />
-                        <Setter Property="BorderColor" Value="{StaticResource Primary}" />
-                    </DataTrigger>
-                </Button.Triggers>
-            </Button>
+                <Button Grid.Column="1"
+                        Text="2 недели"
+                        Style="{StaticResource SecondaryButton}"
+                        Command="{Binding SelectPeriodCommand}"
+                        CommandParameter="{Binding PeriodOptions[1]}">
+                    <Button.Triggers>
+                        <DataTrigger TargetType="Button" Binding="{Binding IsTwoWeeksSelected}" Value="True">
+                            <Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
+                            <Setter Property="TextColor" Value="White" />
+                            <Setter Property="BorderColor" Value="{StaticResource Primary}" />
+                        </DataTrigger>
+                    </Button.Triggers>
+                </Button>
 
-            <Button Grid.Column="1"
-                    Text="2 недели"
-                    Style="{StaticResource SecondaryButton}"
-                    Command="{Binding SelectPeriodCommand}"
-                    CommandParameter="{Binding PeriodOptions[1]}">
-                <Button.Triggers>
-                    <DataTrigger TargetType="Button" Binding="{Binding IsTwoWeeksSelected}" Value="True">
-                        <Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
-                        <Setter Property="TextColor" Value="White" />
-                        <Setter Property="BorderColor" Value="{StaticResource Primary}" />
-                    </DataTrigger>
-                </Button.Triggers>
-            </Button>
+                <Button Grid.Column="2"
+                        Text="Месяц"
+                        Style="{StaticResource SecondaryButton}"
+                        Command="{Binding SelectPeriodCommand}"
+                        CommandParameter="{Binding PeriodOptions[2]}">
+                    <Button.Triggers>
+                        <DataTrigger TargetType="Button" Binding="{Binding IsMonthSelected}" Value="True">
+                            <Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
+                            <Setter Property="TextColor" Value="White" />
+                            <Setter Property="BorderColor" Value="{StaticResource Primary}" />
+                        </DataTrigger>
+                    </Button.Triggers>
+                </Button>
 
-            <Button Grid.Column="2"
-                    Text="Месяц"
-                    Style="{StaticResource SecondaryButton}"
-                    Command="{Binding SelectPeriodCommand}"
-                    CommandParameter="{Binding PeriodOptions[2]}">
-                <Button.Triggers>
-                    <DataTrigger TargetType="Button" Binding="{Binding IsMonthSelected}" Value="True">
-                        <Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
-                        <Setter Property="TextColor" Value="White" />
-                        <Setter Property="BorderColor" Value="{StaticResource Primary}" />
-                    </DataTrigger>
-                </Button.Triggers>
-            </Button>
-
-        </Grid>
-
-        <!-- Row 2: Carousel -->
+            </Grid>
+        </Border>
+        <!-- Row 1: Carousel -->
         <CarouselView
-            Grid.Row="2"
+            Grid.Row="1"
             x:Name="InsightsCarousel"
             ItemsSource="{Binding Cards}"
             ItemTemplate="{StaticResource CardSelector}"
@@ -129,16 +124,16 @@
 
         <!-- Page-level loading overlay -->
         <ActivityIndicator
-            Grid.Row="2"
+            Grid.Row="1"
             IsRunning="{Binding IsPageLoading}"
             IsVisible="{Binding IsPageLoading}"
             Color="{StaticResource Primary}"
             VerticalOptions="Center"
             HorizontalOptions="Center" />
 
-        <!-- Row 3: Dot indicators -->
+        <!-- Row 2: Dot indicators -->
         <IndicatorView
-            Grid.Row="3"
+            Grid.Row="2"
             x:Name="CardIndicator"
             IndicatorColor="{StaticResource Border}"
             SelectedIndicatorColor="{StaticResource Primary}"

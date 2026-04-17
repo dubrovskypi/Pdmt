@@ -17,34 +17,31 @@
                    FontAttributes="Bold" FontSize="16" Margin="0,8,0,2" />
             <Label Grid.Row="2" Text="Высота полоски — количество событий. Яркость — средняя интенсивность."
                    Style="{StaticResource MutedLabel}" Margin="0,0,0,10" />
-            <CollectionView Grid.Row="3" ItemsSource="{Binding Weeks}"
-                            VerticalOptions="End" HorizontalOptions="Start">
-                <CollectionView.ItemsLayout>
-                    <LinearItemsLayout Orientation="Horizontal" ItemSpacing="6" />
-                </CollectionView.ItemsLayout>
-                <CollectionView.ItemTemplate>
+            <FlexLayout Grid.Row="3" BindableLayout.ItemsSource="{Binding Weeks}"
+                        JustifyContent="SpaceEvenly" HorizontalOptions="Fill" VerticalOptions="End">
+                <BindableLayout.ItemTemplate>
                     <DataTemplate x:DataType="cards:WeekBarItem">
-                        <Grid RowDefinitions="80,Auto" RowSpacing="3" HorizontalOptions="Center" WidthRequest="40">
-                            <BoxView Grid.Row="0" WidthRequest="28" HeightRequest="{Binding BarHeight}"
-                                     CornerRadius="3,3,0,0"
-                                     HorizontalOptions="Center" VerticalOptions="End">
-                                <BoxView.Triggers>
-                                    <DataTrigger TargetType="BoxView" Binding="{Binding IsPositive}" Value="True">
-                                        <Setter Property="Color" Value="#4ade80" />
-                                    </DataTrigger>
-                                    <DataTrigger TargetType="BoxView" Binding="{Binding IsPositive}" Value="False">
-                                        <Setter Property="Color" Value="#f87171" />
-                                    </DataTrigger>
-                                </BoxView.Triggers>
-                            </BoxView>
-                            <Label Grid.Row="1" Text="{Binding WeekLabel}" FontSize="10"
+                        <Grid RowDefinitions="160,Auto" RowSpacing="4" WidthRequest="92">
+                            <Grid Grid.Row="0" ColumnDefinitions="28,6,28" HorizontalOptions="Center">
+                                <BoxView Grid.Column="0"
+                                         WidthRequest="28" HeightRequest="{Binding PosBarHeight}"
+                                         Color="#4ade80" Opacity="{Binding Opacity}"
+                                         CornerRadius="3,3,0,0"
+                                         HorizontalOptions="Center" VerticalOptions="End" />
+                                <BoxView Grid.Column="2"
+                                         WidthRequest="28" HeightRequest="{Binding NegBarHeight}"
+                                         Color="#f87171" Opacity="{Binding Opacity}"
+                                         CornerRadius="3,3,0,0"
+                                         HorizontalOptions="Center" VerticalOptions="End" />
+                            </Grid>
+                            <Label Grid.Row="1" Text="{Binding WeekLabel}" FontSize="9"
                                    TextColor="{StaticResource Muted}"
                                    HorizontalOptions="Center" HorizontalTextAlignment="Center" />
                         </Grid>
                     </DataTemplate>
-                </CollectionView.ItemTemplate>
-            </CollectionView>
-            <Label Grid.Row="3" Text="Нет данных за 6 недель"
+                </BindableLayout.ItemTemplate>
+            </FlexLayout>
+            <Label Grid.Row="3" Text="Нет данных за период"
                    Style="{StaticResource MutedLabel}" HorizontalTextAlignment="Center"
                    IsVisible="{Binding IsEmpty}" VerticalOptions="Center" Margin="0,20" />
             <ActivityIndicator Grid.Row="4" IsRunning="{Binding IsLoading}" IsVisible="{Binding IsLoading}"

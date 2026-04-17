@@ -3,12 +3,13 @@ using Pdmt.Maui.Services;
 
 namespace Pdmt.Maui.ViewModels.Cards;
 
-public record TagTrendBarItem(string PeriodLabel, int Count, double BarHeight);
-public record TagTrendSeries(string TagName, IReadOnlyList<TagTrendBarItem> Points);
+public record TagTrendBarItem(string PeriodLabel, int Count, double BarHeight, string BarColor);
+public record TagTrendSeries(string TagName, string SeriesColor, IReadOnlyList<TagTrendBarItem> Points);
 
 public partial class Card09TagTrendViewModel(InsightsService insightsService) : InsightCardViewModel
 {
     private const double DesignMaxHeight = 80.0;
+    private static readonly string[] SeriesColors = ["#93c5fd", "#86efac", "#fca5a5"];
 
     [ObservableProperty] private IReadOnlyList<TagTrendSeries> _series = [];
     [ObservableProperty] private bool _isEmpty;
@@ -30,14 +31,16 @@ public partial class Card09TagTrendViewModel(InsightsService insightsService) : 
                 return;
             }
 
-            Series = seriesList.Take(3).Select(s =>
+            Series = seriesList.Take(3).Select((s, idx) =>
             {
+                var color = SeriesColors[idx % SeriesColors.Length];
                 double maxCount = s.Points.Count > 0 ? s.Points.Max(p => (double)p.Count) : 1;
                 var bars = s.Points.Select(p => new TagTrendBarItem(
-                    p.PeriodStart.ToString("dd.MM"),
+                    $"{p.PeriodStart:dd.MM}–{p.PeriodStart.AddDays(6):dd.MM}",
                     p.Count,
-                    maxCount > 0 ? p.Count / maxCount * DesignMaxHeight : 4)).ToList();
-                return new TagTrendSeries(s.TagName, bars);
+                    maxCount > 0 ? Math.Max(p.Count / maxCount * DesignMaxHeight, p.Count > 0 ? 4 : 0) : 0,
+                    color)).ToList();
+                return new TagTrendSeries(s.TagName, color, bars);
             }).ToList();
         }
         catch (OperationCanceledException)

@@ -5,10 +5,14 @@ namespace Pdmt.Maui.ViewModels.Cards;
 
 public record ComboItem(
     string Label,
+    string Tag1Name,
+    string Tag2Name,
     double CombinedAvgScore,
-    double AloneAvgScore,
+    double Tag1AloneScore,
+    double Tag2AloneScore,
     double CombinedBarWidth,
-    double AloneBarWidth,
+    double Tag1AloneBarWidth,
+    double Tag2AloneBarWidth,
     int CoOccurrences);
 
 public partial class Card08TagCombosViewModel(InsightsService insightsService) : InsightCardViewModel
@@ -31,17 +35,17 @@ public partial class Card08TagCombosViewModel(InsightsService insightsService) :
                 : 1;
             if (maxAbs == 0) maxAbs = 1;
 
-            Items = combos.Take(5).Select(c =>
-            {
-                var aloneScore = (c.Tag1AloneAvgScore + c.Tag2AloneAvgScore) / 2;
-                return new ComboItem(
-                    $"{c.Tag1} + {c.Tag2}",
-                    c.CombinedAvgScore,
-                    aloneScore,
-                    Math.Abs(c.CombinedAvgScore) / maxAbs * DesignMaxWidth,
-                    Math.Abs(aloneScore) / maxAbs * DesignMaxWidth,
-                    c.CoOccurrences);
-            }).ToList();
+            Items = combos.Take(5).Select(c => new ComboItem(
+                $"{c.Tag1} + {c.Tag2}",
+                c.Tag1,
+                c.Tag2,
+                c.CombinedAvgScore,
+                c.Tag1AloneAvgScore,
+                c.Tag2AloneAvgScore,
+                Math.Abs(c.CombinedAvgScore) / maxAbs * DesignMaxWidth,
+                Math.Abs(c.Tag1AloneAvgScore) / maxAbs * DesignMaxWidth,
+                Math.Abs(c.Tag2AloneAvgScore) / maxAbs * DesignMaxWidth,
+                c.CoOccurrences)).ToList();
         }
         catch (OperationCanceledException)
         {

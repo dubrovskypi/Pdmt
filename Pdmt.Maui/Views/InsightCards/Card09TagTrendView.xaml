@@ -26,35 +26,41 @@
                        HorizontalOptions="Center" Margin="0,16" />
 
                 <!-- Серии топ-3 тегов -->
-                <VerticalStackLayout Spacing="16"
+                <VerticalStackLayout Spacing="10"
                                      BindableLayout.ItemsSource="{Binding Series}">
                     <BindableLayout.ItemTemplate>
                         <DataTemplate x:DataType="cards:TagTrendSeries">
-                            <VerticalStackLayout Spacing="6">
-                                <Label Text="{Binding TagName}"
-                                       FontSize="13" FontAttributes="Bold"
-                                       TextColor="{StaticResource Muted}" />
-                                <CollectionView ItemsSource="{Binding Points}"
-                                                VerticalOptions="End" HorizontalOptions="Start">
-                                    <CollectionView.ItemsLayout>
-                                        <LinearItemsLayout Orientation="Horizontal" ItemSpacing="6" />
-                                    </CollectionView.ItemsLayout>
-                                    <CollectionView.ItemTemplate>
-                                        <DataTemplate x:DataType="cards:TagTrendBarItem">
-                                            <VerticalStackLayout Spacing="3" HorizontalOptions="Center" WidthRequest="40">
-                                                <Label Text="{Binding Count}" FontSize="11"
-                                                       TextColor="{StaticResource Muted}" HorizontalOptions="Center" />
-                                                <BoxView WidthRequest="28" HeightRequest="{Binding BarHeight}"
-                                                         Color="#c084fc" CornerRadius="3,3,0,0"
-                                                         HorizontalOptions="Center" VerticalOptions="End" />
-                                                <Label Text="{Binding PeriodLabel}" FontSize="10"
-                                                       TextColor="{StaticResource Muted}"
-                                                       HorizontalOptions="Center" HorizontalTextAlignment="Center" />
-                                            </VerticalStackLayout>
-                                        </DataTemplate>
-                                    </CollectionView.ItemTemplate>
-                                </CollectionView>
-                            </VerticalStackLayout>
+                            <Border Padding="10,8" StrokeThickness="1.5"
+                                    Stroke="{Binding SeriesColor}"
+                                    BackgroundColor="{StaticResource Surface}">
+                                <Border.StrokeShape><RoundRectangle CornerRadius="8" /></Border.StrokeShape>
+                                <VerticalStackLayout Spacing="0">
+                                    <Label Text="{Binding TagName}"
+                                           FontSize="13" FontAttributes="Bold"
+                                           TextColor="{Binding SeriesColor}"
+                                           Margin="0,0,0,12" />
+                                    <BoxView HeightRequest="1" Color="{StaticResource Border}" Opacity="0"
+                                             Margin="0,0,0,10" />
+                                    <FlexLayout BindableLayout.ItemsSource="{Binding Points}"
+                                                JustifyContent="SpaceEvenly"
+                                                HorizontalOptions="Fill">
+                                        <BindableLayout.ItemTemplate>
+                                            <DataTemplate x:DataType="cards:TagTrendBarItem">
+                                                <Grid RowDefinitions="60,Auto" RowSpacing="3" WidthRequest="80">
+                                                    <BoxView Grid.Row="0"
+                                                             WidthRequest="44" HeightRequest="{Binding BarHeight}"
+                                                             Color="{Binding BarColor}" CornerRadius="3,3,0,0"
+                                                             HorizontalOptions="Center" VerticalOptions="End" />
+                                                    <Label Grid.Row="1"
+                                                           Text="{Binding PeriodLabel}" FontSize="9"
+                                                           TextColor="{StaticResource Muted}"
+                                                           HorizontalOptions="Center" HorizontalTextAlignment="Center" />
+                                                </Grid>
+                                            </DataTemplate>
+                                        </BindableLayout.ItemTemplate>
+                                    </FlexLayout>
+                                </VerticalStackLayout>
+                            </Border>
                         </DataTemplate>
                     </BindableLayout.ItemTemplate>
                 </VerticalStackLayout>

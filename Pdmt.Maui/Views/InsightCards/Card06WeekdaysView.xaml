@@ -27,16 +27,8 @@
                             <Label Grid.Column="0" Text="{Binding DayLabel}"
                                    FontSize="12" TextColor="{StaticResource Muted}" VerticalOptions="Center" />
                             <BoxView Grid.Column="1" WidthRequest="{Binding BarWidth}" HeightRequest="14"
-                                     CornerRadius="2" HorizontalOptions="Start" VerticalOptions="Center">
-                                <BoxView.Triggers>
-                                    <DataTrigger TargetType="BoxView" Binding="{Binding IsPositive}" Value="True">
-                                        <Setter Property="Color" Value="#4ade80" />
-                                    </DataTrigger>
-                                    <DataTrigger TargetType="BoxView" Binding="{Binding IsPositive}" Value="False">
-                                        <Setter Property="Color" Value="#f87171" />
-                                    </DataTrigger>
-                                </BoxView.Triggers>
-                            </BoxView>
+                                     Color="{Binding BarColor}"
+                                     CornerRadius="2" HorizontalOptions="Start" VerticalOptions="Center" />
                         </Grid>
                     </DataTemplate>
                 </CollectionView.ItemTemplate>

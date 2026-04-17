@@ -100,6 +100,6 @@ public class InsightsService(IHttpClientFactory factory)
     // ── Helpers ───────────────────────────────────────────────────────────
 
     private static (string from, string to) FormatRange(DateTimeOffset from, DateTimeOffset to) => (
-        Uri.EscapeDataString(from.ToUniversalTime().ToString("O")),
-        Uri.EscapeDataString(to.ToUniversalTime().ToString("O")));
+        Uri.EscapeDataString(from.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")),
+        Uri.EscapeDataString(to.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")));
 }

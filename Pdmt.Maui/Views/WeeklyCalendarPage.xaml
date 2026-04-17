@@ -157,7 +157,7 @@
                                                 WidthRequest="{Binding PosBarWidth}"
                                                 HeightRequest="12"
                                                 Color="#4ade80"
-                                                CornerRadius="2,0,0,2" />
+                                                CornerRadius="2,0,2,0" />
                                         </Grid>
 
                                         <!-- Center divider -->
@@ -176,7 +176,7 @@
                                                 WidthRequest="{Binding NegBarWidth}"
                                                 HeightRequest="12"
                                                 Color="#f87171"
-                                                CornerRadius="0,2,2,0" />
+                                                CornerRadius="0,2,0,2" />
                                         </Grid>
 
                                         <!-- Negative count -->
