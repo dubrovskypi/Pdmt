@@ -86,4 +86,22 @@
         <Setter Property="StrokeShape" Value="RoundRectangle 8" />
     </Style>
 
+    <Style x:Key="IconButton" TargetType="Button">
+        <Setter Property="BackgroundColor" Value="Transparent" />
+        <Setter Property="TextColor" Value="{StaticResource Muted}" />
+        <Setter Property="BorderColor" Value="{StaticResource Border}" />
+        <Setter Property="BorderWidth" Value="1" />
+        <Setter Property="CornerRadius" Value="14" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="WidthRequest" Value="28" />
+        <Setter Property="HeightRequest" Value="28" />
+        <Setter Property="MinimumWidthRequest" Value="0" />
+        <Setter Property="MinimumHeightRequest" Value="0" />
+    </Style>
+
+    <Style x:Key="IconButtonDanger" BasedOn="{StaticResource IconButton}" TargetType="Button">
+        <Setter Property="TextColor" Value="{StaticResource Negative}" />
+    </Style>
+
 </ResourceDictionary>

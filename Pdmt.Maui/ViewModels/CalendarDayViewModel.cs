@@ -28,7 +28,7 @@ public partial class CalendarDayViewModel : ObservableObject
     public string NegCountText => _dto.NegCount > 0 ? _dto.NegCount.ToString() : "";
     public double PosBarWidth => _maxIntensitySum > 0 ? _dto.PositiveIntensitySum / _maxIntensitySum * MaxHalfWidth : 0;
     public double NegBarWidth => _maxIntensitySum > 0 ? _dto.NegativeIntensitySum / _maxIntensitySum * MaxHalfWidth : 0;
-    public string ScoreAbsolute => Math.Abs(_dto.DayScore).ToString("0.1", System.Globalization.CultureInfo.InvariantCulture);
+    public double ScoreAbsolute => Math.Abs(_dto.DayScore);
     public string ScoreLabel => _dto.DayScore > 1 ? "pos" : _dto.DayScore < -1 ? "neg" : "even";
     public Color DotColor => _dto.DayScore > 1
         ? Color.FromArgb("#22c55e")

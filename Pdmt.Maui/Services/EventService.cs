@@ -35,6 +35,19 @@ public class EventService(IHttpClientFactory factory)
         return (await response.Content.ReadFromJsonAsync<EventResponseDto>())!;
     }
 
+    public async Task<EventResponseDto?> GetEventAsync(Guid id)
+    {
+        var http = factory.CreateClient("PdmtApi");
+        return await http.GetFromJsonAsync<EventResponseDto>($"api/events/{id}");
+    }
+
+    public async Task UpdateEventAsync(Guid id, UpdateEventDto dto)
+    {
+        var http = factory.CreateClient("PdmtApi");
+        var response = await http.PutAsJsonAsync($"api/events/{id}", dto);
+        response.EnsureSuccessStatusCode();
+    }
+
     public async Task DeleteEventAsync(Guid id)
     {
         var http = factory.CreateClient("PdmtApi");

@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="Pdmt.Maui.Views.EditEventPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:conv="clr-namespace:Pdmt.Maui.Converters"
+    xmlns:vm="clr-namespace:Pdmt.Maui.ViewModels"
+    x:DataType="vm:EditEventViewModel"
+    Title="Редактировать событие"
+    BackgroundColor="{StaticResource Secondary}">
+
+    <ContentPage.Resources>
+        <conv:NotNullToBoolConverter x:Key="NotNullToBool" />
+        <conv:InvertBoolConverter x:Key="InvertBool" />
+    </ContentPage.Resources>
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16" Spacing="12">
+
+            <!-- Error -->
+            <Label
+                Style="{StaticResource ErrorLabel}"
+                Text="{Binding ErrorMessage}"
+                IsVisible="{Binding ErrorMessage, Converter={StaticResource NotNullToBool}}" />
+
+            <!-- Title -->
+            <Border Padding="4">
+                <Entry
+                    Placeholder="Название *"
+                    Text="{Binding Title}"
+                    ReturnType="Next" />
+            </Border>
+
+            <!-- Type toggle -->
+            <Border Padding="12">
+                <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+                    <RadioButton
+                        Grid.Column="0"
+                        Content="Положительное"
+                        IsChecked="{Binding IsPositive}"
+                        GroupName="EventType" />
+                    <RadioButton
+                        Grid.Column="1"
+                        Content="Отрицательное"
+                        IsChecked="{Binding IsPositive, Converter={StaticResource InvertBool}}"
+                        GroupName="EventType" />
+                </Grid>
+            </Border>
+
+            <!-- Intensity -->
+            <Border Padding="12">
+                <VerticalStackLayout Spacing="4">
+                    <Label Text="{Binding Intensity, StringFormat='Интенсивность: {0:F0}/10'}" />
+                    <Slider
+                        Minimum="0"
+                        Maximum="10"
+                        Value="{Binding Intensity}"
+                        MinimumTrackColor="{StaticResource Primary}"
+                        ThumbColor="{StaticResource Primary}" />
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Context -->
+            <Border Padding="4">
+                <Entry
+                    Placeholder="Контекст (необязательно)"
+                    Text="{Binding Context}"
+                    ReturnType="Next" />
+            </Border>
+
+            <!-- Tags -->
+            <Border Padding="12">
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="Теги" />
+
+                    <!-- Selected tag chips -->
+                    <FlexLayout
+                        BindableLayout.ItemsSource="{Binding SelectedTags}"
+                        Wrap="Wrap"
+                        Direction="Row"
+                        JustifyContent="Start"
+                        AlignItems="Center">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate x:DataType="x:String">
+                                <Border
+                                    BackgroundColor="{StaticResource Primary}"
+                                    Stroke="Transparent"
+                                    Margin="0,2,4,2"
+                                    Padding="8,4">
+                                    <HorizontalStackLayout Spacing="4">
+                                        <Label Text="{Binding .}" TextColor="White" FontSize="13" />
+                                        <Label
+                                            Text="×"
+                                            TextColor="White"
+                                            FontSize="15"
+                                            FontAttributes="Bold">
+                                            <Label.GestureRecognizers>
+                                                <TapGestureRecognizer
+                                                    Command="{Binding Source={RelativeSource AncestorType={x:Type vm:EditEventViewModel}}, Path=RemoveTagCommand}"
+                                                    CommandParameter="{Binding .}" />
+                                            </Label.GestureRecognizers>
+                                        </Label>
+                                    </HorizontalStackLayout>
+                                </Border>
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </FlexLayout>
+
+                    <!-- Tag input -->
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                        <Entry
+                            Grid.Column="0"
+                            Placeholder="Добавить тег..."
+                            Text="{Binding TagInput}"
+                            ReturnCommand="{Binding CommitTagInputCommand}"
+                            ReturnType="Done" />
+                        <Button
+                            Grid.Column="1"
+                            Text="+"
+                            Command="{Binding CommitTagInputCommand}"
+                            WidthRequest="44"
+                            Padding="0" />
+                    </Grid>
+
+                    <!-- Suggestions dropdown -->
+                    <Border
+                        IsVisible="{Binding HasSuggestions}"
+                        Padding="0">
+                        <CollectionView ItemsSource="{Binding TagSuggestions}">
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate x:DataType="x:String">
+                                    <Label
+                                        Text="{Binding .}"
+                                        Padding="12,8"
+                                        BackgroundColor="White">
+                                        <Label.GestureRecognizers>
+                                            <TapGestureRecognizer
+                                                Command="{Binding Source={RelativeSource AncestorType={x:Type vm:EditEventViewModel}}, Path=SelectSuggestionCommand}"
+                                                CommandParameter="{Binding .}" />
+                                        </Label.GestureRecognizers>
+                                    </Label>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                        </CollectionView>
+                    </Border>
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Description -->
+            <Border Padding="4">
+                <Editor
+                    Placeholder="Описание (необязательно)"
+                    Text="{Binding Description}"
+                    AutoSize="TextChanges"
+                    MinimumHeightRequest="80" />
+            </Border>
+
+            <!-- CanInfluence toggle -->
+            <Border Padding="12">
+                <Grid ColumnDefinitions="*,Auto">
+                    <Label Grid.Column="0" Text="Могу влиять на это" VerticalOptions="Center" />
+                    <Switch Grid.Column="1" IsToggled="{Binding CanInfluence}" />
+                </Grid>
+            </Border>
+
+            <!-- Action buttons -->
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="12" Margin="0,8,0,0">
+                <Button
+                    Grid.Column="0"
+                    Text="Сохранить"
+                    Command="{Binding SaveCommand}"
+                    IsEnabled="{Binding IsBusy, Converter={StaticResource InvertBool}}" />
+                <Button
+                    Grid.Column="1"
+                    Text="Отмена"
+                    Style="{StaticResource SecondaryButton}"
+                    Command="{Binding CancelCommand}" />
+            </Grid>
+
+            <ActivityIndicator
+                IsRunning="{Binding IsBusy}"
+                IsVisible="{Binding IsBusy}"
+                Color="{StaticResource Primary}"
+                HorizontalOptions="Center" />
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

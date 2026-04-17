@@ -139,4 +139,8 @@ public partial class EventListViewModel(
     [RelayCommand]
     private static async Task NavigateToAddAsync() =>
         await Shell.Current.GoToAsync("addEvent");
+
+    [RelayCommand]
+    private static async Task NavigateToEditAsync(Guid id) =>
+        await Shell.Current.GoToAsync($"editEvent?id={id}");
 }
