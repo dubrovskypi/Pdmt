@@ -61,7 +61,7 @@
     <Grid RowDefinitions="Auto,*,Auto">
 
         <!-- Row 0: Period selector -->
-        <Border Grid.Row="0" Margin="24,4,24,4" Padding="8">
+        <Border Grid.Row="0" Margin="12,4,12,4" Padding="8">
             <Grid ColumnDefinitions="*,*,*" ColumnSpacing="8">
 
                 <Button Grid.Column="0"
