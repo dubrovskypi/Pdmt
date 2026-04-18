@@ -22,9 +22,9 @@ public partial class InsightsViewModel : ObservableObject
     private CancellationTokenSource? _cts;
 
     public IReadOnlyList<PeriodOption> PeriodOptions { get; } = [
-        new("Неделя", 7),
-        new("2 недели", 14),
-        new("Месяц", 30),
+        new("Week", 7),
+        new("2 weeks", 14),
+        new("Month", 30),
     ];
 
     public ObservableCollection<InsightCardViewModel> Cards { get; }

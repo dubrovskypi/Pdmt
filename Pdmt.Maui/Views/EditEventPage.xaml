@@ -6,7 +6,7 @@
     xmlns:conv="clr-namespace:Pdmt.Maui.Converters"
     xmlns:vm="clr-namespace:Pdmt.Maui.ViewModels"
     x:DataType="vm:EditEventViewModel"
-    Title="Редактировать событие"
+    Title="Edit event"
     BackgroundColor="{StaticResource Secondary}">
 
     <ContentPage.Resources>
@@ -26,7 +26,7 @@
             <!-- Title -->
             <Border Padding="4">
                 <Entry
-                    Placeholder="Название *"
+                    Placeholder="Title *"
                     Text="{Binding Title}"
                     ReturnType="Next" />
             </Border>
@@ -36,12 +36,12 @@
                 <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
                     <RadioButton
                         Grid.Column="0"
-                        Content="Положительное"
+                        Content="Positive"
                         IsChecked="{Binding IsPositive}"
                         GroupName="EventType" />
                     <RadioButton
                         Grid.Column="1"
-                        Content="Отрицательное"
+                        Content="Negative"
                         IsChecked="{Binding IsPositive, Converter={StaticResource InvertBool}}"
                         GroupName="EventType" />
                 </Grid>
@@ -50,7 +50,7 @@
             <!-- Intensity -->
             <Border Padding="12">
                 <VerticalStackLayout Spacing="4">
-                    <Label Text="{Binding Intensity, StringFormat='Интенсивность: {0:F0}/10'}" />
+                    <Label Text="{Binding Intensity, StringFormat='Intensity: {0:F0}/10'}" />
                     <Slider
                         Minimum="0"
                         Maximum="10"
@@ -63,7 +63,7 @@
             <!-- Context -->
             <Border Padding="4">
                 <Entry
-                    Placeholder="Контекст (необязательно)"
+                    Placeholder="Context (optional)"
                     Text="{Binding Context}"
                     ReturnType="Next" />
             </Border>
@@ -71,7 +71,7 @@
             <!-- Tags -->
             <Border Padding="12">
                 <VerticalStackLayout Spacing="8">
-                    <Label Text="Теги" />
+                    <Label Text="Tags" />
 
                     <!-- Selected tag chips -->
                     <FlexLayout
@@ -110,7 +110,7 @@
                     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
                         <Entry
                             Grid.Column="0"
-                            Placeholder="Добавить тег..."
+                            Placeholder="Add tag..."
                             Text="{Binding TagInput}"
                             ReturnCommand="{Binding CommitTagInputCommand}"
                             ReturnType="Done" />
@@ -149,7 +149,7 @@
             <!-- Description -->
             <Border Padding="4">
                 <Editor
-                    Placeholder="Описание (необязательно)"
+                    Placeholder="Description (optional)"
                     Text="{Binding Description}"
                     AutoSize="TextChanges"
                     MinimumHeightRequest="80" />
@@ -158,7 +158,7 @@
             <!-- CanInfluence toggle -->
             <Border Padding="12">
                 <Grid ColumnDefinitions="*,Auto">
-                    <Label Grid.Column="0" Text="Могу влиять на это" VerticalOptions="Center" />
+                    <Label Grid.Column="0" Text="I can influence this" VerticalOptions="Center" />
                     <Switch Grid.Column="1" IsToggled="{Binding CanInfluence}" />
                 </Grid>
             </Border>
@@ -167,12 +167,12 @@
             <Grid ColumnDefinitions="*,*" ColumnSpacing="12" Margin="0,8,0,0">
                 <Button
                     Grid.Column="0"
-                    Text="Сохранить"
+                    Text="Save"
                     Command="{Binding SaveCommand}"
                     IsEnabled="{Binding IsBusy, Converter={StaticResource InvertBool}}" />
                 <Button
                     Grid.Column="1"
-                    Text="Отмена"
+                    Text="Cancel"
                     Style="{StaticResource SecondaryButton}"
                     Command="{Binding CancelCommand}" />
             </Grid>

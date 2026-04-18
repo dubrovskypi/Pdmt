@@ -23,7 +23,7 @@ public partial class LoginViewModel(AuthService authService, ITokenService token
     {
         if (string.IsNullOrWhiteSpace(Email) || string.IsNullOrWhiteSpace(Password))
         {
-            ErrorMessage = "Введите email и пароль";
+            ErrorMessage = "Enter email and password";
             return;
         }
 
@@ -38,11 +38,11 @@ public partial class LoginViewModel(AuthService authService, ITokenService token
         }
         catch (HttpRequestException)
         {
-            ErrorMessage = "Неверный email или пароль";
+            ErrorMessage = "Invalid email or password";
         }
         catch
         {
-            ErrorMessage = "Ошибка сети. Попробуйте ещё раз.";
+            ErrorMessage = "Network error. Please try again.";
         }
         finally
         {

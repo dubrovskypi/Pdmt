@@ -7,7 +7,7 @@
     xmlns:vm="clr-namespace:Pdmt.Maui.ViewModels"
     xmlns:models="clr-namespace:Pdmt.Maui.Models"
     x:DataType="vm:EventListViewModel"
-    Title="События"
+    Title="Events"
     BackgroundColor="{StaticResource Secondary}">
 
     <ContentPage.Resources>
@@ -31,43 +31,43 @@
             <VerticalStackLayout Spacing="8">
                 <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
                     <VerticalStackLayout Grid.Column="0" Spacing="2">
-                        <Label Style="{StaticResource MutedLabel}" Text="От" />
+                        <Label Style="{StaticResource MutedLabel}" Text="From" />
                         <DatePicker Date="{Binding FilterFrom, Mode=TwoWay}" Format="dd.MM.yy" />
                     </VerticalStackLayout>
                     <VerticalStackLayout Grid.Column="1" Spacing="2">
-                        <Label Style="{StaticResource MutedLabel}" Text="До" />
+                        <Label Style="{StaticResource MutedLabel}" Text="To" />
                         <DatePicker Date="{Binding FilterTo, Mode=TwoWay}" Format="dd.MM.yy" />
                     </VerticalStackLayout>
                 </Grid>
 
                 <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
                     <VerticalStackLayout Grid.Column="0" Spacing="2">
-                        <Label Style="{StaticResource MutedLabel}" Text="Тип" />
+                        <Label Style="{StaticResource MutedLabel}" Text="Type" />
                         <Picker
                             ItemsSource="{Binding EventTypeFilters}"
                             SelectedItem="{Binding SelectedTypeFilter}"
                             ItemDisplayBinding="{Binding Label}"
-                            Title="Все типы" />
+                            Title="All types" />
                     </VerticalStackLayout>
                     <VerticalStackLayout Grid.Column="1" Spacing="2">
-                        <Label Style="{StaticResource MutedLabel}" Text="Тег" />
+                        <Label Style="{StaticResource MutedLabel}" Text="Tag" />
                         <Picker
                             ItemsSource="{Binding TagFilters}"
                             SelectedItem="{Binding SelectedTagFilter}"
                             ItemDisplayBinding="{Binding Name}"
-                            Title="Все теги" />
+                            Title="All tags" />
                     </VerticalStackLayout>
                 </Grid>
 
                 <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
                     <Button
                         Grid.Column="0"
-                        Text="Применить"
+                        Text="Apply"
                         Command="{Binding ApplyFiltersCommand}"
                         Padding="8,8" />
                     <Button
                         Grid.Column="1"
-                        Text="Сбросить"
+                        Text="Reset"
                         Style="{StaticResource SecondaryButton}"
                         Command="{Binding ResetFiltersCommand}"
                         Padding="8,8" />
@@ -86,7 +86,7 @@
                 <CollectionView.EmptyView>
                     <Label
                         Style="{StaticResource MutedLabel}"
-                        Text="Событий нет. Нажмите + чтобы добавить."
+                        Text="No events. Tap + to add one."
                         HorizontalOptions="Center"
                         VerticalOptions="Center"
                         Margin="0,32" />
@@ -151,7 +151,7 @@
                                             IsVisible="{Binding HasContext}"
                                             Style="{StaticResource MutedLabel}" />
                                         <Label
-                                            Text="· могу повлиять"
+                                            Text="· can influence"
                                             IsVisible="{Binding CanInfluence}"
                                             Style="{StaticResource MutedLabel}" />
                                     </HorizontalStackLayout>

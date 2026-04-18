@@ -7,7 +7,7 @@
     xmlns:models="clr-namespace:Pdmt.Maui.Models"
     xmlns:vm="clr-namespace:Pdmt.Maui.ViewModels"
     x:DataType="vm:WeeklyCalendarViewModel"
-    Title="Календарь"
+    Title="Calendar"
     BackgroundColor="{StaticResource Secondary}">
 
     <ContentPage.Resources>
@@ -130,7 +130,7 @@
 
                                     <!-- Empty day label -->
                                     <Label
-                                        Text="нет событий"
+                                        Text="no events"
                                         FontSize="11"
                                         TextColor="{StaticResource Muted}"
                                         HorizontalOptions="Center"
@@ -271,7 +271,7 @@
 
                                 <!-- Empty state -->
                                 <Label
-                                    Text="Событий в этот день нет."
+                                    Text="No events on this day."
                                     Style="{StaticResource MutedLabel}"
                                     HorizontalOptions="Center"
                                     Margin="0,8"

@@ -5,7 +5,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:vm="clr-namespace:Pdmt.Maui.ViewModels"
     x:DataType="vm:AccountViewModel"
-    Title="Аккаунт"
+    Title="Account"
     BackgroundColor="{StaticResource Secondary}">
 
     <VerticalStackLayout VerticalOptions="Center" Padding="32" Spacing="12">
@@ -18,7 +18,7 @@
             TextColor="{StaticResource Primary}" />
 
         <Label
-            Text="Личный трекер событий"
+            Text="event tracker"
             FontSize="14"
             TextColor="{StaticResource Muted}"
             HorizontalOptions="Center" />
@@ -29,7 +29,7 @@
             Margin="0,32,0,24" />
 
         <Button
-            Text="Выйти из аккаунта"
+            Text="Logout"
             Command="{Binding LogoutCommand}"
             Style="{StaticResource DangerButton}"
             FontSize="16"

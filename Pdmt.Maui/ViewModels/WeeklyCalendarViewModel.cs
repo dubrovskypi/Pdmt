@@ -115,7 +115,7 @@ public partial class WeeklyCalendarViewModel(
         }
         catch
         {
-            ErrorMessage = "Не удалось загрузить календарь. Попробуйте ещё раз.";
+            ErrorMessage = "Failed to load calendar. Please try again.";
         }
         finally
         {

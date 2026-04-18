@@ -66,7 +66,7 @@ public partial class EventListViewModel(
         }
         catch
         {
-            ErrorMessage = "Не удалось загрузить события";
+            ErrorMessage = "Failed to load events";
         }
         finally
         {
@@ -132,7 +132,7 @@ public partial class EventListViewModel(
         }
         catch
         {
-            ErrorMessage = "Не удалось удалить событие";
+            ErrorMessage = "Failed to delete event";
         }
     }
 

@@ -62,7 +62,7 @@ public partial class EditEventViewModel(EventService eventService, TagService ta
             var ev = await eventService.GetEventAsync(_id);
             if (ev is null)
             {
-                ErrorMessage = "Событие не найдено";
+                ErrorMessage = "Event not found";
                 return;
             }
 
@@ -79,7 +79,7 @@ public partial class EditEventViewModel(EventService eventService, TagService ta
         }
         catch
         {
-            ErrorMessage = "Не удалось загрузить событие";
+            ErrorMessage = "Failed to load event";
         }
         finally
         {
@@ -136,7 +136,7 @@ public partial class EditEventViewModel(EventService eventService, TagService ta
     {
         if (string.IsNullOrWhiteSpace(Title))
         {
-            ErrorMessage = "Название обязательно";
+            ErrorMessage = "Title is required";
             return;
         }
 
@@ -161,7 +161,7 @@ public partial class EditEventViewModel(EventService eventService, TagService ta
         }
         catch
         {
-            ErrorMessage = "Не удалось сохранить изменения. Попробуйте ещё раз.";
+            ErrorMessage = "Failed to save changes. Please try again.";
         }
         finally
         {
