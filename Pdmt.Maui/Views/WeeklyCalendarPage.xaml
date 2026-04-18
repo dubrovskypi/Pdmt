@@ -7,12 +7,11 @@
     xmlns:models="clr-namespace:Pdmt.Maui.Models"
     xmlns:vm="clr-namespace:Pdmt.Maui.ViewModels"
     x:DataType="vm:WeeklyCalendarViewModel"
-    Title="Календарь"
+    Title="Calendar"
     BackgroundColor="{StaticResource Secondary}">
 
     <ContentPage.Resources>
         <conv:NotNullToBoolConverter x:Key="NotNullToBool" />
-        <conv:InvertBoolConverter x:Key="InvertBool" />
     </ContentPage.Resources>
 
     <Grid RowDefinitions="Auto,Auto,*">
@@ -49,7 +48,6 @@
                     Grid.Column="2"
                     Text="&#8594;"
                     Command="{Binding NextWeekCommand}"
-                    IsEnabled="{Binding IsCurrentWeek, Converter={StaticResource InvertBool}}"
                     Padding="14,8"
                     FontSize="18"
                     WidthRequest="48"
@@ -63,27 +61,14 @@
             ItemsSource="{Binding Days}"
             Margin="12,0,12,12">
 
-            <CollectionView.EmptyView>
-                <Label
-                    Style="{StaticResource MutedLabel}"
-                    Text="Нет данных за эту неделю."
-                    HorizontalOptions="Center"
-                    VerticalOptions="Center"
-                    Margin="0,32" />
-            </CollectionView.EmptyView>
-
             <CollectionView.ItemTemplate>
                 <DataTemplate x:DataType="vm:CalendarDayViewModel">
                     <VerticalStackLayout Margin="0,4,0,0" Spacing="0">
 
                         <!-- Day card header -->
                         <Border Padding="10,8"
-                                StrokeShape="{OnIdiom Phone='RoundRectangle 8,8,0,0', Default='RoundRectangle 8,8,0,0'}"
+                                StrokeShape="RoundRectangle 8,8,0,0"
                                 BackgroundColor="{StaticResource Surface}">
-
-                            <Border.StrokeShape>
-                                <RoundRectangle CornerRadius="8,8,0,0" />
-                            </Border.StrokeShape>
 
                             <Border.GestureRecognizers>
                                 <TapGestureRecognizer
@@ -143,8 +128,17 @@
                                         </HorizontalStackLayout>
                                     </Grid>
 
+                                    <!-- Empty day label -->
+                                    <Label
+                                        Text="no events"
+                                        FontSize="11"
+                                        TextColor="{StaticResource Muted}"
+                                        HorizontalOptions="Center"
+                                        IsVisible="{Binding IsEmpty}" />
+
                                     <!-- Histogram -->
-                                    <Grid ColumnDefinitions="18,*,2,*,18" HeightRequest="22">
+                                    <Grid ColumnDefinitions="18,*,2,*,18" HeightRequest="22"
+                                          IsVisible="{Binding HasEvents}">
 
                                         <!-- Positive count -->
                                         <Label
@@ -163,7 +157,7 @@
                                                 WidthRequest="{Binding PosBarWidth}"
                                                 HeightRequest="12"
                                                 Color="#4ade80"
-                                                CornerRadius="2,0,0,2" />
+                                                CornerRadius="2,0,2,0" />
                                         </Grid>
 
                                         <!-- Center divider -->
@@ -182,7 +176,7 @@
                                                 WidthRequest="{Binding NegBarWidth}"
                                                 HeightRequest="12"
                                                 Color="#f87171"
-                                                CornerRadius="0,2,2,0" />
+                                                CornerRadius="0,2,0,2" />
                                         </Grid>
 
                                         <!-- Negative count -->
@@ -191,7 +185,6 @@
                                             Text="{Binding NegCountText}"
                                             TextColor="#dc2626"
                                             FontSize="11"
-                                            HorizontalOptions="Start"
                                             VerticalOptions="Center" />
                                     </Grid>
 
@@ -239,7 +232,7 @@
                                             Color="{Binding DotColor}"
                                             VerticalOptions="Center" />
                                         <Label
-                                            Text="{Binding ScoreAbsolute}"
+                                            Text="{Binding ScoreAbsolute, StringFormat='{0:F1}'}"
                                             FontSize="15"
                                             FontAttributes="Bold"
                                             TextColor="{StaticResource OnSurface}"
@@ -278,7 +271,7 @@
 
                                 <!-- Empty state -->
                                 <Label
-                                    Text="Событий в этот день нет."
+                                    Text="No events on this day."
                                     Style="{StaticResource MutedLabel}"
                                     HorizontalOptions="Center"
                                     Margin="0,8"
@@ -291,18 +284,17 @@
                                     <BindableLayout.ItemTemplate>
                                         <DataTemplate x:DataType="vm:CalendarEventViewModel">
                                             <Grid
-                                                ColumnDefinitions="18,*,44"
+                                                ColumnDefinitions="30,*,44"
                                                 ColumnSpacing="8"
                                                 Padding="0,6,0,6">
 
                                                 <!-- Type indicator -->
                                                 <Label
-                                                    Grid.Column="0"
-                                                    Text="{Binding TypeLabel}"
-                                                    TextColor="{Binding TypeColor}"
-                                                    FontSize="18"
-                                                    FontAttributes="Bold"
-                                                    VerticalOptions="Start" />
+                                                        Text="{Binding IntensityText}"
+                                                        FontSize="13"
+                                                        FontAttributes="Bold"
+                                                        TextColor="{Binding TypeColor}"
+                                                        HorizontalOptions="End" />
 
                                                 <!-- Event info -->
                                                 <VerticalStackLayout Grid.Column="1" Spacing="2">
@@ -330,12 +322,7 @@
                                                         Text="{Binding TimeText}"
                                                         Style="{StaticResource MutedLabel}"
                                                         HorizontalOptions="End" />
-                                                    <Label
-                                                        Text="{Binding IntensityText}"
-                                                        FontSize="13"
-                                                        FontAttributes="Bold"
-                                                        TextColor="{Binding TypeColor}"
-                                                        HorizontalOptions="End" />
+
                                                 </VerticalStackLayout>
                                             </Grid>
                                         </DataTemplate>

@@ -60,12 +60,14 @@ export function HBar({
   max,
   annotation,
   color = "bg-slate-500",
+  annotationClass = "w-12",
 }: {
   label: string;
   value: number;
   max: number;
-  annotation?: string;
+  annotation?: React.ReactNode;
   color?: string;
+  annotationClass?: string;
 }) {
   const pct = max > 0 ? (Math.abs(value) / max) * 100 : 0;
   return (
@@ -75,7 +77,7 @@ export function HBar({
         <div className={`h-2 rounded-full ${color}`} style={{ width: `${pct}%` }} />
       </div>
       {annotation && (
-        <span className="w-12 text-right flex-shrink-0 text-slate-400">{annotation}</span>
+        <span className={`${annotationClass} text-right flex-shrink-0 text-slate-400`}>{annotation}</span>
       )}
     </div>
   );

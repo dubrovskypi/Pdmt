@@ -1,4 +1,4 @@
-import { getRepeatingTriggers } from "@/api/analytics";
+import { getRepeatingTriggers } from "@/api/insights";
 import type { RepeatingTriggerDto } from "@/api/types";
 import { CardShell, HBar } from "./CardShell";
 import { useLazyFetch } from "./useLazyFetch";
@@ -16,10 +16,10 @@ export function Card2Repeating({ range, isActive }: { range: PeriodRange; isActi
 
   return (
     <CardShell
-      badge="Patterns"
+      badge="Repeats"
       badgeClass="bg-purple-100 text-purple-700"
       title="Повторяющиеся триггеры"
-      explanation="Теги, которые встречались 3 и более раз. Это не случайность — это паттерн."
+      explanation="Теги, которые встречались 3 и более раз."
       loading={loading}
       error={error}
       onRetry={retry}

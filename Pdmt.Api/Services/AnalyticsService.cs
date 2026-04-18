@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Pdmt.Api.Data;
 using Pdmt.Api.Domain;
 using Pdmt.Api.Dto.Analytics;
@@ -7,11 +8,15 @@ using Pdmt.Api.Infrastructure.Exceptions;
 
 namespace Pdmt.Api.Services;
 
-public class AnalyticsService(AppDbContext db) : IAnalyticsService
+public class AnalyticsService(AppDbContext db, IConfiguration config) : IAnalyticsService
 {
+    private TimeZoneInfo GetTz() =>
+        TimeZoneInfo.FindSystemTimeZoneById(config["App:DefaultTimeZone"]!);
+
     public async Task<WeeklySummaryDto> GetWeeklySummaryAsync(Guid userId, DateOnly weekOf)
     {
-        var monday = DateHelper.GetMonday(weekOf);
+        var tz = GetTz();
+        var monday = DateHelper.GetMonday(weekOf, tz);
 
         var events = await db.Events
             .AsNoTracking()
@@ -46,9 +51,8 @@ public class AnalyticsService(AppDbContext db) : IAnalyticsService
             .Take(5)
             .Select(e => new TopEventDto(e.Title, e.Intensity, e.Timestamp))
             .ToList();
-
         var byDayOfWeek = events
-            .GroupBy(e => e.Timestamp.DayOfWeek)
+            .GroupBy(e => DateHelper.ToLocalDate(e.Timestamp, tz).DayOfWeek)
             .OrderBy(g => ((int)g.Key + 6) % 7)
             .Select(g => new DayOfWeekBreakdownDto(
                 g.Key.ToString(),
@@ -69,29 +73,6 @@ public class AnalyticsService(AppDbContext db) : IAnalyticsService
             byDayOfWeek);
     }
 
-    public async Task<IReadOnlyList<TrendPeriodDto>> GetTrendsAsync(Guid userId, DateTimeOffset from, DateTimeOffset to, TrendGranularity period)
-    {
-        var raw = await db.Events
-            .AsNoTracking()
-            .Where(e => e.UserId == userId && e.Timestamp >= from && e.Timestamp < to.AddDays(1))
-            .Select(e => new { e.Timestamp, e.Type, e.Intensity })
-            .ToListAsync();
-
-        Func<DateTimeOffset, DateTimeOffset> getKey = period == TrendGranularity.Week
-            ? date => DateHelper.GetMonday(date)
-            : date => new DateTimeOffset(date.Year, date.Month, 1, 0, 0, 0, TimeSpan.Zero);
-
-        return raw
-            .GroupBy(e => getKey(e.Timestamp))
-            .OrderBy(g => g.Key)
-            .Select(g => new TrendPeriodDto(
-                g.Key,
-                g.Count(e => e.Type == EventType.Positive),
-                g.Count(e => e.Type == EventType.Negative),
-                g.Average(e => (double)e.Intensity)))
-            .ToList();
-    }
-
     public async Task<CorrelationsDto> GetCorrelationsAsync(Guid userId, Guid tagId, DateTimeOffset from, DateTimeOffset to)
     {
         var tag = await db.Tags
@@ -99,6 +80,7 @@ public class AnalyticsService(AppDbContext db) : IAnalyticsService
             .FirstOrDefaultAsync(t => t.Id == tagId && t.UserId == userId)
             ?? throw new NotFoundException("Tag not found.");
 
+        var tz = GetTz();
         var allEvents = await db.Events
             .AsNoTracking()
             .Where(e => e.UserId == userId && e.Timestamp >= from && e.Timestamp < to.AddDays(1))
@@ -117,7 +99,7 @@ public class AnalyticsService(AppDbContext db) : IAnalyticsService
         var avgIntensityWithoutTag = withoutTagEvents.Count == 0 ? 0.0 : withoutTagEvents.Average(e => (double)e.Intensity);
 
         var daysOfWeek = withTagEvents
-            .GroupBy(e => e.Timestamp.DayOfWeek)
+            .GroupBy(e => DateHelper.ToLocalDate(e.Timestamp, tz).DayOfWeek)
             .OrderBy(g => ((int)g.Key + 6) % 7)
             .Select(g => new DayFrequencyDto(g.Key.ToString(), g.Count()))
             .ToList();
@@ -127,23 +109,27 @@ public class AnalyticsService(AppDbContext db) : IAnalyticsService
 
     public async Task<CalendarWeekDto> GetCalendarWeekAsync(Guid userId, DateOnly weekOf)
     {
-        var monday = DateHelper.GetMonday(weekOf);
+        var tz = GetTz();
+        var monday = DateHelper.GetMonday(weekOf, tz);
 
         var events = await db.Events
             .AsNoTracking()
             .Include(e => e.EventTags).ThenInclude(et => et.Tag)
             .Where(e => e.UserId == userId && e.Timestamp >= monday && e.Timestamp < monday.AddDays(7))
             .ToListAsync();
+        var byDay = events.GroupBy(e => DateHelper.ToLocalDate(e.Timestamp, tz)).ToDictionary(g => g.Key, g => g.ToList());
 
-        var byDay = events.GroupBy(e => e.Timestamp.DateTime.Date).ToDictionary(g => g.Key, g => g.ToList());
+        // monday is UTC — derive local DateOnly for day iteration and DTO dates
+        var mondayDate = DateHelper.ToLocalDate(monday, tz);
 
         var days = new List<CalendarDayDetailsDto>(7);
         for (var i = 0; i < 7; i++)
         {
-            var date = monday.AddDays(i);
-            if (!byDay.TryGetValue(date.DateTime.Date, out var dayEvents))
+            var dayDate = mondayDate.AddDays(i);
+            var dtoDate = new DateTimeOffset(dayDate.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc), TimeSpan.Zero);
+            if (!byDay.TryGetValue(dayDate, out var dayEvents))
             {
-                days.Add(new CalendarDayDetailsDto(date, 0, 0, 0, 0, 0.0, [], []));
+                days.Add(new CalendarDayDetailsDto(dtoDate, 0, 0, 0, 0, 0.0, [], []));
                 continue;
             }
 
@@ -170,17 +156,21 @@ public class AnalyticsService(AppDbContext db) : IAnalyticsService
                 .Select(g => new TagCountDto(g.Key, g.Count()))
                 .ToList();
 
-            days.Add(new CalendarDayDetailsDto(date, posEvents.Count, negEvents.Count,
+            days.Add(new CalendarDayDetailsDto(dtoDate, posEvents.Count, negEvents.Count,
                 posSum, negSum, dayScore, topPosTags, topNegTags));
         }
 
-        return new CalendarWeekDto(monday, monday.AddDays(6), days);
+        var weekStart = new DateTimeOffset(mondayDate.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc), TimeSpan.Zero);
+        return new CalendarWeekDto(weekStart, weekStart.AddDays(6), days);
     }
 
     public async Task<CalendarMonthDto> GetCalendarMonthAsync(Guid userId, int year, int month)
     {
-        var from = new DateTimeOffset(year, month, 1, 0, 0, 0, TimeSpan.Zero);
-        var to = from.AddMonths(1);
+        var tz = GetTz();
+        var fromLocal = new DateTime(year, month, 1, 0, 0, 0);
+        var from = new DateTimeOffset(TimeZoneInfo.ConvertTimeToUtc(fromLocal, tz), TimeSpan.Zero);
+        var toLocal = fromLocal.AddMonths(1);
+        var to = new DateTimeOffset(TimeZoneInfo.ConvertTimeToUtc(toLocal, tz), TimeSpan.Zero);
 
         var raw = await db.Events
             .AsNoTracking()
@@ -188,15 +178,16 @@ public class AnalyticsService(AppDbContext db) : IAnalyticsService
             .Select(e => new { e.Timestamp, e.Type, e.Intensity })
             .ToListAsync();
 
-        var byDay = raw.GroupBy(e => e.Timestamp.DateTime.Date).ToDictionary(g => g.Key, g => g.ToList());
+        var byDay = raw.GroupBy(e => DateHelper.ToLocalDate(e.Timestamp, tz)).ToDictionary(g => g.Key, g => g.ToList());
 
         var days = new List<CalendarDayLightDto>(DateTime.DaysInMonth(year, month));
         for (var d = 1; d <= DateTime.DaysInMonth(year, month); d++)
         {
-            var date = new DateTimeOffset(year, month, d, 0, 0, 0, TimeSpan.Zero);
-            if (!byDay.TryGetValue(date.DateTime.Date, out var dayEvents))
+            var dayDate = new DateOnly(year, month, d);
+            var dtoDate = new DateTimeOffset(dayDate.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc), TimeSpan.Zero);
+            if (!byDay.TryGetValue(dayDate, out var dayEvents))
             {
-                days.Add(new CalendarDayLightDto(date, 0, 0, 0.0));
+                days.Add(new CalendarDayLightDto(dtoDate, 0, 0, 0.0));
                 continue;
             }
 
@@ -218,7 +209,7 @@ public class AnalyticsService(AppDbContext db) : IAnalyticsService
             }
             var total = dayEvents.Count;
             var dayScore = total == 0 ? 0.0 : (double)(posSum - negSum) / total;
-            days.Add(new CalendarDayLightDto(date, posCount, negCount, dayScore));
+            days.Add(new CalendarDayLightDto(dtoDate, posCount, negCount, dayScore));
         }
 
         return new CalendarMonthDto(days);

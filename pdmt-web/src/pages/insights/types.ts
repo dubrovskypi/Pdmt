@@ -1,11 +1,8 @@
-import { toDateString, getMondayOf } from "@/lib/dateUtils";
-
 export type Period = 7 | 14 | 30;
 
 export interface PeriodRange {
   from: string;
   to: string;
-  weekOf: string; // Monday of `from` date, for weekly-summary cards
 }
 
 export type CardComponent = (props: {
@@ -25,6 +22,5 @@ export function getPeriodRange(period: Period): PeriodRange {
   return {
     from: from.toISOString(),
     to: to.toISOString(),
-    weekOf: toDateString(getMondayOf(from)),
   };
 }

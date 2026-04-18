@@ -66,7 +66,7 @@ public partial class EventListViewModel(
         }
         catch
         {
-            ErrorMessage = "Не удалось загрузить события";
+            ErrorMessage = "Failed to load events";
         }
         finally
         {
@@ -132,11 +132,15 @@ public partial class EventListViewModel(
         }
         catch
         {
-            ErrorMessage = "Не удалось удалить событие";
+            ErrorMessage = "Failed to delete event";
         }
     }
 
     [RelayCommand]
     private static async Task NavigateToAddAsync() =>
         await Shell.Current.GoToAsync("addEvent");
+
+    [RelayCommand]
+    private static async Task NavigateToEditAsync(Guid id) =>
+        await Shell.Current.GoToAsync($"editEvent?id={id}");
 }

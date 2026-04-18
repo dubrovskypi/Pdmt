@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView
+    x:Class="Pdmt.Maui.Views.InsightCards.Card04TrendView"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:cards="clr-namespace:Pdmt.Maui.ViewModels.Cards"
+    x:DataType="cards:Card04TrendViewModel">
+
+    <Border Margin="4,0" Padding="16" BackgroundColor="{StaticResource Surface}">
+        <Grid RowDefinitions="Auto,Auto,Auto,*,Auto" RowSpacing="0">
+            <Border Grid.Row="0" BackgroundColor="#dbeafe" Stroke="Transparent" StrokeThickness="0"
+                    Padding="8,3" HorizontalOptions="Start">
+                <Border.StrokeShape><RoundRectangle CornerRadius="10" /></Border.StrokeShape>
+                <Label Text="Trends" TextColor="#1e40af" FontSize="12" FontAttributes="Bold" />
+            </Border>
+            <Label Grid.Row="1" Text="Тренд соотношения по неделям"
+                   FontAttributes="Bold" FontSize="16" Margin="0,8,0,2" />
+            <Label Grid.Row="2" Text="Высота полоски — количество событий. Яркость — средняя интенсивность."
+                   Style="{StaticResource MutedLabel}" Margin="0,0,0,10" />
+            <FlexLayout Grid.Row="3" BindableLayout.ItemsSource="{Binding Weeks}"
+                        JustifyContent="SpaceEvenly" HorizontalOptions="Fill" VerticalOptions="End">
+                <BindableLayout.ItemTemplate>
+                    <DataTemplate x:DataType="cards:WeekBarItem">
+                        <Grid RowDefinitions="160,Auto" RowSpacing="4" WidthRequest="92">
+                            <Grid Grid.Row="0" ColumnDefinitions="28,6,28" HorizontalOptions="Center">
+                                <BoxView Grid.Column="0"
+                                         WidthRequest="28" HeightRequest="{Binding PosBarHeight}"
+                                         Color="#4ade80" Opacity="{Binding Opacity}"
+                                         CornerRadius="3,3,0,0"
+                                         HorizontalOptions="Center" VerticalOptions="End" />
+                                <BoxView Grid.Column="2"
+                                         WidthRequest="28" HeightRequest="{Binding NegBarHeight}"
+                                         Color="#f87171" Opacity="{Binding Opacity}"
+                                         CornerRadius="3,3,0,0"
+                                         HorizontalOptions="Center" VerticalOptions="End" />
+                            </Grid>
+                            <Label Grid.Row="1" Text="{Binding WeekLabel}" FontSize="9"
+                                   TextColor="{StaticResource Muted}"
+                                   HorizontalOptions="Center" HorizontalTextAlignment="Center" />
+                        </Grid>
+                    </DataTemplate>
+                </BindableLayout.ItemTemplate>
+            </FlexLayout>
+            <Label Grid.Row="3" Text="Нет данных за период"
+                   Style="{StaticResource MutedLabel}" HorizontalTextAlignment="Center"
+                   IsVisible="{Binding IsEmpty}" VerticalOptions="Center" Margin="0,20" />
+            <ActivityIndicator Grid.Row="4" IsRunning="{Binding IsLoading}" IsVisible="{Binding IsLoading}"
+                               Color="{StaticResource Primary}" HorizontalOptions="Center" Margin="0,8" />
+            <Label Grid.Row="4" Style="{StaticResource ErrorLabel}" Text="{Binding ErrorMessage}"
+                   IsVisible="{Binding HasError}" HorizontalOptions="Center" Margin="0,8" />
+        </Grid>
+    </Border>
+
+</ContentView>

@@ -34,14 +34,14 @@
             ReturnType="Next" />
 
         <Entry
-            Placeholder="Пароль"
+            Placeholder="Password"
             Text="{Binding Password}"
             IsPassword="True"
             ReturnType="Done"
             ReturnCommand="{Binding LoginCommand}" />
 
         <Button
-            Text="Войти"
+            Text="Login"
             Command="{Binding LoginCommand}"
             IsEnabled="{Binding IsBusy, Converter={StaticResource InvertBool}}"
             Margin="0,8,0,0" />

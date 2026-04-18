@@ -1,14 +1,14 @@
-import { getWeeklySummary } from "@/api/analytics";
-import type { WeeklySummaryDto } from "@/api/types";
+import { getBalance } from "@/api/insights";
+import type { PosNegBalanceDto } from "@/api/types";
 import { CardShell } from "./CardShell";
 import { useLazyFetch } from "./useLazyFetch";
 import type { PeriodRange } from "./types";
 
 export function Card3Balance({ range, isActive }: { range: PeriodRange; isActive: boolean }) {
-  const { data, loading, error, retry } = useLazyFetch<WeeklySummaryDto | null>(
-    (signal) => getWeeklySummary(range.weekOf, signal),
+  const { data, loading, error, retry } = useLazyFetch<PosNegBalanceDto | null>(
+    (signal) => getBalance(range.from, range.to, signal),
     null,
-    [range.weekOf],
+    [range.from, range.to],
     isActive,
   );
 
@@ -21,7 +21,6 @@ export function Card3Balance({ range, isActive }: { range: PeriodRange; isActive
       loading={loading}
       error={error}
       onRetry={retry}
-      weekOnly
     >
       {data && (
         <div className="flex flex-col gap-4">

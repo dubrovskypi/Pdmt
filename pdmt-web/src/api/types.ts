@@ -110,14 +110,14 @@ export interface WeeklySummaryDto {
   byDayOfWeek: DayOfWeekBreakdownDto[];
 }
 
+// --- Insights ---
+
 export interface TrendPeriodDto {
   periodStart: string;
   posCount: number;
   negCount: number;
   avgIntensity: number;
 }
-
-// --- Insights ---
 
 export interface RepeatingTriggerDto {
   tagName: string;
@@ -140,15 +140,39 @@ export interface NextDayEffectDto {
 export interface TagComboDto {
   tag1: string;
   tag2: string;
-  combinedAvgIntensity: number;
-  tag1AloneAvgIntensity: number;
-  tag2AloneAvgIntensity: number;
+  combinedAvgScore: number;
+  tag1AloneAvgScore: number;
+  tag2AloneAvgScore: number;
   coOccurrences: number;
 }
 
 export interface TagTrendPointDto {
   periodStart: string;
   count: number;
+  avgIntensity: number;
+}
+
+export interface TagTrendSeriesDto {
+  tagName: string;
+  points: TagTrendPointDto[];
+}
+
+export interface PosNegBalanceDto {
+  posCount: number;
+  negCount: number;
+  avgPosIntensity: number;
+  avgNegIntensity: number;
+}
+
+export interface MostIntenseTagsDto {
+  topPosTags: TagSummaryDto[];
+  topNegTags: TagSummaryDto[];
+}
+
+export interface WeekdayStatDto {
+  day: string;
+  posCount: number;
+  negCount: number;
   avgIntensity: number;
 }
 

@@ -141,8 +141,8 @@ Integration tests in `EventControllerTests.cs` cover auth enforcement, CRUD, fil
 - No lazy loading — always explicit `.Include()`
 - Never edit migration files manually; generate via `dotnet ef migrations add`
 - Custom C# methods cannot be used inside EF Core queries (`IQueryable`) — EF cannot translate them to SQL. Materialize with `ToListAsync()` first, then apply custom logic in-memory.
-- **DateTime/DateTimeOffset**: Use `DateTimeOffset` in all new code. When encountering legacy `DateTime`, propose migration if feasible.
-- **Normalization at module boundaries**: Normalize all inbound parameters to UTC at the earliest point (controllers, clients) using `.ToUniversalTime()` before passing to services. PostgreSQL requires UTC offset only (rejects non-UTC offsets).
+- **DateTime/DateTimeOffset**: Use `DateTimeOffset` in all new code. When encountering legacy `DateTime`, propose migration if feasible. Never call `.ToUniversalTime()` in controllers or services — Npgsql handles UTC conversion automatically.
+- **Timezone**: App timezone is configured in `appsettings.json` under `App:DefaultTimeZone` (value: `"Europe/Vilnius"`). Analytics queries that group by local day use `EF.Functions.AtTimeZone(e.Timestamp, tz)`. When per-user timezone is needed, replace config lookup with `user.TimeZone`.
  
 ## What NOT to do
  

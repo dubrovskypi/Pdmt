@@ -94,7 +94,7 @@ public partial class NewEventViewModel(EventService eventService, TagService tag
     {
         if (string.IsNullOrWhiteSpace(Title))
         {
-            ErrorMessage = "Название обязательно";
+            ErrorMessage = "Title is required";
             return;
         }
 
@@ -118,7 +118,7 @@ public partial class NewEventViewModel(EventService eventService, TagService tag
         }
         catch
         {
-            ErrorMessage = "Не удалось сохранить событие. Попробуйте ещё раз.";
+            ErrorMessage = "Failed to save event. Please try again.";
         }
         finally
         {

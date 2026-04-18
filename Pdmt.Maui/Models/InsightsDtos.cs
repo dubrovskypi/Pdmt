@@ -1,6 +1,6 @@
 namespace Pdmt.Maui.Models;
 
-// ── New insights endpoints ─────────────────────────────────────────────────
+// ── Insights endpoints ─────────────────────────────────────────────────────
 
 public record RepeatingTriggerDto(string TagName, int Count, double AvgIntensity);
 
@@ -11,12 +11,14 @@ public record NextDayEffectDto(string TagName, double NextDayAvgScore, int Occur
 public record TagComboDto(
     string Tag1,
     string Tag2,
-    double CombinedAvgIntensity,
-    double Tag1AloneAvgIntensity,
-    double Tag2AloneAvgIntensity,
+    double CombinedAvgScore,
+    double Tag1AloneAvgScore,
+    double Tag2AloneAvgScore,
     int CoOccurrences);
 
-public record TagTrendPointDto(DateTimeOffset PeriodStart, int Count, double AvgIntensity);
+public record TagTrendPointDto(DateOnly PeriodStart, int Count, double AvgIntensity);
+
+public record TagTrendSeriesDto(string TagName, List<TagTrendPointDto> Points);
 
 public record InfluenceabilitySplitDto(
     int CanInfluenceCount,
@@ -24,37 +26,12 @@ public record InfluenceabilitySplitDto(
     int CannotInfluenceCount,
     double CannotInfluenceAvgIntensity);
 
-// ── Existing analytics endpoints (not yet in MAUI models) ─────────────────
+public record TagSummaryDto(string TagName, int Count, double AvgIntensity);
 
-public class WeeklySummaryDto
-{
-    public int PosCount { get; set; }
-    public int NegCount { get; set; }
-    public double AvgPosIntensity { get; set; }
-    public double AvgNegIntensity { get; set; }
-    public List<WeeklySummaryTagDto> TopTags { get; set; } = [];
-    public List<DayOfWeekSummaryDto> ByDayOfWeek { get; set; } = [];
-}
+public record MostIntenseTagsDto(List<TagSummaryDto> TopPosTags, List<TagSummaryDto> TopNegTags);
 
-public class WeeklySummaryTagDto
-{
-    public required string TagName { get; set; }
-    public int Count { get; set; }
-    public double AvgIntensity { get; set; }
-}
+public record PosNegBalanceDto(int PosCount, int NegCount, double AvgPosIntensity, double AvgNegIntensity);
 
-public class DayOfWeekSummaryDto
-{
-    public required string Day { get; set; }
-    public int NegCount { get; set; }
-    public int PosCount { get; set; }
-    public double AvgIntensity { get; set; }
-}
+public record WeekdayStatDto(string Day, int PosCount, int NegCount, double AvgIntensity);
 
-public class TrendPeriodDto
-{
-    public DateTimeOffset PeriodStart { get; set; }
-    public int PosCount { get; set; }
-    public int NegCount { get; set; }
-    public double AvgIntensity { get; set; }
-}
+public record TrendPeriodDto(DateOnly PeriodStart, int PosCount, int NegCount, double AvgIntensity);

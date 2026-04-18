@@ -1,14 +1,14 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { getPeriodRange, PERIOD_LABELS, type Period, type CardComponent } from "./insights/types";
-import { Card1Triggers } from "./insights/Card1Triggers";
+import { Card1IntenseTags } from "./insights/Card1IntenseTags";
 import { Card2Repeating } from "./insights/Card2Repeating";
 import { Card3Balance } from "./insights/Card3Balance";
 import { Card4Trend } from "./insights/Card4Trend";
-import { Card5BlindSpot } from "./insights/Card5BlindSpot";
-import { Card6DayOfWeek } from "./insights/Card6DayOfWeek";
+import { Card5DiscountedPos } from "./insights/Card5DiscountedPos";
+import { Card6Weekdays } from "./insights/Card6Weekdays";
 import { Card7NextDay } from "./insights/Card7NextDay";
-import { Card8Combos } from "./insights/Card8Combos";
+import { Card8TagCombos } from "./insights/Card8TagCombos";
 import { Card9TagTrend } from "./insights/Card9TagTrend";
 import { Card10Influence } from "./insights/Card10Influence";
 
@@ -84,14 +84,14 @@ function CarouselNav({
 const TOTAL_CARDS = 10;
 
 const CARDS: CardComponent[] = [
-  Card1Triggers,
+  Card1IntenseTags,
   Card2Repeating,
   Card3Balance,
   Card4Trend,
-  Card5BlindSpot,
-  Card6DayOfWeek,
+  Card5DiscountedPos,
+  Card6Weekdays,
   Card7NextDay,
-  Card8Combos,
+  Card8TagCombos,
   Card9TagTrend,
   Card10Influence,
 ];

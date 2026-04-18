@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView
+    x:Class="Pdmt.Maui.Views.InsightCards.Card08TagCombosView"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:cards="clr-namespace:Pdmt.Maui.ViewModels.Cards"
+    x:DataType="cards:Card08TagCombosViewModel">
+
+    <Border Margin="4,0" Padding="16" BackgroundColor="{StaticResource Surface}">
+        <Grid RowDefinitions="Auto,Auto,Auto,*,Auto" RowSpacing="0">
+            <Border Grid.Row="0" BackgroundColor="#f3e8ff" Stroke="Transparent" StrokeThickness="0"
+                    Padding="8,3" HorizontalOptions="Start">
+                <Border.StrokeShape><RoundRectangle CornerRadius="10" /></Border.StrokeShape>
+                <Label Text="Tag combos" TextColor="#6b21a8" FontSize="12" FontAttributes="Bold" />
+            </Border>
+            <Label Grid.Row="1" Text="Комбинации тегов"
+                   FontAttributes="Bold" FontSize="16" Margin="0,8,0,2" />
+            <Label Grid.Row="2" Text="Пары тегов, которые часто встречаются вместе, и как комбинация отличается от каждого отдельно."
+                   Style="{StaticResource MutedLabel}" Margin="0,0,0,10" />
+            <CollectionView Grid.Row="3" ItemsSource="{Binding Items}">
+                <CollectionView.ItemsLayout>
+                    <LinearItemsLayout Orientation="Vertical" ItemSpacing="10" />
+                </CollectionView.ItemsLayout>
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="cards:ComboItem">
+                        <VerticalStackLayout Spacing="3">
+                            <Label Text="{Binding Label}" FontSize="13" FontAttributes="Bold" />
+                            <Grid ColumnDefinitions="46,*,36" ColumnSpacing="6">
+                                <Label Grid.Column="0" Text="Вместе" FontSize="11"
+                                       TextColor="{StaticResource Muted}" VerticalOptions="Center" />
+                                <BoxView Grid.Column="1" WidthRequest="{Binding CombinedBarWidth}"
+                                         HeightRequest="12" Color="#c084fc" CornerRadius="2"
+                                         HorizontalOptions="Start" VerticalOptions="Center" />
+                                <Label Grid.Column="2"
+                                       Text="{Binding CombinedAvgScore, StringFormat='{0:+0.0;-0.0;0.0}'}"
+                                       FontSize="11" TextColor="{StaticResource Muted}" VerticalOptions="Center" />
+                            </Grid>
+                            <Grid ColumnDefinitions="46,*,36" ColumnSpacing="6">
+                                <Label Grid.Column="0" Text="{Binding Tag1Name}" FontSize="11"
+                                       TextColor="{StaticResource Muted}" VerticalOptions="Center"
+                                       LineBreakMode="TailTruncation" />
+                                <BoxView Grid.Column="1" WidthRequest="{Binding Tag1AloneBarWidth}"
+                                         HeightRequest="12" Color="#94a3b8" CornerRadius="2"
+                                         HorizontalOptions="Start" VerticalOptions="Center" />
+                                <Label Grid.Column="2"
+                                       Text="{Binding Tag1AloneScore, StringFormat='{0:+0.0;-0.0;0.0}'}"
+                                       FontSize="11" TextColor="{StaticResource Muted}" VerticalOptions="Center" />
+                            </Grid>
+                            <Grid ColumnDefinitions="46,*,36" ColumnSpacing="6">
+                                <Label Grid.Column="0" Text="{Binding Tag2Name}" FontSize="11"
+                                       TextColor="{StaticResource Muted}" VerticalOptions="Center"
+                                       LineBreakMode="TailTruncation" />
+                                <BoxView Grid.Column="1" WidthRequest="{Binding Tag2AloneBarWidth}"
+                                         HeightRequest="12" Color="#94a3b8" CornerRadius="2"
+                                         HorizontalOptions="Start" VerticalOptions="Center" />
+                                <Label Grid.Column="2"
+                                       Text="{Binding Tag2AloneScore, StringFormat='{0:+0.0;-0.0;0.0}'}"
+                                       FontSize="11" TextColor="{StaticResource Muted}" VerticalOptions="Center" />
+                            </Grid>
+                        </VerticalStackLayout>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+            <ActivityIndicator Grid.Row="4" IsRunning="{Binding IsLoading}" IsVisible="{Binding IsLoading}"
+                               Color="{StaticResource Primary}" HorizontalOptions="Center" Margin="0,8" />
+            <Label Grid.Row="4" Style="{StaticResource ErrorLabel}" Text="{Binding ErrorMessage}"
+                   IsVisible="{Binding HasError}" HorizontalOptions="Center" Margin="0,8" />
+        </Grid>
+    </Border>
+
+</ContentView>

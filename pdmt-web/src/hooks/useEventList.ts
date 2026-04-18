@@ -45,12 +45,11 @@ export function useEventList(): UseEventListReturn {
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
   const [tagIds, setTagIds] = useState<string[]>([]);
 
-  const loadTags = useCallback(async (signal?: AbortSignal) => {
+  const loadTags = useCallback(async () => {
     try {
-      const tags = await getTags(signal);
+      const tags = await getTags();
       setAllTags(tags);
     } catch (err: unknown) {
-      if (isAbortError(err)) return;
       setError(getErrorMessage(err));
       console.error(err);
     }
@@ -87,9 +86,7 @@ export function useEventList(): UseEventListReturn {
 
   // Load tags once on mount
   useEffect(() => {
-    const controller = new AbortController();
-    void loadTags(controller.signal);
-    return () => controller.abort();
+    void loadTags();
   }, [loadTags]);
 
   // Load events when filters change
