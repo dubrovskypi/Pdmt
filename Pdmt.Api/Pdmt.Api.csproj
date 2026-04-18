@@ -6,7 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
 	<PreserveCompilationContext>true</PreserveCompilationContext>
     <UserSecretsId>1559d298-0b1b-414a-8d2a-7dd4b546f012</UserSecretsId>
-    <Version>0.1.0</Version>
+    <Version>0.2.0</Version>
   </PropertyGroup>
 
   <Target Name="DockerComposeUp" BeforeTargets="PrepareForRun">

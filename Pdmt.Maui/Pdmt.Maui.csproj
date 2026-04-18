@@ -10,8 +10,8 @@
     <Nullable>enable</Nullable>
     <ApplicationTitle>Pdmt</ApplicationTitle>
     <ApplicationId>com.pdmt.app</ApplicationId>
-    <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
-    <ApplicationVersion>1</ApplicationVersion>
+    <ApplicationDisplayVersion>0.2.0</ApplicationDisplayVersion>
+    <ApplicationVersion>2</ApplicationVersion>
     <NoWarn>$(NoWarn);MA002</NoWarn>
   </PropertyGroup>
 
