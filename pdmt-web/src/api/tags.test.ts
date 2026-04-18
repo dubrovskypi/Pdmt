@@ -52,9 +52,8 @@ describe("getTags", () => {
 
   it("passes signal to apiGet", async () => {
     mockApiGet.mockResolvedValue(SAMPLE_TAGS);
-    const signal = new AbortController().signal;
-    await getTags(signal);
-    expect(mockApiGet).toHaveBeenCalledWith("/api/tags", signal);
+    await getTags();
+    expect(mockApiGet).toHaveBeenCalledWith("/api/tags");
   });
 });
 

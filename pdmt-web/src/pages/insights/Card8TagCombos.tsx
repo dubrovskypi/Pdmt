@@ -27,9 +27,9 @@ export function Card8TagCombos({ range, isActive }: { range: PeriodRange; isActi
         <div className="flex flex-col gap-3">
           {data.slice(0, 3).map((c, i) => {
             const max: number = Math.max(
-              Math.abs(c.combinedAvgScore as number),
-              Math.abs(c.tag1AloneAvgScore as number),
-              Math.abs(c.tag2AloneAvgScore as number),
+              Math.abs(c.combinedAvgScore),
+              Math.abs(c.tag1AloneAvgScore),
+              Math.abs(c.tag2AloneAvgScore),
               0.1,
             );
             const fmt = (v: number) => (v >= 0 ? "+" : "") + v.toFixed(1);
@@ -41,23 +41,23 @@ export function Card8TagCombos({ range, isActive }: { range: PeriodRange; isActi
                 </span>
                 <HBar
                   label="Вместе"
-                  value={Math.abs(c.combinedAvgScore as number)}
+                  value={Math.abs(c.combinedAvgScore)}
                   max={max}
-                  annotation={fmt(c.combinedAvgScore as number)}
+                  annotation={fmt(c.combinedAvgScore)}
                   color="bg-purple-400"
                 />
                 <HBar
                   label={c.tag1}
-                  value={Math.abs(c.tag1AloneAvgScore as number)}
+                  value={Math.abs(c.tag1AloneAvgScore)}
                   max={max}
-                  annotation={fmt(c.tag1AloneAvgScore as number)}
+                  annotation={fmt(c.tag1AloneAvgScore)}
                   color="bg-slate-400"
                 />
                 <HBar
                   label={c.tag2}
-                  value={Math.abs(c.tag2AloneAvgScore as number)}
+                  value={Math.abs(c.tag2AloneAvgScore)}
                   max={max}
-                  annotation={fmt(c.tag2AloneAvgScore as number)}
+                  annotation={fmt(c.tag2AloneAvgScore)}
                   color="bg-slate-400"
                 />
               </div>
