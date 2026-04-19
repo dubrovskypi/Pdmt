@@ -378,3 +378,4 @@ FodyWeavers.xsd
 # Environment variables
 .env*
 !.env*example
+.build.local.env
