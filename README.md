@@ -31,8 +31,8 @@ Pdmt helps you understand yourself better by:
 | Project | Stack | Purpose |
 |---------|-------|---------|
 | **Pdmt.Api** | ASP.NET Core 8 | REST API backend |
-| **Pdmt.Api.Tests** | xUnit + Moq | 127 unit & integration tests |
-| **pdmt-web** | React 18 + TypeScript | Production web client |
+| **Pdmt.Api.Tests** | xUnit + Moq | 180+ unit & integration tests |
+| **pdmt-web** | React 19 + TypeScript | Production web client |
 | **Pdmt.Client** | Blazor WASM | Test/reference UI |
 | **Pdmt.Maui** | .NET MAUI | Android mobile app |
 
@@ -59,12 +59,12 @@ npm install && npm run dev
 Visit:
 - **API**: https://localhost:7031
 - **Web App**: https://localhost:5173
-- **Swagger**: https://localhost:7031/swagger/ui
+- **Swagger**: https://localhost:7031/swagger
 
 ### Testing
 
 ```bash
-# Run all tests (127 total)
+# Run all tests (180+)
 dotnet test Pdmt.Api.Tests/Pdmt.Api.Tests.csproj
 
 # Run specific test class
@@ -87,24 +87,27 @@ dotnet test Pdmt.Api.Tests/Pdmt.Api.Tests.csproj --filter "FullyQualifiedName~Au
 
 ### Analytics
 - `GET /api/analytics/weekly-summary?date={ISO}` — Weekly overview
-- `GET /api/analytics/trends?from={ISO}&to={ISO}&granularity=Week|Month` — Trend data
 - `GET /api/analytics/correlations?tagId={id}&from={ISO}&to={ISO}` — Tag correlations
 - `GET /api/analytics/calendar/week?date={ISO}` — Calendar week view
 - `GET /api/analytics/calendar/month?year=2024&month=1` — Calendar month view
 
 ### Insights
-All under `/api/analytics/insights/`:
-- `repeating-triggers` — Recurring negative patterns
-- `discounted-positives` — High-frequency low-impact positives
-- `next-day-effects` — How today's events affect tomorrow
-- `tag-combos` — Tags that co-occur
-- `tag-trend?tagId={id}&granularity=Week|Month` — Tag-specific trends
-- `influenceability` — Split of controllable vs uncontrollable negatives
+All under `/api/insights/`:
+- `GET most-intense-tags` — Tags with highest average intensity
+- `GET repeating-triggers` — Recurring negative patterns
+- `GET balance` — Positive/negative balance overview
+- `GET trends?from={ISO}&to={ISO}&granularity=Week|Month` — Trend data
+- `GET discounted-positives` — High-frequency low-impact positives
+- `GET weekday-stats` — Breakdown by day of week
+- `GET next-day-effects` — How today's events affect tomorrow
+- `GET tag-combos` — Tags that co-occur
+- `GET tag-trend?tagId={id}&granularity=Week|Month` — Tag-specific trends
+- `GET influenceability` — Split of controllable vs uncontrollable negatives
 
 ## Key Features
 
 ### Authentication & Security
-- JWT Bearer tokens (60 min access, 7 day refresh)
+- JWT Bearer tokens (60 min access, 1 day refresh)
 - Refresh token rotation on login/refresh
 - Rate limiting (Redis fallback to in-memory)
 - Role-based data isolation per user
@@ -112,13 +115,13 @@ All under `/api/analytics/insights/`:
 ### Data Validation
 - UTC normalization at API boundaries
 - Nullable reference types enabled
-- Post-login async/await throughout
+- Fully async/await throughout
 
 ### Testing Coverage
-- **Unit tests** (89): Services + rate limiting logic
-- **Integration tests** (38): Full HTTP request cycles
+- **Unit tests**: Services + rate limiting logic
+- **Integration tests**: Full HTTP request cycles
 - **In-memory database** isolation for fast test runs
-- **127 total tests** — all passing
+- **180+ total tests** — all passing
 
 ## Development
 
@@ -136,6 +139,7 @@ pdmt-web/
   │   ├── pages/         # Route pages
   │   ├── components/    # Reusable UI
   │   ├── api/           # HTTP client
+  │   ├── hooks/         # Reusable React hooks
   │   └── auth/          # JWT + refresh logic
 ```
 
@@ -156,7 +160,7 @@ Indexes on `Events(UserId, Timestamp)` and `Events(UserId, Type)` for fast filte
 
 ## Monitoring & Logs
 
-- **Seq** (Structured Event Query) at http://localhost:5341 for centralized logging
+- **Seq** (Structured Event Query) at http://localhost:5080 for centralized logging
 - Correlation IDs propagated across requests
 - Exceptions logged with full stack traces
 
@@ -174,4 +178,4 @@ Proprietary. All rights reserved.
 
 ---
 
-**Built with**: ASP.NET Core 8, React 18, EF Core, PostgreSQL, Redis, .NET MAUI
+**Built with**: ASP.NET Core 8, React 19, EF Core, PostgreSQL, Redis, .NET MAUI

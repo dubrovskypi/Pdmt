@@ -9,8 +9,10 @@ cd pdmt-web
 # 2. УСТАНОВКА ОСНОВНЫХ ЗАВИСИМОСТЕЙ
 # ========================================
 
-npm install react-router-dom
-npm install recharts               # (опционально — графики)
+npm install react-router-dom        # v7
+npm install recharts                # графики
+npm install zod                     # валидация схем
+npm install react-error-boundary    # Error Boundary компонент
 
 # ========================================
 # 3. УСТАНОВКА УТИЛИТ ДЛЯ СТИЛЕЙ
@@ -40,6 +42,10 @@ npm install -D tailwindcss@3 postcss autoprefixer
 npm install -D @vitejs/plugin-basic-ssl
 npm install -D @types/node         # нужен для path alias в vite.config.ts
 
+# Тестирование
+npm install -D vitest jsdom
+npm install -D @testing-library/react @testing-library/user-event @testing-library/jest-dom
+
 # ========================================
 # 6. СОЗДАНИЕ ФАЙЛОВ КОНФИГОВ
 # ========================================
@@ -60,7 +66,7 @@ npx shadcn@latest init
 # Модифицирует tailwind.config.js и src/index.css
 
 # Ручное редактирование:
-# vite.config.ts    — добавить плагины (react, basicSsl), alias @/
+# vite.config.ts    — добавить плагины (react, basicSsl), alias @/, test.environment jsdom
 # tsconfig.json     — baseUrl, paths
 # tsconfig.app.json — lib, paths
 # tsconfig.node.json — конфиг для vite.config.ts
@@ -80,6 +86,7 @@ npx shadcn@latest init
 # src/components/       — бизнес компоненты
 # src/components/ui/    — Shadcn UI компоненты (генерируются CLI)
 # src/pages/            — страницы приложения
+# src/test/             — тестовые утилиты и setup
 
 # ========================================
 # 8. СОЗДАНИЕ КОНФИГУРАЦИИ API
@@ -126,6 +133,8 @@ touch src/config.ts
 
 npm install          # Финальная установка всех зависимостей
 npm run dev          # Запустить dev сервер на https://localhost:5173
+npm run test         # Запустить тесты (vitest watch)
+npm run test:run     # Запустить тесты однократно
 
 # ========================================
 # 12. ДОБАВЛЕНИЕ КОМПОНЕНТОВ SHADCN

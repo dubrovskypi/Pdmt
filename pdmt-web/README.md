@@ -4,7 +4,7 @@ React SPA frontend for [Pdmt](../README.md) — a personal event tracking app.
 
 ## Stack
 
-React 19 · TypeScript · Vite · Tailwind CSS · shadcn/ui · React Router v7 · Recharts
+React 19 · TypeScript · Vite · Tailwind CSS · shadcn/ui · React Router v7 · Recharts · Zod
 
 ## Prerequisites
 
@@ -24,6 +24,8 @@ npm run dev            # https://localhost:5173
 |---|---|
 | `npm run dev` | Start dev server (HTTPS, port 5173) |
 | `npm run build` | Production build → `dist/` |
+| `npm test` | Run tests in watch mode |
+| `npm run test:run` | Run tests once (CI) |
 | `npm run lint` | Run ESLint |
 | `npm run preview` | Preview production build locally |
 
@@ -31,12 +33,14 @@ npm run dev            # https://localhost:5173
 
 ```
 src/
-  api/          HTTP client and endpoint modules
+  api/          HTTP client, endpoint modules, Zod schemas
   auth/         Auth context, provider, hook
   components/   Shared components + shadcn/ui kit (ui/)
-  hooks/        Custom hooks
+  hooks/        Custom hooks (useEventList, …)
   lib/          Utilities (cn, dateUtils)
   pages/        Page components
+    insights/   Insight cards + useLazyFetch hook
+  test/         Test setup (vitest + testing-library)
 ```
 
 ## Environment variables

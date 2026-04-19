@@ -32,6 +32,11 @@ dotnet ef database update --project Pdmt.Api
 # Build MAUI project (Pdmt.slnx is not supported by msbuild directly)
 dotnet build Pdmt.Maui/Pdmt.Maui.csproj
 
+# Build signed APK for Android (from repo root)
+# Requires .build.local.env (copy from .build.local.env.example)
+build-apk.bat   # Windows CMD
+# or: powershell -ExecutionPolicy Bypass -File build-apk.ps1
+
 # Run React SPA dev server (from pdmt-web/)
 npm run dev   # https://localhost:5173 (HTTPS via @vitejs/plugin-basic-ssl)
 
@@ -66,15 +71,15 @@ npm run build  # Output: dist/ directory; requires VITE_PDMT_API_BASE_URL env va
 - **Pdmt.Api.Tests** — xUnit tests using `Microsoft.AspNetCore.Mvc.Testing` with an in-memory EF database
 - **Pdmt.Client** — Blazor WebAssembly frontend with MudBlazor UI (test UI, not production)
 - **Pdmt.Maui** — .NET MAUI Android client
-- **pdmt-web** — React 18 + TypeScript + Vite SPA (production web frontend); located at `pdmt-web/` in solution root, not part of `.slnx`
+- **pdmt-web** — React 19 + TypeScript + Vite SPA (production web frontend); located at `pdmt-web/` in solution root, not part of `.slnx`
  
 ### API Layers
  
 - **Controllers** → **Services** → **AppDbContext** (EF Core)
 - Services (`AuthService`, `EventService`, `TagService`, `AnalyticsService`, `InsightsService`) contain all business logic; controllers are thin
 - Controllers: `AuthController`, `WebAuthController`, `EventsController`, `TagsController`, `AnalyticsController`, `InsightsController`
-- `AnalyticsController` routes: `/weekly-summary`, `/trends`, `/correlations`, `/calendar/week`, `/calendar/month`
-- `InsightsController` routes (all under `/api/analytics/insights/`): `repeating-triggers`, `discounted-positives`, `next-day-effects`, `tag-combos`, `tag-trend`, `influenceability`
+- `AnalyticsController` routes: `/weekly-summary`, `/correlations`, `/calendar/week`, `/calendar/month`
+- `InsightsController` routes (all under `/api/insights/`): `most-intense-tags`, `repeating-triggers`, `balance`, `trends`, `discounted-positives`, `weekday-stats`, `next-day-effects`, `tag-combos`, `tag-trend`, `influenceability`
 - Add `[ProducesResponseType]` and response code attributes to action methods for Swagger documentation
 - `TokenCleanupBgService` — background service that purges expired refresh tokens (currently commented out in `Program.cs` — uncomment to enable automatic cleanup of stale refresh tokens)
 - Global exception handling via `ExceptionHandlingMiddleware` — do not add try/catch in controllers
@@ -163,6 +168,7 @@ Integration tests in `EventControllerTests.cs` cover auth enforcement, CRUD, fil
 - Same for `DateTime.Date` property — it preserves `Kind`, so if the source was `Unspecified`, the result is too
 - Heterogeneous `CarouselView`: use `DataTemplateSelector` (see `InsightCardTemplateSelector`) — subclass, expose one `DataTemplate` property per card type, dispatch via pattern-matching `switch`
 - **Insights loading lifecycle**: `InsightsViewModel` owns `CancellationTokenSource`; cards 0–1 load with priority, remaining 8 in background; `OnDisappearing` calls `CancelLoad()` to abort all in-flight HTTP requests before ViewModel is collected
+- **Android input underline (Samsung One UI fix):** All `Entry`/`Editor`/`Picker`/`DatePicker` use a custom `Platforms/Android/Resources/drawable/entry_background.xml` (layer-list with bottom border). Registered globally in `MauiProgram.cs` via `ConfigureMauiHandlers` → `Handler.Mapper.AppendToMapping("Background", ...)`. Required because Samsung One UI overrides default MAUI backgrounds.
 
 ## Pdmt.Client Conventions
  
@@ -172,7 +178,7 @@ Integration tests in `EventControllerTests.cs` cover auth enforcement, CRUD, fil
  
 ## pdmt-web Conventions (React SPA)
 
-- **Stack**: React 18 + TypeScript + Vite + Tailwind CSS + Shadcn/ui + React Router v6
+- **Stack**: React 19 + TypeScript + Vite + Tailwind CSS + Shadcn/ui + React Router v7
 - **Config**: `src/config.ts` reads `VITE_PDMT_API_BASE_URL` env var (required in prod); dev defaults to `https://localhost:7031`; set via `.env` file (see `.env.example`)
 - **Auth**: `accessToken` in memory (React Context + `useRef`); `refreshToken` in httpOnly cookie — never in `localStorage`
 - **API client**: `src/api/client.ts` — `apiFetch` wrapper with Bearer header injection + 401 → silent refresh → retry
@@ -181,10 +187,11 @@ Integration tests in `EventControllerTests.cs` cover auth enforcement, CRUD, fil
 - **Dates**: always `Date.toISOString()` before sending to API (UTC Z-suffix); `datetime-local` inputs are local time — `new Date(value).toISOString()` converts correctly
 - **Tag filter**: `GET /api/events?tags=` accepts comma-separated **Guid IDs**, not names
 - **Dev HTTPS**: Vite runs on `https://localhost:5173` via `@vitejs/plugin-basic-ssl` — no proxy, real cross-origin like prod
-- Pages in `src/pages/`, shared components in `src/components/`, API modules in `src/api/`, auth in `src/auth/`
+- Pages in `src/pages/`, shared components in `src/components/`, API modules in `src/api/`, auth in `src/auth/`, reusable hooks in `src/hooks/`
 - **Page sub-components**: Declare in same file above main component
-- **Data loading**: `useState` + `useEffect`; no custom hooks for read-only data; parallel requests via `Promise.all` when independent
-- **AnalyticsPage**: sub-components in same file; no custom hooks for read-only data; `Promise.all` for parallel independent requests
+- **Data loading**: `useState` + `useEffect` for simple pages; extract to a custom hook in `src/hooks/` when the page has complex filter/pagination state (e.g., `useEventList`); parallel requests via `Promise.all` when independent
+- **AnalyticsPage**: sub-components in same file; `Promise.all` for parallel independent requests
+- **Page-specific hooks**: co-locate inside the page directory (e.g., `src/pages/insights/useLazyFetch.ts`) when the hook is not reused elsewhere
 
 ## Production Configuration
 
@@ -249,6 +256,10 @@ docker compose logs -f redis       # Redis logs
 
 **Common issues:**
 - Port conflicts: Change ports in `docker-compose.yml` if 5432 (PostgreSQL), 6379 (Redis), or 5080 (Seq) are in use
+
+## TODO
+
+Tasks are tracked in `TODO.md` at the solution root. Add new items there, not to Claude's memory.
 
 ## Commits
 
