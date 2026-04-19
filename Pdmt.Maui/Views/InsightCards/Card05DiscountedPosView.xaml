@@ -30,7 +30,8 @@
                                      Color="#fcd34d" CornerRadius="2"
                                      HorizontalOptions="Start" VerticalOptions="Center" />
                             <Label Grid.Column="2" Text="{Binding FormattedAnnotation}"
-                                   FontSize="12" TextColor="{StaticResource Muted}" VerticalOptions="Center" />
+                                   FontSize="12" TextColor="{StaticResource Muted}" 
+                                   HorizontalOptions="End" VerticalOptions="Center" />
                         </Grid>
                     </DataTemplate>
                 </CollectionView.ItemTemplate>

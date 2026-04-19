@@ -23,7 +23,7 @@ public partial class WeeklyCalendarViewModel(
     [ObservableProperty] private bool _isBusy;
     [ObservableProperty] private string? _errorMessage;
 
-    public string WeekLabel => $"{WeekStart:dd MMM} \u2014 {WeekEnd:dd MMM yyyy}";
+    public string WeekLabel => $"{WeekStart:dd MMM} \u2014 {WeekEnd:dd MMM}";
 
     [RelayCommand]
     private async Task LoadAsync()

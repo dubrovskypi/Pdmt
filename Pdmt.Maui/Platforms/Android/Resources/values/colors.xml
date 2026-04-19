@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="pdmt_primary">#1565C0</color>
+    <color name="pdmt_entry_inactive">#9E9E9E</color>
+</resources>

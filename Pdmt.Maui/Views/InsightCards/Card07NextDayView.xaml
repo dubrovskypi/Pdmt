@@ -23,7 +23,7 @@
                 </CollectionView.ItemsLayout>
                 <CollectionView.ItemTemplate>
                     <DataTemplate x:DataType="cards:NextDayBarItem">
-                        <Grid ColumnDefinitions="90,*,44" ColumnSpacing="8">
+                        <Grid ColumnDefinitions="90,*,36" ColumnSpacing="8">
                             <Label Grid.Column="0" Text="{Binding TagName}"
                                    FontSize="13" LineBreakMode="TailTruncation" VerticalOptions="Center" />
                             <BoxView Grid.Column="1" WidthRequest="{Binding BarWidth}" HeightRequest="14"
@@ -39,7 +39,8 @@
                             </BoxView>
                             <Label Grid.Column="2"
                                    Text="{Binding NextDayAvgScore, StringFormat='{0:+0.0;-0.0}'}"
-                                   FontSize="12" TextColor="{StaticResource Muted}" VerticalOptions="Center" />
+                                   FontSize="12" TextColor="{StaticResource Muted}"
+                                   HorizontalOptions="End" VerticalOptions="Center" />
                         </Grid>
                     </DataTemplate>
                 </CollectionView.ItemTemplate>

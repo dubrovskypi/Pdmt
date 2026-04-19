@@ -20,6 +20,19 @@ public static class MauiProgram
             .ConfigureFonts(fonts =>
             {
                 fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
+            })
+            .ConfigureMauiHandlers(handlers =>
+            {
+#if ANDROID
+                Microsoft.Maui.Handlers.EntryHandler.Mapper.AppendToMapping("Background", (handler, _) =>
+                    handler.PlatformView.SetBackgroundResource(Resource.Drawable.entry_background));
+                Microsoft.Maui.Handlers.EditorHandler.Mapper.AppendToMapping("Background", (handler, _) =>
+                    handler.PlatformView.SetBackgroundResource(Resource.Drawable.entry_background));
+                Microsoft.Maui.Handlers.PickerHandler.Mapper.AppendToMapping("Background", (handler, _) =>
+                    handler.PlatformView.SetBackgroundResource(Resource.Drawable.entry_background));
+                Microsoft.Maui.Handlers.DatePickerHandler.Mapper.AppendToMapping("Background", (handler, _) =>
+                    handler.PlatformView.SetBackgroundResource(Resource.Drawable.entry_background));
+#endif
             });
 
         // Configuration from embedded resources

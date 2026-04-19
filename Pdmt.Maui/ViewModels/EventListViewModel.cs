@@ -44,52 +44,13 @@ public partial class EventListViewModel(
     [ObservableProperty]
     private string? _errorMessage;
 
-    [RelayCommand]
-    private async Task LoadAsync()
+    private void SetDefaultDateRange()
     {
-        IsBusy = true;
-        ErrorMessage = null;
-        try
-        {
-            if (!FilterFrom.HasValue || !FilterTo.HasValue)
-            {
-                FilterFrom = DateTime.Today.AddDays(-6);
-                FilterTo = DateTime.Today.AddDays(1);
-            }
-
-            var tags = await tagService.GetTagsAsync();
-            TagFilters.Clear();
-            foreach (var tag in tags)
-                TagFilters.Add(new TagFilter(tag.Name, tag.Id));
-
-            await ApplyFiltersAsync();
-        }
-        catch
-        {
-            ErrorMessage = "Failed to load events";
-        }
-        finally
-        {
-            IsBusy = false;
-        }
+        FilterFrom = DateTime.Today.AddDays(-6);
+        FilterTo = DateTime.Today.AddDays(1);
     }
 
-    [RelayCommand]
-    private async Task RefreshAsync()
-    {
-        IsRefreshing = true;
-        try
-        {
-            await ApplyFiltersAsync();
-        }
-        finally
-        {
-            IsRefreshing = false;
-        }
-    }
-
-    [RelayCommand]
-    private async Task ApplyFiltersAsync()
+    private async Task FetchAndPopulateAsync()
     {
         var tagIds = SelectedTagFilter?.Id is Guid id
             ? (IReadOnlyList<Guid>)[id]
@@ -111,13 +72,93 @@ public partial class EventListViewModel(
     }
 
     [RelayCommand]
+    private async Task LoadAsync()
+    {
+        IsBusy = true;
+        ErrorMessage = null;
+        try
+        {
+            if (!FilterFrom.HasValue || !FilterTo.HasValue)
+                SetDefaultDateRange();
+
+            if (TagFilters.Count == 0)
+            {
+                var tags = await tagService.GetTagsAsync();
+                TagFilters.Clear();
+                foreach (var tag in tags)
+                    TagFilters.Add(new TagFilter(tag.Name, tag.Id));
+            }
+
+            await FetchAndPopulateAsync();
+        }
+        catch
+        {
+            ErrorMessage = "Failed to load events";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    [RelayCommand]
+    private async Task RefreshAsync()
+    {
+        IsRefreshing = true;
+        ErrorMessage = null;
+        try
+        {
+            await FetchAndPopulateAsync();
+        }
+        catch
+        {
+            ErrorMessage = "Failed to refresh events";
+        }
+        finally
+        {
+            IsRefreshing = false;
+        }
+    }
+
+    [RelayCommand]
+    private async Task ApplyFiltersAsync()
+    {
+        IsBusy = true;
+        ErrorMessage = null;
+        try
+        {
+            await FetchAndPopulateAsync();
+        }
+        catch
+        {
+            ErrorMessage = "Failed to load events";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    [RelayCommand]
     private async Task ResetFiltersAsync()
     {
-        FilterFrom = null;
-        FilterTo = null;
+        SetDefaultDateRange();
         SelectedTypeFilter = EventTypeFilters[0];
         SelectedTagFilter = null;
-        await ApplyFiltersAsync();
+        IsBusy = true;
+        ErrorMessage = null;
+        try
+        {
+            await FetchAndPopulateAsync();
+        }
+        catch
+        {
+            ErrorMessage = "Failed to load events";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
     }
 
     [RelayCommand]

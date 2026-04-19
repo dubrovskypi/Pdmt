@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_focused="true">
+        <layer-list>
+            <item>
+                <color android:color="@android:color/white" />
+            </item>
+            <item android:gravity="bottom">
+                <shape android:shape="rectangle">
+                    <size android:height="2dp" />
+                    <solid android:color="@color/pdmt_primary" />
+                </shape>
+            </item>
+        </layer-list>
+    </item>
+    <item>
+        <layer-list>
+            <item>
+                <color android:color="@android:color/white" />
+            </item>
+            <item android:gravity="bottom">
+                <shape android:shape="rectangle">
+                    <size android:height="1dp" />
+                    <solid android:color="@color/pdmt_entry_inactive" />
+                </shape>
+            </item>
+        </layer-list>
+    </item>
+</selector>

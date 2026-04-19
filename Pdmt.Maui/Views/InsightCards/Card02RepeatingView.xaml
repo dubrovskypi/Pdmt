@@ -31,7 +31,8 @@
                                      HorizontalOptions="Start" VerticalOptions="Center" />
                             <Label Grid.Column="2"
                                    Text="{Binding Count, StringFormat='{0}×'}"
-                                   FontSize="12" TextColor="{StaticResource Muted}" VerticalOptions="Center" />
+                                   FontSize="12" TextColor="{StaticResource Muted}"
+                                   HorizontalOptions="End" VerticalOptions="Center" />
                         </Grid>
                     </DataTemplate>
                 </CollectionView.ItemTemplate>

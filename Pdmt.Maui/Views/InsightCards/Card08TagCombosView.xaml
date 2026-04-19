@@ -25,7 +25,7 @@
                     <DataTemplate x:DataType="cards:ComboItem">
                         <VerticalStackLayout Spacing="3">
                             <Label Text="{Binding Label}" FontSize="13" FontAttributes="Bold" />
-                            <Grid ColumnDefinitions="46,*,36" ColumnSpacing="6">
+                            <Grid ColumnDefinitions="56,*,36" ColumnSpacing="6">
                                 <Label Grid.Column="0" Text="Вместе" FontSize="11"
                                        TextColor="{StaticResource Muted}" VerticalOptions="Center" />
                                 <BoxView Grid.Column="1" WidthRequest="{Binding CombinedBarWidth}"
@@ -33,9 +33,10 @@
                                          HorizontalOptions="Start" VerticalOptions="Center" />
                                 <Label Grid.Column="2"
                                        Text="{Binding CombinedAvgScore, StringFormat='{0:+0.0;-0.0;0.0}'}"
-                                       FontSize="11" TextColor="{StaticResource Muted}" VerticalOptions="Center" />
+                                       FontSize="11" TextColor="{StaticResource Muted}"
+                                       HorizontalOptions="End" VerticalOptions="Center" />
                             </Grid>
-                            <Grid ColumnDefinitions="46,*,36" ColumnSpacing="6">
+                            <Grid ColumnDefinitions="56,*,36" ColumnSpacing="6">
                                 <Label Grid.Column="0" Text="{Binding Tag1Name}" FontSize="11"
                                        TextColor="{StaticResource Muted}" VerticalOptions="Center"
                                        LineBreakMode="TailTruncation" />
@@ -44,9 +45,10 @@
                                          HorizontalOptions="Start" VerticalOptions="Center" />
                                 <Label Grid.Column="2"
                                        Text="{Binding Tag1AloneScore, StringFormat='{0:+0.0;-0.0;0.0}'}"
-                                       FontSize="11" TextColor="{StaticResource Muted}" VerticalOptions="Center" />
+                                       FontSize="11" TextColor="{StaticResource Muted}"
+                                       HorizontalOptions="End" VerticalOptions="Center" />
                             </Grid>
-                            <Grid ColumnDefinitions="46,*,36" ColumnSpacing="6">
+                            <Grid ColumnDefinitions="56,*,36" ColumnSpacing="6">
                                 <Label Grid.Column="0" Text="{Binding Tag2Name}" FontSize="11"
                                        TextColor="{StaticResource Muted}" VerticalOptions="Center"
                                        LineBreakMode="TailTruncation" />
@@ -55,7 +57,8 @@
                                          HorizontalOptions="Start" VerticalOptions="Center" />
                                 <Label Grid.Column="2"
                                        Text="{Binding Tag2AloneScore, StringFormat='{0:+0.0;-0.0;0.0}'}"
-                                       FontSize="11" TextColor="{StaticResource Muted}" VerticalOptions="Center" />
+                                       FontSize="11" TextColor="{StaticResource Muted}"
+                                       HorizontalOptions="End" VerticalOptions="Center" />
                             </Grid>
                         </VerticalStackLayout>
                     </DataTemplate>

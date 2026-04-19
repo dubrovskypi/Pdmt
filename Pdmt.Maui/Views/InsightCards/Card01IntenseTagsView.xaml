@@ -6,8 +6,28 @@
     xmlns:cards="clr-namespace:Pdmt.Maui.ViewModels.Cards"
     x:DataType="cards:Card01IntenseTagsViewModel">
 
+    <ContentView.Resources>
+        <DataTemplate x:Key="TriggerBarTemplate" x:DataType="cards:TriggerBarItem">
+            <Grid ColumnDefinitions="90,*,36" ColumnSpacing="8">
+                <Label Grid.Column="0" Text="{Binding TagName}"
+                       FontSize="13" LineBreakMode="TailTruncation" VerticalOptions="Center" />
+                <Grid Grid.Column="1" HeightRequest="14" VerticalOptions="Center">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="{Binding BarProgress, Converter={StaticResource StarConverter}}" />
+                        <ColumnDefinition Width="{Binding BarProgress, Converter={StaticResource StarConverter}, ConverterParameter=inverse}" />
+                    </Grid.ColumnDefinitions>
+                    <BoxView Grid.Column="0" Color="{Binding BarColor}" CornerRadius="2" />
+                </Grid>
+                <Label Grid.Column="2"
+                       Text="{Binding AvgIntensity, StringFormat='{0:F1}'}"
+                       FontSize="12" TextColor="{StaticResource Muted}"
+                       HorizontalOptions="End" VerticalOptions="Center" />
+            </Grid>
+        </DataTemplate>
+    </ContentView.Resources>
+
     <Border Margin="4,0" Padding="16" BackgroundColor="{StaticResource Surface}">
-        <Grid RowDefinitions="Auto,Auto,Auto,*,Auto" RowSpacing="0">
+        <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto" RowSpacing="0">
             <Border Grid.Row="0" BackgroundColor="#fee2e2" Stroke="Transparent" StrokeThickness="0"
                     Padding="8,3" HorizontalOptions="Start">
                 <Border.StrokeShape><RoundRectangle CornerRadius="10" /></Border.StrokeShape>
@@ -17,53 +37,32 @@
                    FontAttributes="Bold" FontSize="16" Margin="0,8,0,2" />
             <Label Grid.Row="2" Text="Топ тегов по средней интенсивности за период."
                    Style="{StaticResource MutedLabel}" Margin="0,0,0,10" />
-
-            <VerticalStackLayout Grid.Row="3" Spacing="12">
-                <!-- Позитивные -->
+            <Label Grid.Row="3" Text="Нет данных за период"
+                   Style="{StaticResource MutedLabel}" IsVisible="{Binding IsEmpty}"
+                   HorizontalOptions="Center" Margin="0,16" />
+            
+            <VerticalStackLayout Grid.Row="3" Spacing="12" IsVisible="{Binding IsEmpty, Converter={StaticResource InvertBoolConverter}}">
                 <VerticalStackLayout Spacing="6">
                     <Label Text="Позитивные" FontSize="12" FontAttributes="Bold" TextColor="#16a34a" />
-                    <CollectionView ItemsSource="{Binding PosItems}">
+                    <CollectionView ItemsSource="{Binding PosItems}" ItemTemplate="{StaticResource TriggerBarTemplate}">
+                        <CollectionView.EmptyView>
+                            <Label Text="Нет позитивных событий за период" Style="{StaticResource MutedLabel}" />
+                        </CollectionView.EmptyView>
                         <CollectionView.ItemsLayout>
                             <LinearItemsLayout Orientation="Vertical" ItemSpacing="8" />
                         </CollectionView.ItemsLayout>
-                        <CollectionView.ItemTemplate>
-                            <DataTemplate x:DataType="cards:TriggerBarItem">
-                                <Grid ColumnDefinitions="90,*,36" ColumnSpacing="8">
-                                    <Label Grid.Column="0" Text="{Binding TagName}"
-                                           FontSize="13" LineBreakMode="TailTruncation" VerticalOptions="Center" />
-                                    <BoxView Grid.Column="1" WidthRequest="{Binding BarWidth}" HeightRequest="14"
-                                             Color="#4ade80" CornerRadius="2"
-                                             HorizontalOptions="Start" VerticalOptions="Center" />
-                                    <Label Grid.Column="2"
-                                           Text="{Binding AvgIntensity, StringFormat='{0:0.0}'}"
-                                           FontSize="12" TextColor="{StaticResource Muted}" VerticalOptions="Center" />
-                                </Grid>
-                            </DataTemplate>
-                        </CollectionView.ItemTemplate>
                     </CollectionView>
                 </VerticalStackLayout>
 
-                <!-- Негативные -->
                 <VerticalStackLayout Spacing="6">
                     <Label Text="Негативные" FontSize="12" FontAttributes="Bold" TextColor="#dc2626" />
-                    <CollectionView ItemsSource="{Binding NegItems}">
+                    <CollectionView ItemsSource="{Binding NegItems}" ItemTemplate="{StaticResource TriggerBarTemplate}">
+                        <CollectionView.EmptyView>
+                            <Label Text="Нет негативных событий за период" Style="{StaticResource MutedLabel}" />
+                        </CollectionView.EmptyView>
                         <CollectionView.ItemsLayout>
                             <LinearItemsLayout Orientation="Vertical" ItemSpacing="8" />
                         </CollectionView.ItemsLayout>
-                        <CollectionView.ItemTemplate>
-                            <DataTemplate x:DataType="cards:TriggerBarItem">
-                                <Grid ColumnDefinitions="90,*,36" ColumnSpacing="8">
-                                    <Label Grid.Column="0" Text="{Binding TagName}"
-                                           FontSize="13" LineBreakMode="TailTruncation" VerticalOptions="Center" />
-                                    <BoxView Grid.Column="1" WidthRequest="{Binding BarWidth}" HeightRequest="14"
-                                             Color="#f87171" CornerRadius="2"
-                                             HorizontalOptions="Start" VerticalOptions="Center" />
-                                    <Label Grid.Column="2"
-                                           Text="{Binding AvgIntensity, StringFormat='{0:0.0}'}"
-                                           FontSize="12" TextColor="{StaticResource Muted}" VerticalOptions="Center" />
-                                </Grid>
-                            </DataTemplate>
-                        </CollectionView.ItemTemplate>
                     </CollectionView>
                 </VerticalStackLayout>
             </VerticalStackLayout>

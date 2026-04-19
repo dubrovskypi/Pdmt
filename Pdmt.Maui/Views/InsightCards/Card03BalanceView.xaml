@@ -37,23 +37,25 @@
                 </VerticalStackLayout>
                 <VerticalStackLayout Spacing="6">
                     <Label Text="Средняя интенсивность" Style="{StaticResource MutedLabel}" />
-                    <Grid ColumnDefinitions="70,*,36" ColumnSpacing="8">
+                    <Grid ColumnDefinitions="80,*,36" ColumnSpacing="8">
                         <Label Grid.Column="0" Text="Позитивные" FontSize="12" VerticalOptions="Center" />
                         <BoxView Grid.Column="1" WidthRequest="{Binding PosBarWidth}" HeightRequest="14"
                                  Color="#4ade80" CornerRadius="2"
                                  HorizontalOptions="Start" VerticalOptions="Center" />
                         <Label Grid.Column="2"
                                Text="{Binding AvgPosIntensity, StringFormat='{0:F1}'}"
-                               FontSize="12" TextColor="{StaticResource Muted}" VerticalOptions="Center" />
+                               FontSize="12" TextColor="{StaticResource Muted}" 
+                               HorizontalOptions="End" VerticalOptions="Center" />
                     </Grid>
-                    <Grid ColumnDefinitions="70,*,36" ColumnSpacing="8">
+                    <Grid ColumnDefinitions="80,*,36" ColumnSpacing="8">
                         <Label Grid.Column="0" Text="Негативные" FontSize="12" VerticalOptions="Center" />
                         <BoxView Grid.Column="1" WidthRequest="{Binding NegBarWidth}" HeightRequest="14"
                                  Color="#f87171" CornerRadius="2"
                                  HorizontalOptions="Start" VerticalOptions="Center" />
                         <Label Grid.Column="2"
                                Text="{Binding AvgNegIntensity, StringFormat='{0:F1}'}"
-                               FontSize="12" TextColor="{StaticResource Muted}" VerticalOptions="Center" />
+                               FontSize="12" TextColor="{StaticResource Muted}"
+                               HorizontalOptions="End" VerticalOptions="Center" />
                     </Grid>
                 </VerticalStackLayout>
             </VerticalStackLayout>
