@@ -4,7 +4,7 @@ using Pdmt.Api.Domain;
 using Pdmt.Api.Dto;
 using Pdmt.Api.Services;
 
-namespace Pdmt.Api.Tests;
+namespace Pdmt.Api.Integration.Tests;
 
 public class EventServiceTests
 {

@@ -8,7 +8,7 @@ using Microsoft.IdentityModel.Tokens;
 using Pdmt.Api.Data;
 using System.Text;
 
-namespace Pdmt.Api.Tests
+namespace Pdmt.Api.Integration.Tests
 {
     public class CustomWebAppFactory : WebApplicationFactory<Program>
     {

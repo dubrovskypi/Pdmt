@@ -9,7 +9,7 @@ using Pdmt.Api.Services;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace Pdmt.Api.Tests
+namespace Pdmt.Api.Integration.Tests
 {
     public class AuthServiceTests
     {

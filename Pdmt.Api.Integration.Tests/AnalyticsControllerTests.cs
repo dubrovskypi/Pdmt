@@ -1,4 +1,4 @@
-namespace Pdmt.Api.Tests;
+namespace Pdmt.Api.Integration.Tests;
 
 public class AnalyticsControllerTests : IClassFixture<CustomWebAppFactory>
 {

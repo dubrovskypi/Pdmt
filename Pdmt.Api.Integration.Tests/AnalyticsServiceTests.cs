@@ -7,7 +7,7 @@ using Pdmt.Api.Dto.Analytics;
 using Pdmt.Api.Infrastructure.Exceptions;
 using Pdmt.Api.Services;
 
-namespace Pdmt.Api.Tests
+namespace Pdmt.Api.Integration.Tests
 {
     public class AnalyticsServiceTests
     {

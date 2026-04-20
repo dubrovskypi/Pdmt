@@ -3,7 +3,8 @@
     <File Path="global.json" />
   </Folder>
   <Folder Name="/Tests/">
-    <Project Path="Pdmt.Api.Tests/Pdmt.Api.Tests.csproj" Id="7f9d9a7d-f34e-4e12-a799-7fa4028263d7" />
+    <Project Path="Pdmt.Api.Integration.Tests/Pdmt.Api.Integration.Tests.csproj" Id="7f9d9a7d-f34e-4e12-a799-7fa4028263d7" />
+    <Project Path="Pdmt.Api.Unit.Tests/Pdmt.Api.Unit.Tests.csproj" />
   </Folder>
   <Project Path="Pdmt.Api/Pdmt.Api.csproj" />
   <Project Path="Pdmt.Client/Pdmt.Client.csproj" />

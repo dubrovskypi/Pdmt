@@ -6,7 +6,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 
-namespace Pdmt.Api.Tests;
+namespace Pdmt.Api.Integration.Tests;
 
 public class InsightsControllerTests : IClassFixture<CustomWebAppFactory>
 {

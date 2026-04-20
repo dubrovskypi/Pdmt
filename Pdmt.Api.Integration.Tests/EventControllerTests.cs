@@ -7,7 +7,7 @@ using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text;
 
-namespace Pdmt.Api.Tests;
+namespace Pdmt.Api.Integration.Tests;
 
 public class EventsControllerTests(CustomWebAppFactory factory) : IClassFixture<CustomWebAppFactory>
 {

@@ -6,7 +6,7 @@ using Pdmt.Api.Dto.Insights;
 using Pdmt.Api.Infrastructure.Exceptions;
 using Pdmt.Api.Services;
 
-namespace Pdmt.Api.Tests
+namespace Pdmt.Api.Integration.Tests
 {
     public class InsightsServiceTests
     {
