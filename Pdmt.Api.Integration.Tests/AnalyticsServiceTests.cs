@@ -152,8 +152,9 @@ namespace Pdmt.Api.Integration.Tests
             var service = new AnalyticsService(db, CreateConfig());
             var userId = Guid.NewGuid();
 
-            var now = DateTimeOffset.UtcNow;
-            var monday = now.AddDays(-(int)now.DayOfWeek + 1);
+            var tz = TimeZoneInfo.FindSystemTimeZoneById("Europe/Vilnius");
+            var nowLocal = TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow, tz);
+            var monday = nowLocal.AddDays(-(int)nowLocal.DayOfWeek + 1);
             var sundayBefore = monday.AddDays(-1);
 
             db.Events.AddRange(
@@ -310,8 +311,9 @@ namespace Pdmt.Api.Integration.Tests
             var service = new AnalyticsService(db, CreateConfig());
             var userId = Guid.NewGuid();
 
-            var now = DateTimeOffset.UtcNow;
-            var monday = now.AddDays(-(int)now.DayOfWeek + 1);
+            var tz = TimeZoneInfo.FindSystemTimeZoneById("Europe/Vilnius");
+            var nowLocal = TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow, tz);
+            var monday = nowLocal.AddDays(-(int)nowLocal.DayOfWeek + 1);
 
             db.Events.AddRange(
                 new Event { Id = Guid.NewGuid(), UserId = userId, Timestamp = monday, Type = EventType.Positive, Title = "P1", Intensity = 8 },
