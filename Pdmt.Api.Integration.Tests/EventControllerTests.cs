@@ -260,6 +260,17 @@ public class EventsControllerTests(CustomWebAppFactory factory) : IClassFixture<
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
+    [Fact]
+    public async Task CreateEvent_IntensityZero_Returns201()
+    {
+        var client = CreateTestAuthClient();
+        var payload = new { Timestamp = DateTimeOffset.UtcNow, Type = 0, Title = "Zero intensity", Intensity = 0 };
+
+        var response = await client.PostAsJsonAsync("/api/events", payload);
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+    }
+
     #endregion
 
     #region UpdateEvent

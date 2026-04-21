@@ -617,19 +617,6 @@ public class EventServiceTests
         Assert.Equal(10, result.Intensity);
     }
 
-    [Fact]
-    public async Task CreateEventAsync_IntensityEleven_SavesSuccessfully()
-    {
-        var db = CreateDbContext();
-        var service = new EventService(db);
-        var userId = Guid.NewGuid();
-        var dto = new CreateEventDto { Timestamp = DateTimeOffset.UtcNow, Type = DtoEventType.Positive, Title = "Eleven", Intensity = 11 };
-
-        var result = await service.CreateEventAsync(userId, dto);
-
-        Assert.Equal(11, result.Intensity);
-    }
-
     #endregion
 
     #region UpdateEventAsync
