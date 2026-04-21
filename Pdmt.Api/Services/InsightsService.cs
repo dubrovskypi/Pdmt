@@ -20,6 +20,11 @@ public class InsightsService(AppDbContext db, IConfiguration config) : IInsights
             .Where(e => e.UserId == userId && e.Timestamp >= from && e.Timestamp < to.AddDays(1))
             .ToListAsync();
 
+        return ComputeMostIntenseTags(events);
+    }
+
+    internal static MostIntenseTagsDto ComputeMostIntenseTags(IReadOnlyList<Event> events)
+    {
         var pos = events.Where(e => e.Type == EventType.Positive).ToList();
         var neg = events.Where(e => e.Type == EventType.Negative).ToList();
 
@@ -45,10 +50,16 @@ public class InsightsService(AppDbContext db, IConfiguration config) : IInsights
         var events = await db.Events
             .AsNoTracking()
             .Include(e => e.EventTags).ThenInclude(et => et.Tag)
-            .Where(e => e.UserId == userId && e.Type == EventType.Negative && e.Timestamp >= from && e.Timestamp < to.AddDays(1))
+            .Where(e => e.UserId == userId && e.Timestamp >= from && e.Timestamp < to.AddDays(1))
             .ToListAsync();
 
+        return ComputeRepeatingTriggers(events, minCount);
+    }
+
+    internal static IReadOnlyList<RepeatingTriggerDto> ComputeRepeatingTriggers(IReadOnlyList<Event> events, int minCount)
+    {
         return events
+            .Where(e => e.Type == EventType.Negative)
             .SelectMany(e => e.EventTags.Select(et => new { et.Tag.Name, e.Intensity }))
             .GroupBy(x => x.Name)
             .Where(g => g.Count() >= minCount)
@@ -62,9 +73,13 @@ public class InsightsService(AppDbContext db, IConfiguration config) : IInsights
         var events = await db.Events
             .AsNoTracking()
             .Where(e => e.UserId == userId && e.Timestamp >= from && e.Timestamp < to.AddDays(1))
-            .Select(e => new { e.Type, e.Intensity })
             .ToListAsync();
 
+        return ComputeBalance(events);
+    }
+
+    internal static PosNegBalanceDto ComputeBalance(IReadOnlyList<Event> events)
+    {
         var pos = events.Where(e => e.Type == EventType.Positive).ToList();
         var neg = events.Where(e => e.Type == EventType.Negative).ToList();
 
@@ -80,10 +95,13 @@ public class InsightsService(AppDbContext db, IConfiguration config) : IInsights
         var events = await db.Events
             .AsNoTracking()
             .Where(e => e.UserId == userId && e.Timestamp >= from && e.Timestamp < to.AddDays(1))
-            .Select(e => new { e.Timestamp, e.Type, e.Intensity })
             .ToListAsync();
 
-        var tz = GetTz();
+        return ComputeTrends(events, period, GetTz());
+    }
+
+    internal static IReadOnlyList<TrendPeriodDto> ComputeTrends(IReadOnlyList<Event> events, Granularity period, TimeZoneInfo tz)
+    {
         Func<DateTimeOffset, DateTimeOffset> getKey = period == Granularity.Week
             ? date => DateHelper.GetMonday(date, tz)
             : date => DateHelper.GetFirstDayOfMonth(date, tz);
@@ -104,10 +122,16 @@ public class InsightsService(AppDbContext db, IConfiguration config) : IInsights
         var events = await db.Events
             .AsNoTracking()
             .Include(e => e.EventTags).ThenInclude(et => et.Tag)
-            .Where(e => e.UserId == userId && e.Type == EventType.Positive && e.Timestamp >= from && e.Timestamp < to.AddDays(1))
+            .Where(e => e.UserId == userId && e.Timestamp >= from && e.Timestamp < to.AddDays(1))
             .ToListAsync();
 
+        return ComputeDiscountedPositives(events);
+    }
+
+    internal static IReadOnlyList<DiscountedPositiveDto> ComputeDiscountedPositives(IReadOnlyList<Event> events)
+    {
         return events
+            .Where(e => e.Type == EventType.Positive)
             .SelectMany(e => e.EventTags.Select(et => new { et.Tag.Name, e.Intensity }))
             .GroupBy(x => x.Name)
             .Where(g => g.Count() >= 5 && g.Average(x => (double)x.Intensity) < 4.0)
@@ -121,11 +145,13 @@ public class InsightsService(AppDbContext db, IConfiguration config) : IInsights
         var events = await db.Events
             .AsNoTracking()
             .Where(e => e.UserId == userId && e.Timestamp >= from && e.Timestamp < to.AddDays(1))
-            .Select(e => new { e.Type, e.Intensity, e.Timestamp })
             .ToListAsync();
 
-        var tz = GetTz();
+        return ComputeWeekdayStats(events, GetTz());
+    }
 
+    internal static IReadOnlyList<WeekdayStatDto> ComputeWeekdayStats(IReadOnlyList<Event> events, TimeZoneInfo tz)
+    {
         var grouped = events
             .GroupBy(e => DateHelper.ToLocalDate(e.Timestamp, tz).DayOfWeek)
             .ToDictionary(g => g.Key, g => g.ToList());
@@ -151,15 +177,17 @@ public class InsightsService(AppDbContext db, IConfiguration config) : IInsights
             .Where(e => e.UserId == userId && e.Timestamp >= from && e.Timestamp < to.AddDays(2))
             .ToListAsync();
 
-        // Вычисляем dayScore для каждого дня
-        var tz = GetTz();
+        return ComputeNextDayEffects(events, to, GetTz());
+    }
+
+    internal static IReadOnlyList<NextDayEffectDto> ComputeNextDayEffects(IReadOnlyList<Event> events, DateTimeOffset to, TimeZoneInfo tz)
+    {
         var dayScores = events
             .GroupBy(e => DateHelper.ToLocalDate(e.Timestamp, tz))
             .ToDictionary(
                 g => g.Key,
                 g => (double)(g.Sum(e => e.Type == EventType.Positive ? e.Intensity : 0) - g.Sum(e => e.Type == EventType.Negative ? e.Intensity : 0)) / g.Count());
 
-        // Собираем теги только из основного периода [from, to]
         var tagDates = events
             .Where(e => e.Timestamp < to.AddDays(1))
             .SelectMany(e => e.EventTags.Select(et => new { et.Tag.Name, Date = DateHelper.ToLocalDate(e.Timestamp, tz) }))
@@ -194,8 +222,11 @@ public class InsightsService(AppDbContext db, IConfiguration config) : IInsights
             .Where(e => e.UserId == userId && e.Timestamp >= from && e.Timestamp < to.AddDays(1))
             .ToListAsync();
 
-        // Группируем события по дням; dayScore знаковый: позитивная интенсивность плюс, негативная минус
-        var tz = GetTz();
+        return ComputeTagCombos(events, GetTz());
+    }
+
+    internal static IReadOnlyList<TagComboDto> ComputeTagCombos(IReadOnlyList<Event> events, TimeZoneInfo tz)
+    {
         var byDay = events
             .GroupBy(e => DateHelper.ToLocalDate(e.Timestamp, tz))
             .Select(g => new
@@ -206,7 +237,6 @@ public class InsightsService(AppDbContext db, IConfiguration config) : IInsights
             })
             .ToList();
 
-        // Агрегируем данные по парам тегов
         var comboData = new Dictionary<(string, string), (List<double> CombinedDayScores, List<double> Tag1AloneDayScores, List<double> Tag2AloneDayScores)>();
 
         foreach (var day in byDay)
@@ -228,7 +258,6 @@ public class InsightsService(AppDbContext db, IConfiguration config) : IInsights
             }
         }
 
-        // Второй проход: заполняем alone scores для дней, где один тег есть, а другого нет
         foreach (var day in byDay)
         {
             var tagSet = day.Tags.ToHashSet();
@@ -266,6 +295,11 @@ public class InsightsService(AppDbContext db, IConfiguration config) : IInsights
             .Where(e => e.UserId == userId && e.Timestamp >= from && e.Timestamp < to.AddDays(1))
             .ToListAsync();
 
+        return ComputeTagTrend(events, period, GetTz());
+    }
+
+    internal static IReadOnlyList<TagTrendSeriesDto> ComputeTagTrend(IReadOnlyList<Event> events, Granularity period, TimeZoneInfo tz)
+    {
         var tags = events
             .SelectMany(e => e.EventTags.Select(et => new { et.TagId, et.Tag.Name, e.Timestamp, e.Intensity }))
             .ToList();
@@ -277,7 +311,6 @@ public class InsightsService(AppDbContext db, IConfiguration config) : IInsights
             .Take(3)
             .ToList();
 
-        var tz = GetTz();
         Func<DateTimeOffset, DateTimeOffset> getKey = period == Granularity.Week
             ? date => DateHelper.GetMonday(date, tz)
             : date => DateHelper.GetFirstDayOfMonth(date, tz);
@@ -296,14 +329,19 @@ public class InsightsService(AppDbContext db, IConfiguration config) : IInsights
 
     public async Task<InfluenceabilitySplitDto> GetInfluenceabilitySplitAsync(Guid userId, DateTimeOffset from, DateTimeOffset to)
     {
-        var raw = await db.Events
+        var events = await db.Events
             .AsNoTracking()
-            .Where(e => e.UserId == userId && e.Type == EventType.Negative && e.Timestamp >= from && e.Timestamp < to.AddDays(1))
-            .Select(e => new { e.CanInfluence, e.Intensity })
+            .Where(e => e.UserId == userId && e.Timestamp >= from && e.Timestamp < to.AddDays(1))
             .ToListAsync();
 
-        var canInfluence = raw.Where(e => e.CanInfluence).ToList();
-        var cannotInfluence = raw.Where(e => !e.CanInfluence).ToList();
+        return ComputeInfluenceabilitySplit(events);
+    }
+
+    internal static InfluenceabilitySplitDto ComputeInfluenceabilitySplit(IReadOnlyList<Event> events)
+    {
+        var negEvents = events.Where(e => e.Type == EventType.Negative).ToList();
+        var canInfluence = negEvents.Where(e => e.CanInfluence).ToList();
+        var cannotInfluence = negEvents.Where(e => !e.CanInfluence).ToList();
 
         return new InfluenceabilitySplitDto(
             canInfluence.Count,
