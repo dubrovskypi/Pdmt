@@ -35,7 +35,7 @@ jobs:
             /d:sonar.cs.opencover.reportsPaths="**/coverage.cobertura.xml"
 
       - name: Build
-        run: dotnet build Pdmt.sln
+        run: dotnet build Pdmt.Api/Pdmt.Api.csproj
 
       - name: Test
         run: dotnet test --collect:"XPlat Code Coverage"
