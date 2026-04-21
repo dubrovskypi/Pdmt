@@ -8,17 +8,10 @@ using System.Net.Http.Json;
 
 namespace Pdmt.Api.Integration.Tests;
 
-public class AnalyticsControllerTests : IClassFixture<CustomWebAppFactory>
+public class AnalyticsControllerTests(CustomWebAppFactory factory) : IClassFixture<CustomWebAppFactory>
 {
     private static readonly Guid TestUserId = TestAuthHandler.TestUserId;
     private static readonly Guid OtherUserId = Guid.NewGuid();
-
-    private readonly CustomWebAppFactory _factory;
-
-    public AnalyticsControllerTests(CustomWebAppFactory factory)
-    {
-        _factory = factory;
-    }
 
     // ── Auth ──────────────────────────────────────────────────────────────────
 
@@ -29,9 +22,9 @@ public class AnalyticsControllerTests : IClassFixture<CustomWebAppFactory>
     [InlineData("/api/analytics/calendar/month?month=2025-01")]
     public async Task AnalyticsEndpoints_Anonymous_Returns401(string url)
     {
-        var client = _factory.CreateClient();
+        var client = factory.CreateClient();
 
-        var response = await client.GetAsync(url);
+        var response = await client.GetAsync(url, TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
@@ -45,7 +38,7 @@ public class AnalyticsControllerTests : IClassFixture<CustomWebAppFactory>
         var client = CreateTestAuthClient();
 
         var response = await client.GetAsync(
-            $"/api/analytics/correlations?tagId={tagId}&from=2025-06-01&to=2025-01-01");
+            $"/api/analytics/correlations?tagId={tagId}&from=2025-06-01&to=2025-01-01", TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
@@ -55,7 +48,7 @@ public class AnalyticsControllerTests : IClassFixture<CustomWebAppFactory>
     {
         var client = CreateTestAuthClient();
 
-        var response = await client.GetAsync("/api/analytics/calendar/month?month=2025-1");
+        var response = await client.GetAsync("/api/analytics/calendar/month?month=2025-1", TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
@@ -65,7 +58,7 @@ public class AnalyticsControllerTests : IClassFixture<CustomWebAppFactory>
     {
         var client = CreateTestAuthClient();
 
-        var response = await client.GetAsync("/api/analytics/calendar/month?month=2025-01");
+        var response = await client.GetAsync("/api/analytics/calendar/month?month=2025-01", TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
@@ -77,8 +70,8 @@ public class AnalyticsControllerTests : IClassFixture<CustomWebAppFactory>
     {
         var client = CreateTestAuthClient();
 
-        var response = await client.GetAsync("/api/analytics/weekly-summary?weekOf=2025-02-03");
-        var result = await response.Content.ReadFromJsonAsync<WeeklySummaryDto>();
+        var response = await client.GetAsync("/api/analytics/weekly-summary?weekOf=2025-02-03", TestContext.Current.CancellationToken);
+        var result = await response.Content.ReadFromJsonAsync<WeeklySummaryDto>(TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.NotNull(result);
@@ -91,7 +84,7 @@ public class AnalyticsControllerTests : IClassFixture<CustomWebAppFactory>
     [Fact]
     public async Task GetWeeklySummary_WithEvents_ReturnsCorrectCounts()
     {
-        using (var scope = _factory.Services.CreateScope())
+        using (var scope = factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             EnsureUserExists(db, TestUserId);
@@ -101,12 +94,12 @@ public class AnalyticsControllerTests : IClassFixture<CustomWebAppFactory>
                 new Event { Id = Guid.NewGuid(), UserId = TestUserId, Timestamp = week.AddDays(1), Type = EventType.Positive, Title = "an_p2", Intensity = 8 },
                 new Event { Id = Guid.NewGuid(), UserId = TestUserId, Timestamp = week.AddDays(2), Type = EventType.Negative, Title = "an_n1", Intensity = 5 }
             );
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         var client = CreateTestAuthClient();
-        var response = await client.GetAsync("/api/analytics/weekly-summary?weekOf=2025-03-03");
-        var result = await response.Content.ReadFromJsonAsync<WeeklySummaryDto>();
+        var response = await client.GetAsync("/api/analytics/weekly-summary?weekOf=2025-03-03", TestContext.Current.CancellationToken);
+        var result = await response.Content.ReadFromJsonAsync<WeeklySummaryDto>(TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Equal(2, result!.PosCount);
@@ -116,18 +109,18 @@ public class AnalyticsControllerTests : IClassFixture<CustomWebAppFactory>
     [Fact]
     public async Task GetWeeklySummary_OtherUsersEvents_NotIncluded()
     {
-        using (var scope = _factory.Services.CreateScope())
+        using (var scope = factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             EnsureUserExists(db, OtherUserId);
             var week = new DateTime(2025, 4, 7, 0, 0, 0, DateTimeKind.Utc);
             db.Events.Add(new Event { Id = Guid.NewGuid(), UserId = OtherUserId, Timestamp = week, Type = EventType.Positive, Title = "an_other_p1", Intensity = 9 });
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         var client = CreateTestAuthClient();
-        var response = await client.GetAsync("/api/analytics/weekly-summary?weekOf=2025-04-07");
-        var result = await response.Content.ReadFromJsonAsync<WeeklySummaryDto>();
+        var response = await client.GetAsync("/api/analytics/weekly-summary?weekOf=2025-04-07", TestContext.Current.CancellationToken);
+        var result = await response.Content.ReadFromJsonAsync<WeeklySummaryDto>(TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Equal(0, result!.PosCount);
@@ -142,7 +135,7 @@ public class AnalyticsControllerTests : IClassFixture<CustomWebAppFactory>
         var unknownTagId = Guid.NewGuid();
 
         var response = await client.GetAsync(
-            $"/api/analytics/correlations?tagId={unknownTagId}&from=2025-01-01&to=2025-01-31");
+            $"/api/analytics/correlations?tagId={unknownTagId}&from=2025-01-01&to=2025-01-31", TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
@@ -151,7 +144,7 @@ public class AnalyticsControllerTests : IClassFixture<CustomWebAppFactory>
     public async Task GetCorrelations_WithAndWithoutTag_ReturnsSplit()
     {
         Tag tag;
-        using (var scope = _factory.Services.CreateScope())
+        using (var scope = factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             EnsureUserExists(db, TestUserId);
@@ -163,13 +156,13 @@ public class AnalyticsControllerTests : IClassFixture<CustomWebAppFactory>
             var evWithoutTag = new Event { Id = Guid.NewGuid(), UserId = TestUserId, Timestamp = baseDate.AddDays(1), Type = EventType.Positive, Title = "an_corr_without", Intensity = 4 };
             db.Events.AddRange(evWithTag, evWithoutTag);
             db.EventTags.Add(new EventTag { EventId = evWithTag.Id, TagId = tag.Id });
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         var client = CreateTestAuthClient();
         var response = await client.GetAsync(
-            $"/api/analytics/correlations?tagId={tag.Id}&from=2025-05-01&to=2025-05-31");
-        var result = await response.Content.ReadFromJsonAsync<CorrelationsDto>();
+            $"/api/analytics/correlations?tagId={tag.Id}&from=2025-05-01&to=2025-05-31", TestContext.Current.CancellationToken);
+        var result = await response.Content.ReadFromJsonAsync<CorrelationsDto>(TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.NotNull(result);
@@ -184,8 +177,8 @@ public class AnalyticsControllerTests : IClassFixture<CustomWebAppFactory>
     {
         var client = CreateTestAuthClient();
 
-        var response = await client.GetAsync("/api/analytics/calendar/week?weekOf=2025-06-02");
-        var result = await response.Content.ReadFromJsonAsync<CalendarWeekDto>();
+        var response = await client.GetAsync("/api/analytics/calendar/week?weekOf=2025-06-02", TestContext.Current.CancellationToken);
+        var result = await response.Content.ReadFromJsonAsync<CalendarWeekDto>(TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.NotNull(result);
@@ -199,8 +192,8 @@ public class AnalyticsControllerTests : IClassFixture<CustomWebAppFactory>
     {
         var client = CreateTestAuthClient();
 
-        var response = await client.GetAsync("/api/analytics/calendar/month?month=2025-04");
-        var result = await response.Content.ReadFromJsonAsync<CalendarMonthDto>();
+        var response = await client.GetAsync("/api/analytics/calendar/month?month=2025-04", TestContext.Current.CancellationToken);
+        var result = await response.Content.ReadFromJsonAsync<CalendarMonthDto>(TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.NotNull(result);
@@ -217,7 +210,7 @@ public class AnalyticsControllerTests : IClassFixture<CustomWebAppFactory>
 
     private HttpClient CreateTestAuthClient()
     {
-        var client = _factory.CreateClient();
+        var client = factory.CreateClient();
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("TestScheme");
         return client;
     }
