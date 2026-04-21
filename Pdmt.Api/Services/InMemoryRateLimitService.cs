@@ -1,5 +1,3 @@
-﻿
-using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using Pdmt.Api.Infrastructure;
 using Pdmt.Api.Infrastructure.Exceptions;
@@ -9,14 +7,15 @@ namespace Pdmt.Api.Services
 {
     public class InMemoryRateLimitService : IRateLimitService
     {
-        private readonly IMemoryCache _cache;
         private readonly RateLimitOptions _options;
+        private readonly TimeProvider _timeProvider;
         private readonly ConcurrentDictionary<string, SemaphoreSlim> _locks = new();
+        private readonly ConcurrentDictionary<string, (int Count, DateTimeOffset ExpiresAt)> _counters = new();
 
-        public InMemoryRateLimitService(IMemoryCache cache, IOptions<RateLimitOptions> options)
+        public InMemoryRateLimitService(IOptions<RateLimitOptions> options, TimeProvider? timeProvider = null)
         {
-            _cache = cache;
             _options = options.Value;
+            _timeProvider = timeProvider ?? TimeProvider.System;
         }
 
         public async Task CheckAsync(string ruleName, string subject)
@@ -29,14 +28,19 @@ namespace Pdmt.Api.Services
             await sem.WaitAsync();
             try
             {
-                var counter = _cache.GetOrCreate(key, entry =>
+                var now = _timeProvider.GetUtcNow();
+                var (count, expiresAt) = _counters.GetValueOrDefault(key, (0, now));
+
+                if (now >= expiresAt)
                 {
-                    entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(rule.WindowSeconds);
-                    return 0;
-                });
-                counter++;
-                _cache.Set(key, counter);
-                if (counter > rule.MaxAttempts)
+                    expiresAt = now.AddSeconds(rule.WindowSeconds);
+                    count = 0;
+                }
+
+                count++;
+                _counters[key] = (count, expiresAt);
+
+                if (count > rule.MaxAttempts)
                     throw new RateLimitExceededException(ruleName);
             }
             finally
