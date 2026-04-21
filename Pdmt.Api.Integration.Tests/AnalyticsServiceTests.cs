@@ -44,10 +44,8 @@ namespace Pdmt.Api.Integration.Tests
         public async Task GetWeeklySummaryAsync_MixedEvents_CountsCorrectly()
         {
             var userId = Guid.NewGuid();
-
             var now = DateTimeOffset.UtcNow;
             var monday = now.AddDays(-(int)now.DayOfWeek + 1);
-
             _db.Events.AddRange(
                 TestHelpers.MakeEvent(userId, "P1", EventType.Positive, 8, monday),
                 TestHelpers.MakeEvent(userId, "P2", EventType.Positive, 7, monday.AddDays(1)),
@@ -57,8 +55,7 @@ namespace Pdmt.Api.Integration.Tests
             );
             await _db.SaveChangesAsync();
 
-            var weekOf = DateOnly.FromDateTime(monday.DateTime);
-            var result = await _service.GetWeeklySummaryAsync(userId, weekOf);
+            var result = await _service.GetWeeklySummaryAsync(userId, DateOnly.FromDateTime(monday.DateTime));
 
             Assert.Equal(3, result.PosCount);
             Assert.Equal(2, result.NegCount);
@@ -68,10 +65,8 @@ namespace Pdmt.Api.Integration.Tests
         public async Task GetWeeklySummaryAsync_PosToNegRatio_CalculatedCorrectly()
         {
             var userId = Guid.NewGuid();
-
             var now = DateTimeOffset.UtcNow;
             var monday = now.AddDays(-(int)now.DayOfWeek + 1);
-
             _db.Events.AddRange(
                 TestHelpers.MakeEvent(userId, "P1", timestamp: monday),
                 TestHelpers.MakeEvent(userId, "P2", timestamp: monday),
@@ -82,8 +77,7 @@ namespace Pdmt.Api.Integration.Tests
             );
             await _db.SaveChangesAsync();
 
-            var weekOf = DateOnly.FromDateTime(monday.DateTime);
-            var result = await _service.GetWeeklySummaryAsync(userId, weekOf);
+            var result = await _service.GetWeeklySummaryAsync(userId, DateOnly.FromDateTime(monday.DateTime));
 
             Assert.Equal(4.0 / 2.0, result.PosToNegRatio);
         }
@@ -92,18 +86,15 @@ namespace Pdmt.Api.Integration.Tests
         public async Task GetWeeklySummaryAsync_NoNegativeEvents_RatioIsZero()
         {
             var userId = Guid.NewGuid();
-
             var now = DateTimeOffset.UtcNow;
             var monday = now.AddDays(-(int)now.DayOfWeek + 1);
-
             _db.Events.AddRange(
                 TestHelpers.MakeEvent(userId, "P1", timestamp: monday),
                 TestHelpers.MakeEvent(userId, "P2", timestamp: monday)
             );
             await _db.SaveChangesAsync();
 
-            var weekOf = DateOnly.FromDateTime(monday.DateTime);
-            var result = await _service.GetWeeklySummaryAsync(userId, weekOf);
+            var result = await _service.GetWeeklySummaryAsync(userId, DateOnly.FromDateTime(monday.DateTime));
 
             Assert.Equal(0.0, result.PosToNegRatio);
         }
@@ -112,28 +103,17 @@ namespace Pdmt.Api.Integration.Tests
         public async Task GetWeeklySummaryAsync_TopTags_LimitedToFive()
         {
             var userId = Guid.NewGuid();
-
             var now = DateTimeOffset.UtcNow;
             var monday = now.AddDays(-(int)now.DayOfWeek + 1);
-
-            var tags = Enumerable.Range(0, 7)
-                .Select(i => TestHelpers.MakeTag(userId, $"Tag{i}"))
-                .ToList();
+            var tags = Enumerable.Range(0, 7).Select(i => TestHelpers.MakeTag(userId, $"Tag{i}")).ToList();
             _db.Tags.AddRange(tags);
-
-            var events = Enumerable.Range(0, 7)
-                .Select(i => TestHelpers.MakeEvent(userId, $"E{i}", timestamp: monday))
-                .ToList();
+            var events = Enumerable.Range(0, 7).Select(i => TestHelpers.MakeEvent(userId, $"E{i}", timestamp: monday)).ToList();
             _db.Events.AddRange(events);
-
             for (int i = 0; i < 7; i++)
-            {
                 _db.EventTags.Add(new EventTag { EventId = events[i].Id, TagId = tags[i].Id });
-            }
             await _db.SaveChangesAsync();
 
-            var weekOf = DateOnly.FromDateTime(monday.DateTime);
-            var result = await _service.GetWeeklySummaryAsync(userId, weekOf);
+            var result = await _service.GetWeeklySummaryAsync(userId, DateOnly.FromDateTime(monday.DateTime));
 
             Assert.True(result.TopTags.Count <= 5);
         }
@@ -142,20 +122,16 @@ namespace Pdmt.Api.Integration.Tests
         public async Task GetWeeklySummaryAsync_FiltersOutsideWeek_NotCounted()
         {
             var userId = Guid.NewGuid();
-
             var tz = TimeZoneInfo.FindSystemTimeZoneById("Europe/Vilnius");
             var nowLocal = TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow, tz);
             var monday = nowLocal.AddDays(-(int)nowLocal.DayOfWeek + 1);
-            var sundayBefore = monday.AddDays(-1);
-
             _db.Events.AddRange(
-                TestHelpers.MakeEvent(userId, "P1", timestamp: sundayBefore),
+                TestHelpers.MakeEvent(userId, "P1", timestamp: monday.AddDays(-1)),
                 TestHelpers.MakeEvent(userId, "P2", timestamp: monday)
             );
             await _db.SaveChangesAsync();
 
-            var weekOf = DateOnly.FromDateTime(monday.DateTime);
-            var result = await _service.GetWeeklySummaryAsync(userId, weekOf);
+            var result = await _service.GetWeeklySummaryAsync(userId, DateOnly.FromDateTime(monday.DateTime));
 
             Assert.Equal(1, result.PosCount);
         }
@@ -165,18 +141,15 @@ namespace Pdmt.Api.Integration.Tests
         {
             var userId1 = Guid.NewGuid();
             var userId2 = Guid.NewGuid();
-
             var now = DateTimeOffset.UtcNow;
             var monday = now.AddDays(-(int)now.DayOfWeek + 1);
-
             _db.Events.AddRange(
                 TestHelpers.MakeEvent(userId1, "P1", timestamp: monday),
                 TestHelpers.MakeEvent(userId2, "P2", timestamp: monday)
             );
             await _db.SaveChangesAsync();
 
-            var weekOf = DateOnly.FromDateTime(monday.DateTime);
-            var result = await _service.GetWeeklySummaryAsync(userId1, weekOf);
+            var result = await _service.GetWeeklySummaryAsync(userId1, DateOnly.FromDateTime(monday.DateTime));
 
             Assert.Equal(1, result.PosCount);
         }
@@ -190,12 +163,11 @@ namespace Pdmt.Api.Integration.Tests
         {
             var userId1 = Guid.NewGuid();
             var userId2 = Guid.NewGuid();
-
             var tag = TestHelpers.MakeTag(userId2, "Work");
             _db.Tags.Add(tag);
             await _db.SaveChangesAsync();
-
             var now = DateTimeOffset.UtcNow;
+
             await Assert.ThrowsAsync<NotFoundException>(() =>
                 _service.GetCorrelationsAsync(userId1, tag.Id, now, now.AddDays(7)));
         }
@@ -204,10 +176,8 @@ namespace Pdmt.Api.Integration.Tests
         public async Task GetCorrelationsAsync_SplitsEventsByTagPresence()
         {
             var userId = Guid.NewGuid();
-
             var tag = TestHelpers.MakeTag(userId, "Work");
             _db.Tags.Add(tag);
-
             var now = DateTimeOffset.UtcNow;
             var eventsWithTag = Enumerable.Range(0, 3)
                 .Select(i => TestHelpers.MakeEvent(userId, $"With{i}", intensity: 6, timestamp: now.AddHours(i)))
@@ -215,14 +185,10 @@ namespace Pdmt.Api.Integration.Tests
             var eventsWithout = Enumerable.Range(0, 2)
                 .Select(i => TestHelpers.MakeEvent(userId, $"Without{i}", intensity: 4, timestamp: now.AddHours(10 + i)))
                 .ToList();
-
             _db.Events.AddRange(eventsWithTag);
             _db.Events.AddRange(eventsWithout);
-
             foreach (var ev in eventsWithTag)
-            {
                 _db.EventTags.Add(new EventTag { EventId = ev.Id, TagId = tag.Id });
-            }
             await _db.SaveChangesAsync();
 
             var result = await _service.GetCorrelationsAsync(userId, tag.Id, now, now.AddDays(1));
@@ -236,14 +202,11 @@ namespace Pdmt.Api.Integration.Tests
         public async Task GetCorrelationsAsync_NoEventsWithTag_AvgWithTagIsZero()
         {
             var userId = Guid.NewGuid();
-
             var tag = TestHelpers.MakeTag(userId, "Work");
             _db.Tags.Add(tag);
-
-            var now = DateTimeOffset.UtcNow;
-            var ev = TestHelpers.MakeEvent(userId, "E1");
-            _db.Events.Add(ev);
+            _db.Events.Add(TestHelpers.MakeEvent(userId, "E1"));
             await _db.SaveChangesAsync();
+            var now = DateTimeOffset.UtcNow;
 
             var result = await _service.GetCorrelationsAsync(userId, tag.Id, now, now.AddDays(1));
 
@@ -258,7 +221,6 @@ namespace Pdmt.Api.Integration.Tests
         public async Task GetCalendarWeekAsync_AlwaysReturnsSevenDays()
         {
             var userId = Guid.NewGuid();
-
             var now = DateTimeOffset.UtcNow;
             var monday = now.AddDays(-(int)now.DayOfWeek + 1);
 
@@ -271,7 +233,6 @@ namespace Pdmt.Api.Integration.Tests
         public async Task GetCalendarWeekAsync_EmptyDay_HasZeroValues()
         {
             var userId = Guid.NewGuid();
-
             var now = DateTimeOffset.UtcNow;
             var monday = now.AddDays(-(int)now.DayOfWeek + 1);
 
@@ -287,11 +248,9 @@ namespace Pdmt.Api.Integration.Tests
         public async Task GetCalendarWeekAsync_DayScore_CalculatedCorrectly()
         {
             var userId = Guid.NewGuid();
-
             var tz = TimeZoneInfo.FindSystemTimeZoneById("Europe/Vilnius");
             var nowLocal = TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow, tz);
             var monday = nowLocal.AddDays(-(int)nowLocal.DayOfWeek + 1);
-
             _db.Events.AddRange(
                 TestHelpers.MakeEvent(userId, "P1", intensity: 8, timestamp: monday),
                 TestHelpers.MakeEvent(userId, "N1", EventType.Negative, 4, monday)
@@ -300,8 +259,7 @@ namespace Pdmt.Api.Integration.Tests
 
             var result = await _service.GetCalendarWeekAsync(userId, DateOnly.FromDateTime(monday.DateTime));
 
-            var firstDay = result.Days[0];
-            Assert.Equal((8.0 - 4.0) / 2.0, firstDay.DayScore);
+            Assert.Equal((8.0 - 4.0) / 2.0, result.Days[0].DayScore);
         }
 
         #endregion
@@ -322,13 +280,9 @@ namespace Pdmt.Api.Integration.Tests
         public async Task GetCalendarMonthAsync_EventOnFirstAndLast_BothPresent()
         {
             var userId = Guid.NewGuid();
-
-            var march1 = new DateTimeOffset(2024, 3, 1, 0, 0, 0, TimeSpan.Zero);
-            var march31 = new DateTimeOffset(2024, 3, 31, 0, 0, 0, TimeSpan.Zero);
-
             _db.Events.AddRange(
-                TestHelpers.MakeEvent(userId, "E1", timestamp: march1),
-                TestHelpers.MakeEvent(userId, "E2", timestamp: march31)
+                TestHelpers.MakeEvent(userId, "E1", timestamp: new DateTimeOffset(2024, 3, 1, 0, 0, 0, TimeSpan.Zero)),
+                TestHelpers.MakeEvent(userId, "E2", timestamp: new DateTimeOffset(2024, 3, 31, 0, 0, 0, TimeSpan.Zero))
             );
             await _db.SaveChangesAsync();
 
@@ -342,13 +296,9 @@ namespace Pdmt.Api.Integration.Tests
         public async Task GetCalendarMonthAsync_FiltersOtherMonths()
         {
             var userId = Guid.NewGuid();
-
-            var march = new DateTimeOffset(2024, 3, 15, 0, 0, 0, TimeSpan.Zero);
-            var april = new DateTimeOffset(2024, 4, 15, 0, 0, 0, TimeSpan.Zero);
-
             _db.Events.AddRange(
-                TestHelpers.MakeEvent(userId, "E1", timestamp: march),
-                TestHelpers.MakeEvent(userId, "E2", timestamp: april)
+                TestHelpers.MakeEvent(userId, "E1", timestamp: new DateTimeOffset(2024, 3, 15, 0, 0, 0, TimeSpan.Zero)),
+                TestHelpers.MakeEvent(userId, "E2", timestamp: new DateTimeOffset(2024, 4, 15, 0, 0, 0, TimeSpan.Zero))
             );
             await _db.SaveChangesAsync();
 

@@ -51,6 +51,7 @@ namespace Pdmt.Api.Integration.Tests
         public async Task RegisterAsync_ValidCredentials_ReturnsAuthResult()
         {
             var dto = new UserDto { Email = "test@example.com", Password = "password123" };
+
             var result = await _service.RegisterAsync(dto, "192.168.1.1");
 
             Assert.NotNull(result.AccessToken);
@@ -63,6 +64,7 @@ namespace Pdmt.Api.Integration.Tests
         public async Task RegisterAsync_ValidCredentials_CreatesUserInDb()
         {
             var dto = new UserDto { Email = "test@example.com", Password = "password123" };
+
             await _service.RegisterAsync(dto, "192.168.1.1");
 
             Assert.Single(_db.Users);
@@ -75,6 +77,7 @@ namespace Pdmt.Api.Integration.Tests
         {
             var password = "password123";
             var dto = new UserDto { Email = "test@example.com", Password = password };
+
             await _service.RegisterAsync(dto, "192.168.1.1");
 
             var user = await _db.Users.FirstAsync();
@@ -85,6 +88,7 @@ namespace Pdmt.Api.Integration.Tests
         public async Task RegisterAsync_ValidCredentials_CreatesRefreshToken()
         {
             var dto = new UserDto { Email = "test@example.com", Password = "password123" };
+
             await _service.RegisterAsync(dto, "192.168.1.1");
 
             Assert.Single(_db.RefreshTokens);
@@ -94,6 +98,7 @@ namespace Pdmt.Api.Integration.Tests
         public async Task RegisterAsync_EmailWithUppercase_NormalizesEmail()
         {
             var dto = new UserDto { Email = "Test@EXAMPLE.COM", Password = "password123" };
+
             await _service.RegisterAsync(dto, "192.168.1.1");
 
             var user = await _db.Users.FirstAsync();
@@ -105,8 +110,8 @@ namespace Pdmt.Api.Integration.Tests
         {
             var dto = new UserDto { Email = "test@example.com", Password = "password123" };
             await _service.RegisterAsync(dto, "192.168.1.1");
-
             var dto2 = new UserDto { Email = "test@example.com", Password = "password456" };
+
             await Assert.ThrowsAsync<InvalidOperationException>(() => _service.RegisterAsync(dto2, "192.168.1.2"));
         }
 
@@ -120,8 +125,8 @@ namespace Pdmt.Api.Integration.Tests
             var password = "password123";
             var registerDto = new UserDto { Email = "test@example.com", Password = password };
             await _service.RegisterAsync(registerDto, "192.168.1.1");
-
             var loginDto = new UserDto { Email = "test@example.com", Password = password };
+
             var result = await _service.LoginAsync(loginDto, "192.168.1.2");
 
             Assert.NotNull(result.AccessToken);
@@ -134,18 +139,13 @@ namespace Pdmt.Api.Integration.Tests
             var password = "password123";
             var registerDto = new UserDto { Email = "test@example.com", Password = password };
             await _service.RegisterAsync(registerDto, "192.168.1.1");
-
-            var oldTokenCount = _db.RefreshTokens.Count();
-            Assert.Equal(1, oldTokenCount);
-
+            Assert.Equal(1, _db.RefreshTokens.Count());
             var loginDto = new UserDto { Email = "test@example.com", Password = password };
+
             await _service.LoginAsync(loginDto, "192.168.1.2");
 
-            var revokedCount = _db.RefreshTokens.Where(rt => rt.IsRevoked).Count();
-            var activeCount = _db.RefreshTokens.Where(rt => !rt.IsRevoked).Count();
-
-            Assert.Equal(1, revokedCount);
-            Assert.Equal(1, activeCount);
+            Assert.Equal(1, _db.RefreshTokens.Where(rt => rt.IsRevoked).Count());
+            Assert.Equal(1, _db.RefreshTokens.Where(rt => !rt.IsRevoked).Count());
         }
 
         [Fact]
@@ -153,8 +153,8 @@ namespace Pdmt.Api.Integration.Tests
         {
             var registerDto = new UserDto { Email = "test@example.com", Password = "password123" };
             await _service.RegisterAsync(registerDto, "192.168.1.1");
-
             var loginDto = new UserDto { Email = "test@example.com", Password = "wrongpassword" };
+
             await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _service.LoginAsync(loginDto, "192.168.1.2"));
         }
 
@@ -163,8 +163,8 @@ namespace Pdmt.Api.Integration.Tests
         {
             var registerDto = new UserDto { Email = "test@example.com", Password = "password123" };
             await _service.RegisterAsync(registerDto, "192.168.1.1");
-
             var loginDto = new UserDto { Email = "test@example.com", Password = "wrongpassword" };
+
             await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _service.LoginAsync(loginDto, "192.168.1.2"));
 
             Assert.Single(_db.FailedLoginAttempts);
@@ -174,6 +174,7 @@ namespace Pdmt.Api.Integration.Tests
         public async Task LoginAsync_UnknownEmail_ThrowsUnauthorizedAccessException()
         {
             var loginDto = new UserDto { Email = "nonexistent@example.com", Password = "password123" };
+
             await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _service.LoginAsync(loginDto, "192.168.1.1"));
         }
 
@@ -198,7 +199,6 @@ namespace Pdmt.Api.Integration.Tests
         {
             var registerDto = new UserDto { Email = "test@example.com", Password = "password123" };
             var registerResult = await _service.RegisterAsync(registerDto, "192.168.1.1");
-
             var oldToken = await _db.RefreshTokens.FirstAsync();
             Assert.False(oldToken.IsRevoked);
 
@@ -211,16 +211,9 @@ namespace Pdmt.Api.Integration.Tests
         [Fact]
         public async Task RefreshAsync_ExpiredToken_ThrowsUnauthorizedAccessException()
         {
-            var user = new User
-            {
-                Id = Guid.NewGuid(),
-                Email = "test@example.com",
-                PasswordHash = "hash",
-                CreatedAt = DateTimeOffset.UtcNow
-            };
+            var user = new User { Id = Guid.NewGuid(), Email = "test@example.com", PasswordHash = "hash", CreatedAt = DateTimeOffset.UtcNow };
             _db.Users.Add(user);
-
-            var expiredToken = new RefreshToken
+            _db.RefreshTokens.Add(new RefreshToken
             {
                 Id = Guid.NewGuid(),
                 UserId = user.Id,
@@ -228,8 +221,7 @@ namespace Pdmt.Api.Integration.Tests
                 ExpiresAt = DateTimeOffset.UtcNow.AddDays(-1),
                 IsRevoked = false,
                 CreatedAt = DateTimeOffset.UtcNow
-            };
-            _db.RefreshTokens.Add(expiredToken);
+            });
             await _db.SaveChangesAsync();
 
             await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _service.RefreshAsync("expired-token", "192.168.1.1"));
@@ -238,16 +230,9 @@ namespace Pdmt.Api.Integration.Tests
         [Fact]
         public async Task RefreshAsync_RevokedToken_ThrowsUnauthorizedAccessException()
         {
-            var user = new User
-            {
-                Id = Guid.NewGuid(),
-                Email = "test@example.com",
-                PasswordHash = "hash",
-                CreatedAt = DateTimeOffset.UtcNow
-            };
+            var user = new User { Id = Guid.NewGuid(), Email = "test@example.com", PasswordHash = "hash", CreatedAt = DateTimeOffset.UtcNow };
             _db.Users.Add(user);
-
-            var revokedToken = new RefreshToken
+            _db.RefreshTokens.Add(new RefreshToken
             {
                 Id = Guid.NewGuid(),
                 UserId = user.Id,
@@ -255,8 +240,7 @@ namespace Pdmt.Api.Integration.Tests
                 ExpiresAt = DateTimeOffset.UtcNow.AddDays(7),
                 IsRevoked = true,
                 CreatedAt = DateTimeOffset.UtcNow
-            };
-            _db.RefreshTokens.Add(revokedToken);
+            });
             await _db.SaveChangesAsync();
 
             await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _service.RefreshAsync("revoked-token", "192.168.1.1"));
@@ -276,10 +260,9 @@ namespace Pdmt.Api.Integration.Tests
         public async Task LogoutAsync_WithActiveTokens_RevokesAllTokens()
         {
             var registerDto = new UserDto { Email = "test@example.com", Password = "password123" };
-            var registerResult = await _service.RegisterAsync(registerDto, "192.168.1.1");
-
+            await _service.RegisterAsync(registerDto, "192.168.1.1");
             var user = await _db.Users.FirstAsync();
-            var token2 = new RefreshToken
+            _db.RefreshTokens.Add(new RefreshToken
             {
                 Id = Guid.NewGuid(),
                 UserId = user.Id,
@@ -287,10 +270,8 @@ namespace Pdmt.Api.Integration.Tests
                 ExpiresAt = DateTimeOffset.UtcNow.AddDays(7),
                 IsRevoked = false,
                 CreatedAt = DateTimeOffset.UtcNow
-            };
-            _db.RefreshTokens.Add(token2);
+            });
             await _db.SaveChangesAsync();
-
             Assert.Equal(2, _db.RefreshTokens.Where(rt => !rt.IsRevoked).Count());
 
             await _service.LogoutAsync(user.Id);
@@ -305,7 +286,6 @@ namespace Pdmt.Api.Integration.Tests
             var userId = Guid.NewGuid();
 
             await _service.LogoutAsync(userId);
-            // No exception thrown
         }
 
         #endregion
