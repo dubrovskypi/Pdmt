@@ -1,0 +1,46 @@
+name: SonarCloud
+
+on:
+  push:
+    branches: [master, dev, test]
+  pull_request:
+    branches: [master, dev]
+
+jobs:
+  build:
+    name: Sonar build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Install SonarScanner
+        run: dotnet tool install --global dotnet-sonarscanner
+
+      - name: Begin Sonar scan
+        run: |
+          dotnet sonarscanner begin \
+            /k:"dubrovskypi_Pdmt" \
+            /o:"dubrovskypi" \
+            /d:sonar.token="${{ secrets.SONAR_TOKEN }}" \
+            /d:sonar.host.url="https://sonarcloud.io" \
+            /d:sonar.cs.opencover.reportsPaths="**/coverage.cobertura.xml"
+
+      - name: Build
+        run: dotnet build Pdmt.sln
+
+      - name: Test
+        run: dotnet test --collect:"XPlat Code Coverage"
+
+      - name: End Sonar scan
+        run: |
+          dotnet sonarscanner end \
+            /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
