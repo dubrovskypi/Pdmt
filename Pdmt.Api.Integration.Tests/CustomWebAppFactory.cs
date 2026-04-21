@@ -12,7 +12,7 @@ namespace Pdmt.Api.Integration.Tests
 {
     public class CustomWebAppFactory : WebApplicationFactory<Program>
     {
-        private const string TestJwtSecret = "test-super-secret-key-min-32-chars!!";
+        public const string TestJwtSecret = "test-super-secret-key-min-32-chars!!";
 
         public CustomWebAppFactory()
         {

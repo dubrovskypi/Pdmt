@@ -364,7 +364,7 @@ public class EventsControllerTests(CustomWebAppFactory factory) : IClassFixture<
 
     private string GenerateJwtToken(Guid? userId = null)
     {
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("your-super-secret-test-key-123456"));
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(CustomWebAppFactory.TestJwtSecret));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
         var claims = new[]
         {
