@@ -8,37 +8,34 @@ namespace Pdmt.Api.Integration.Tests;
 
 public class EventServiceTests
 {
-    private AppDbContext CreateDbContext() =>
-        new AppDbContext(new DbContextOptionsBuilder<AppDbContext>()
+    private readonly AppDbContext _db;
+    private readonly EventService _service;
+
+    public EventServiceTests()
+    {
+        _db = new AppDbContext(new DbContextOptionsBuilder<AppDbContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options);
+        _service = new EventService(_db);
+    }
 
     #region GetEventsAsync
 
     [Fact]
     public async Task GetEventsAsync_EmptyUserId_ThrowsArgumentException()
     {
-        var db = CreateDbContext();
-        var service = new EventService(db);
-
         await Assert.ThrowsAsync<ArgumentException>(() =>
-            service.GetEventsAsync(Guid.Empty, null, null, null, null, null, null));
+            _service.GetEventsAsync(Guid.Empty, null, null, null, null, null, null));
     }
 
     [Fact]
     public async Task GetEventsAsync_NoFilters_ReturnsAllUserEvents()
     {
-        var db = CreateDbContext();
-        var service = new EventService(db);
         var userId = Guid.NewGuid();
+        _db.Events.AddRange(TestHelpers.MakeEvent(userId, "A"), TestHelpers.MakeEvent(userId, "B", EventType.Negative));
+        await _db.SaveChangesAsync();
 
-        db.Events.AddRange(
-            new Event { Id = Guid.NewGuid(), UserId = userId, Timestamp = DateTimeOffset.UtcNow, Type = EventType.Positive, Title = "A", Intensity = 5 },
-            new Event { Id = Guid.NewGuid(), UserId = userId, Timestamp = DateTimeOffset.UtcNow, Type = EventType.Negative, Title = "B", Intensity = 3 }
-        );
-        await db.SaveChangesAsync();
-
-        var result = await service.GetEventsAsync(userId, null, null, null, null, null, null);
+        var result = await _service.GetEventsAsync(userId, null, null, null, null, null, null);
 
         Assert.Equal(2, result.Count);
     }
@@ -46,18 +43,12 @@ public class EventServiceTests
     [Fact]
     public async Task GetEventsAsync_OtherUsersEvents_NotReturned()
     {
-        var db = CreateDbContext();
-        var service = new EventService(db);
         var userId = Guid.NewGuid();
         var otherUserId = Guid.NewGuid();
+        _db.Events.AddRange(TestHelpers.MakeEvent(userId, "Mine"), TestHelpers.MakeEvent(otherUserId, "Theirs"));
+        await _db.SaveChangesAsync();
 
-        db.Events.AddRange(
-            new Event { Id = Guid.NewGuid(), UserId = userId,      Timestamp = DateTimeOffset.UtcNow, Type = EventType.Positive, Title = "Mine",  Intensity = 5 },
-            new Event { Id = Guid.NewGuid(), UserId = otherUserId, Timestamp = DateTimeOffset.UtcNow, Type = EventType.Positive, Title = "Theirs", Intensity = 5 }
-        );
-        await db.SaveChangesAsync();
-
-        var result = await service.GetEventsAsync(userId, null, null, null, null, null, null);
+        var result = await _service.GetEventsAsync(userId, null, null, null, null, null, null);
 
         Assert.Single(result);
         Assert.Equal("Mine", result[0].Title);
@@ -66,11 +57,7 @@ public class EventServiceTests
     [Fact]
     public async Task GetEventsAsync_NoEvents_ReturnsEmptyList()
     {
-        var db = CreateDbContext();
-        var service = new EventService(db);
-        var userId = Guid.NewGuid();
-
-        var result = await service.GetEventsAsync(userId, null, null, null, null, null, null);
+        var result = await _service.GetEventsAsync(Guid.NewGuid(), null, null, null, null, null, null);
 
         Assert.Empty(result);
     }
@@ -78,17 +65,13 @@ public class EventServiceTests
     [Fact]
     public async Task GetEventsAsync_FilterByType_ReturnsMatchingEvents()
     {
-        var db = CreateDbContext();
-        var service = new EventService(db);
         var userId = Guid.NewGuid();
+        _db.Events.AddRange(
+            TestHelpers.MakeEvent(userId, "Pos", EventType.Positive, 7),
+            TestHelpers.MakeEvent(userId, "Neg", EventType.Negative, 4));
+        await _db.SaveChangesAsync();
 
-        db.Events.AddRange(
-            new Event { Id = Guid.NewGuid(), UserId = userId, Timestamp = DateTimeOffset.UtcNow, Type = EventType.Positive, Title = "Pos", Intensity = 7 },
-            new Event { Id = Guid.NewGuid(), UserId = userId, Timestamp = DateTimeOffset.UtcNow, Type = EventType.Negative, Title = "Neg", Intensity = 4 }
-        );
-        await db.SaveChangesAsync();
-
-        var result = await service.GetEventsAsync(userId, null, null, DtoEventType.Negative, null, null, null);
+        var result = await _service.GetEventsAsync(userId, null, null, DtoEventType.Negative, null, null, null);
 
         Assert.Single(result);
         Assert.Equal("Neg", result[0].Title);
@@ -97,19 +80,15 @@ public class EventServiceTests
     [Fact]
     public async Task GetEventsAsync_FilterByFrom_BoundaryIsInclusive()
     {
-        var db = CreateDbContext();
-        var service = new EventService(db);
         var userId = Guid.NewGuid();
         var from = new DateTimeOffset(2024, 6, 10, 0, 0, 0, TimeSpan.Zero);
+        _db.Events.AddRange(
+            TestHelpers.MakeEvent(userId, "Before",     timestamp: from.AddDays(-1)),
+            TestHelpers.MakeEvent(userId, "OnBoundary", timestamp: from),
+            TestHelpers.MakeEvent(userId, "After",      timestamp: from.AddDays(1)));
+        await _db.SaveChangesAsync();
 
-        db.Events.AddRange(
-            new Event { Id = Guid.NewGuid(), UserId = userId, Timestamp = from.AddDays(-1), Type = EventType.Positive, Title = "Before",     Intensity = 5 },
-            new Event { Id = Guid.NewGuid(), UserId = userId, Timestamp = from,             Type = EventType.Positive, Title = "OnBoundary", Intensity = 5 },
-            new Event { Id = Guid.NewGuid(), UserId = userId, Timestamp = from.AddDays(1),  Type = EventType.Positive, Title = "After",      Intensity = 5 }
-        );
-        await db.SaveChangesAsync();
-
-        var result = await service.GetEventsAsync(userId, from, null, null, null, null, null);
+        var result = await _service.GetEventsAsync(userId, from, null, null, null, null, null);
 
         Assert.Equal(2, result.Count);
         Assert.DoesNotContain(result, e => e.Title == "Before");
@@ -118,19 +97,15 @@ public class EventServiceTests
     [Fact]
     public async Task GetEventsAsync_FilterByTo_BoundaryIsInclusive()
     {
-        var db = CreateDbContext();
-        var service = new EventService(db);
         var userId = Guid.NewGuid();
         var to = new DateTimeOffset(2024, 6, 10, 0, 0, 0, TimeSpan.Zero);
+        _db.Events.AddRange(
+            TestHelpers.MakeEvent(userId, "Before",     timestamp: to.AddDays(-1)),
+            TestHelpers.MakeEvent(userId, "OnBoundary", timestamp: to),
+            TestHelpers.MakeEvent(userId, "After",      timestamp: to.AddDays(1)));
+        await _db.SaveChangesAsync();
 
-        db.Events.AddRange(
-            new Event { Id = Guid.NewGuid(), UserId = userId, Timestamp = to.AddDays(-1), Type = EventType.Positive, Title = "Before",     Intensity = 5 },
-            new Event { Id = Guid.NewGuid(), UserId = userId, Timestamp = to,             Type = EventType.Positive, Title = "OnBoundary", Intensity = 5 },
-            new Event { Id = Guid.NewGuid(), UserId = userId, Timestamp = to.AddDays(1),  Type = EventType.Positive, Title = "After",      Intensity = 5 }
-        );
-        await db.SaveChangesAsync();
-
-        var result = await service.GetEventsAsync(userId, null, to, null, null, null, null);
+        var result = await _service.GetEventsAsync(userId, null, to, null, null, null, null);
 
         Assert.Equal(2, result.Count);
         Assert.DoesNotContain(result, e => e.Title == "After");
@@ -139,22 +114,18 @@ public class EventServiceTests
     [Fact]
     public async Task GetEventsAsync_FilterByDateRange_BothBoundariesInclusive()
     {
-        var db = CreateDbContext();
-        var service = new EventService(db);
         var userId = Guid.NewGuid();
         var from = new DateTimeOffset(2024, 6, 10, 0, 0, 0, TimeSpan.Zero);
         var to   = new DateTimeOffset(2024, 6, 20, 0, 0, 0, TimeSpan.Zero);
+        _db.Events.AddRange(
+            TestHelpers.MakeEvent(userId, "TooEarly", timestamp: from.AddDays(-1)),
+            TestHelpers.MakeEvent(userId, "Start",    timestamp: from),
+            TestHelpers.MakeEvent(userId, "Middle",   timestamp: from.AddDays(5)),
+            TestHelpers.MakeEvent(userId, "End",      timestamp: to),
+            TestHelpers.MakeEvent(userId, "TooLate",  timestamp: to.AddDays(1)));
+        await _db.SaveChangesAsync();
 
-        db.Events.AddRange(
-            new Event { Id = Guid.NewGuid(), UserId = userId, Timestamp = from.AddDays(-1), Type = EventType.Positive, Title = "TooEarly", Intensity = 5 },
-            new Event { Id = Guid.NewGuid(), UserId = userId, Timestamp = from,             Type = EventType.Positive, Title = "Start",    Intensity = 5 },
-            new Event { Id = Guid.NewGuid(), UserId = userId, Timestamp = from.AddDays(5),  Type = EventType.Positive, Title = "Middle",   Intensity = 5 },
-            new Event { Id = Guid.NewGuid(), UserId = userId, Timestamp = to,               Type = EventType.Positive, Title = "End",      Intensity = 5 },
-            new Event { Id = Guid.NewGuid(), UserId = userId, Timestamp = to.AddDays(1),    Type = EventType.Positive, Title = "TooLate",  Intensity = 5 }
-        );
-        await db.SaveChangesAsync();
-
-        var result = await service.GetEventsAsync(userId, from, to, null, null, null, null);
+        var result = await _service.GetEventsAsync(userId, from, to, null, null, null, null);
 
         Assert.Equal(3, result.Count);
         Assert.DoesNotContain(result, e => e.Title == "TooEarly");
@@ -164,19 +135,15 @@ public class EventServiceTests
     [Fact]
     public async Task GetEventsAsync_FromEqualsTo_ReturnsSinglePointInTime()
     {
-        var db = CreateDbContext();
-        var service = new EventService(db);
         var userId = Guid.NewGuid();
         var point = new DateTimeOffset(2024, 6, 10, 12, 0, 0, TimeSpan.Zero);
+        _db.Events.AddRange(
+            TestHelpers.MakeEvent(userId, "Before", timestamp: point.AddSeconds(-1)),
+            TestHelpers.MakeEvent(userId, "Exact",  timestamp: point),
+            TestHelpers.MakeEvent(userId, "After",  timestamp: point.AddSeconds(1)));
+        await _db.SaveChangesAsync();
 
-        db.Events.AddRange(
-            new Event { Id = Guid.NewGuid(), UserId = userId, Timestamp = point.AddSeconds(-1), Type = EventType.Positive, Title = "Before", Intensity = 5 },
-            new Event { Id = Guid.NewGuid(), UserId = userId, Timestamp = point,                Type = EventType.Positive, Title = "Exact",  Intensity = 5 },
-            new Event { Id = Guid.NewGuid(), UserId = userId, Timestamp = point.AddSeconds(1),  Type = EventType.Positive, Title = "After",  Intensity = 5 }
-        );
-        await db.SaveChangesAsync();
-
-        var result = await service.GetEventsAsync(userId, point, point, null, null, null, null);
+        var result = await _service.GetEventsAsync(userId, point, point, null, null, null, null);
 
         Assert.Single(result);
         Assert.Equal("Exact", result[0].Title);
@@ -185,35 +152,30 @@ public class EventServiceTests
     [Fact]
     public async Task GetEventsAsync_FilterByDateRange_WorksWhenEventHasNonUtcOffset()
     {
-        var db = CreateDbContext();
-        var service = new EventService(db);
         var userId = Guid.NewGuid();
-
-        // Границы фильтра в UTC
         var from = new DateTimeOffset(2024, 6, 10,  8, 0, 0, TimeSpan.Zero);
         var to   = new DateTimeOffset(2024, 6, 10, 12, 0, 0, TimeSpan.Zero);
 
-        // 12:00+03:00 = 09:00 UTC — попадает в [08:00, 12:00] UTC
+        // 12:00+03:00 = 09:00 UTC — within [08:00, 12:00]
         var insideOffset   = new DateTimeOffset(2024, 6, 10, 12,  0,  0, TimeSpan.FromHours(3));
-        // 06:00+03:00 = 03:00 UTC — до нижней границы
+        // 06:00+03:00 = 03:00 UTC — before lower bound
         var beforeOffset   = new DateTimeOffset(2024, 6, 10,  6,  0,  0, TimeSpan.FromHours(3));
-        // 10:59:59+03:00 = 07:59:59 UTC — секунда до нижней границы
+        // 10:59:59+03:00 = 07:59:59 UTC — one second before lower bound
         var justBeforeFrom = new DateTimeOffset(2024, 6, 10, 10, 59, 59, TimeSpan.FromHours(3));
-        // 11:00:01+03:00 = 08:00:01 UTC — секунда после нижней границы, попадает
+        // 11:00:01+03:00 = 08:00:01 UTC — one second after lower bound
         var justAfterFrom  = new DateTimeOffset(2024, 6, 10, 11,  0,  1, TimeSpan.FromHours(3));
-        // 17:00+03:00 = 14:00 UTC — после верхней границы
+        // 17:00+03:00 = 14:00 UTC — after upper bound
         var afterOffset    = new DateTimeOffset(2024, 6, 10, 17,  0,  0, TimeSpan.FromHours(3));
 
-        db.Events.AddRange(
-            new Event { Id = Guid.NewGuid(), UserId = userId, Timestamp = insideOffset,   Type = EventType.Positive, Title = "Inside",        Intensity = 5 },
-            new Event { Id = Guid.NewGuid(), UserId = userId, Timestamp = beforeOffset,   Type = EventType.Positive, Title = "Before",        Intensity = 5 },
-            new Event { Id = Guid.NewGuid(), UserId = userId, Timestamp = justBeforeFrom, Type = EventType.Positive, Title = "JustBeforeFrom", Intensity = 5 },
-            new Event { Id = Guid.NewGuid(), UserId = userId, Timestamp = justAfterFrom,  Type = EventType.Positive, Title = "JustAfterFrom", Intensity = 5 },
-            new Event { Id = Guid.NewGuid(), UserId = userId, Timestamp = afterOffset,    Type = EventType.Positive, Title = "After",         Intensity = 5 }
-        );
-        await db.SaveChangesAsync();
+        _db.Events.AddRange(
+            TestHelpers.MakeEvent(userId, "Inside",        timestamp: insideOffset),
+            TestHelpers.MakeEvent(userId, "Before",        timestamp: beforeOffset),
+            TestHelpers.MakeEvent(userId, "JustBeforeFrom",timestamp: justBeforeFrom),
+            TestHelpers.MakeEvent(userId, "JustAfterFrom", timestamp: justAfterFrom),
+            TestHelpers.MakeEvent(userId, "After",         timestamp: afterOffset));
+        await _db.SaveChangesAsync();
 
-        var result = await service.GetEventsAsync(userId, from, to, null, null, null, null);
+        var result = await _service.GetEventsAsync(userId, from, to, null, null, null, null);
 
         Assert.Equal(2, result.Count);
         Assert.Contains(result, e => e.Title == "Inside");
@@ -223,17 +185,13 @@ public class EventServiceTests
     [Fact]
     public async Task GetEventsAsync_FilterByMinIntensity_ExcludesBelowThreshold()
     {
-        var db = CreateDbContext();
-        var service = new EventService(db);
         var userId = Guid.NewGuid();
+        _db.Events.AddRange(
+            TestHelpers.MakeEvent(userId, "Low",  intensity: 3),
+            TestHelpers.MakeEvent(userId, "High", intensity: 7));
+        await _db.SaveChangesAsync();
 
-        db.Events.AddRange(
-            new Event { Id = Guid.NewGuid(), UserId = userId, Timestamp = DateTimeOffset.UtcNow, Type = EventType.Positive, Title = "Low",  Intensity = 3 },
-            new Event { Id = Guid.NewGuid(), UserId = userId, Timestamp = DateTimeOffset.UtcNow, Type = EventType.Positive, Title = "High", Intensity = 7 }
-        );
-        await db.SaveChangesAsync();
-
-        var result = await service.GetEventsAsync(userId, null, null, null, null, 5, null);
+        var result = await _service.GetEventsAsync(userId, null, null, null, null, 5, null);
 
         Assert.Single(result);
         Assert.Equal("High", result[0].Title);
@@ -242,17 +200,13 @@ public class EventServiceTests
     [Fact]
     public async Task GetEventsAsync_FilterByMaxIntensity_ExcludesAboveThreshold()
     {
-        var db = CreateDbContext();
-        var service = new EventService(db);
         var userId = Guid.NewGuid();
+        _db.Events.AddRange(
+            TestHelpers.MakeEvent(userId, "Low",  intensity: 3),
+            TestHelpers.MakeEvent(userId, "High", intensity: 7));
+        await _db.SaveChangesAsync();
 
-        db.Events.AddRange(
-            new Event { Id = Guid.NewGuid(), UserId = userId, Timestamp = DateTimeOffset.UtcNow, Type = EventType.Positive, Title = "Low",  Intensity = 3 },
-            new Event { Id = Guid.NewGuid(), UserId = userId, Timestamp = DateTimeOffset.UtcNow, Type = EventType.Positive, Title = "High", Intensity = 7 }
-        );
-        await db.SaveChangesAsync();
-
-        var result = await service.GetEventsAsync(userId, null, null, null, null, null, 5);
+        var result = await _service.GetEventsAsync(userId, null, null, null, null, null, 5);
 
         Assert.Single(result);
         Assert.Equal("Low", result[0].Title);
@@ -261,20 +215,17 @@ public class EventServiceTests
     [Fact]
     public async Task GetEventsAsync_FilterBySingleTag_ReturnsOnlyTaggedEvents()
     {
-        var db = CreateDbContext();
-        var service = new EventService(db);
         var userId = Guid.NewGuid();
+        var tag = TestHelpers.MakeTag(userId, "Work");
+        _db.Tags.Add(tag);
 
-        var tag = new Tag { Id = Guid.NewGuid(), Name = "Work", UserId = userId, CreatedAt = DateTimeOffset.UtcNow };
-        db.Tags.Add(tag);
+        var eventWithTag    = TestHelpers.MakeEvent(userId, "A");
+        var eventWithoutTag = TestHelpers.MakeEvent(userId, "B");
+        _db.Events.AddRange(eventWithTag, eventWithoutTag);
+        _db.EventTags.Add(new EventTag { EventId = eventWithTag.Id, TagId = tag.Id });
+        await _db.SaveChangesAsync();
 
-        var eventWithTag    = new Event { Id = Guid.NewGuid(), UserId = userId, Timestamp = DateTimeOffset.UtcNow, Type = EventType.Positive, Title = "A", Intensity = 5 };
-        var eventWithoutTag = new Event { Id = Guid.NewGuid(), UserId = userId, Timestamp = DateTimeOffset.UtcNow, Type = EventType.Positive, Title = "B", Intensity = 5 };
-        db.Events.AddRange(eventWithTag, eventWithoutTag);
-        db.EventTags.Add(new EventTag { EventId = eventWithTag.Id, TagId = tag.Id });
-        await db.SaveChangesAsync();
-
-        var result = await service.GetEventsAsync(userId, null, null, null, [tag.Id], null, null);
+        var result = await _service.GetEventsAsync(userId, null, null, null, [tag.Id], null, null);
 
         Assert.Single(result);
         Assert.Equal("A", result[0].Title);
@@ -283,23 +234,20 @@ public class EventServiceTests
     [Fact]
     public async Task GetEventsAsync_FilterByMultipleTags_ReturnsEventsWithAnyTag()
     {
-        var db = CreateDbContext();
-        var service = new EventService(db);
         var userId = Guid.NewGuid();
+        var tagWork   = TestHelpers.MakeTag(userId, "Work");
+        var tagHealth = TestHelpers.MakeTag(userId, "Health");
+        _db.Tags.AddRange(tagWork, tagHealth);
 
-        var tagWork   = new Tag { Id = Guid.NewGuid(), Name = "Work",   UserId = userId, CreatedAt = DateTimeOffset.UtcNow };
-        var tagHealth = new Tag { Id = Guid.NewGuid(), Name = "Health", UserId = userId, CreatedAt = DateTimeOffset.UtcNow };
-        db.Tags.AddRange(tagWork, tagHealth);
+        var evWork   = TestHelpers.MakeEvent(userId, "Work event");
+        var evHealth = TestHelpers.MakeEvent(userId, "Health event");
+        var evNone   = TestHelpers.MakeEvent(userId, "No tags");
+        _db.Events.AddRange(evWork, evHealth, evNone);
+        _db.EventTags.Add(new EventTag { EventId = evWork.Id,   TagId = tagWork.Id });
+        _db.EventTags.Add(new EventTag { EventId = evHealth.Id, TagId = tagHealth.Id });
+        await _db.SaveChangesAsync();
 
-        var evWork   = new Event { Id = Guid.NewGuid(), UserId = userId, Timestamp = DateTimeOffset.UtcNow, Type = EventType.Positive, Title = "Work event",   Intensity = 5 };
-        var evHealth = new Event { Id = Guid.NewGuid(), UserId = userId, Timestamp = DateTimeOffset.UtcNow, Type = EventType.Positive, Title = "Health event", Intensity = 5 };
-        var evNone   = new Event { Id = Guid.NewGuid(), UserId = userId, Timestamp = DateTimeOffset.UtcNow, Type = EventType.Positive, Title = "No tags",      Intensity = 5 };
-        db.Events.AddRange(evWork, evHealth, evNone);
-        db.EventTags.Add(new EventTag { EventId = evWork.Id,   TagId = tagWork.Id });
-        db.EventTags.Add(new EventTag { EventId = evHealth.Id, TagId = tagHealth.Id });
-        await db.SaveChangesAsync();
-
-        var result = await service.GetEventsAsync(userId, null, null, null, [tagWork.Id, tagHealth.Id], null, null);
+        var result = await _service.GetEventsAsync(userId, null, null, null, [tagWork.Id, tagHealth.Id], null, null);
 
         Assert.Equal(2, result.Count);
         Assert.DoesNotContain(result, e => e.Title == "No tags");
@@ -312,36 +260,23 @@ public class EventServiceTests
     [Fact]
     public async Task GetByIdAsync_EmptyUserId_ThrowsArgumentException()
     {
-        var db = CreateDbContext();
-        var service = new EventService(db);
-
         await Assert.ThrowsAsync<ArgumentException>(() =>
-            service.GetByIdAsync(Guid.Empty, Guid.NewGuid()));
+            _service.GetByIdAsync(Guid.Empty, Guid.NewGuid()));
     }
 
     [Fact]
     public async Task GetByIdAsync_OwnEvent_ReturnsDto()
     {
-        var db = CreateDbContext();
-        var service = new EventService(db);
         var userId = Guid.NewGuid();
-        var eventId = Guid.NewGuid();
         var ts = new DateTimeOffset(2024, 5, 20, 15, 30, 0, TimeSpan.Zero);
-        db.Events.Add(new Event
-        {
-            Id = eventId,
-            UserId = userId,
-            Timestamp = ts,
-            Type = EventType.Positive,
-            Title = "My Event",
-            Intensity = 6
-        });
-        await db.SaveChangesAsync();
+        var ev = TestHelpers.MakeEvent(userId, "My Event", intensity: 6, timestamp: ts);
+        _db.Events.Add(ev);
+        await _db.SaveChangesAsync();
 
-        var result = await service.GetByIdAsync(userId, eventId);
+        var result = await _service.GetByIdAsync(userId, ev.Id);
 
         Assert.NotNull(result);
-        Assert.Equal(eventId, result.Id);
+        Assert.Equal(ev.Id, result.Id);
         Assert.Equal("My Event", result.Title);
         Assert.Equal(ts, result.Timestamp);
     }
@@ -349,23 +284,12 @@ public class EventServiceTests
     [Fact]
     public async Task GetByIdAsync_OtherUsersEvent_ReturnsNull()
     {
-        var db = CreateDbContext();
-        var service = new EventService(db);
         var ownerId = Guid.NewGuid();
-        var otherUserId = Guid.NewGuid();
-        var entity = new Event
-        {
-            Id = Guid.NewGuid(),
-            UserId = ownerId,
-            Timestamp = DateTimeOffset.UtcNow,
-            Type = EventType.Positive,
-            Title = "Test",
-            Intensity = 5
-        };
-        db.Events.Add(entity);
-        await db.SaveChangesAsync();
+        var ev = TestHelpers.MakeEvent(ownerId, "Test");
+        _db.Events.Add(ev);
+        await _db.SaveChangesAsync();
 
-        var result = await service.GetByIdAsync(otherUserId, entity.Id);
+        var result = await _service.GetByIdAsync(Guid.NewGuid(), ev.Id);
 
         Assert.Null(result);
     }
@@ -373,10 +297,7 @@ public class EventServiceTests
     [Fact]
     public async Task GetByIdAsync_NonExistentEvent_ReturnsNull()
     {
-        var db = CreateDbContext();
-        var service = new EventService(db);
-
-        var result = await service.GetByIdAsync(Guid.NewGuid(), Guid.NewGuid());
+        var result = await _service.GetByIdAsync(Guid.NewGuid(), Guid.NewGuid());
 
         Assert.Null(result);
     }
@@ -388,43 +309,27 @@ public class EventServiceTests
     [Fact]
     public async Task CreateEventAsync_EmptyUserId_ThrowsArgumentException()
     {
-        var db = CreateDbContext();
-        var service = new EventService(db);
-        var dto = new CreateEventDto { Timestamp = DateTimeOffset.UtcNow, Type = DtoEventType.Positive, Title = "T", Intensity = 5 };
-
         await Assert.ThrowsAsync<ArgumentException>(() =>
-            service.CreateEventAsync(Guid.Empty, dto));
+            _service.CreateEventAsync(Guid.Empty, TestHelpers.MakeCreateDto()));
     }
 
     [Fact]
     public async Task CreateEventAsync_NullDto_ThrowsArgumentNullException()
     {
-        var db = CreateDbContext();
-        var service = new EventService(db);
-
         await Assert.ThrowsAsync<ArgumentNullException>(() =>
-            service.CreateEventAsync(Guid.NewGuid(), null!));
+            _service.CreateEventAsync(Guid.NewGuid(), null!));
     }
 
     [Fact]
     public async Task CreateEventAsync_ValidDto_PersistsWithCorrectFields()
     {
-        var db = CreateDbContext();
-        var service = new EventService(db);
         var userId = Guid.NewGuid();
         var ts = new DateTimeOffset(2024, 4, 10, 9, 0, 0, TimeSpan.Zero);
-        var dto = new CreateEventDto
-        {
-            Timestamp = ts,
-            Type = DtoEventType.Positive,
-            Title = "Promotion",
-            Intensity = 8,
-            CanInfluence = true
-        };
+        var dto = TestHelpers.MakeCreateDto("Promotion", intensity: 8, timestamp: ts, canInfluence: true);
 
-        var result = await service.CreateEventAsync(userId, dto);
+        var result = await _service.CreateEventAsync(userId, dto);
 
-        var entity = await db.Events.FirstOrDefaultAsync();
+        var entity = await _db.Events.FirstOrDefaultAsync();
         Assert.NotNull(entity);
         Assert.Equal(userId, entity.UserId);
         Assert.Equal(dto.Title, entity.Title);
@@ -435,18 +340,7 @@ public class EventServiceTests
     [Fact]
     public async Task CreateEventAsync_ValidDto_GeneratesNonEmptyId()
     {
-        var db = CreateDbContext();
-        var service = new EventService(db);
-        var userId = Guid.NewGuid();
-        var dto = new CreateEventDto
-        {
-            Timestamp = DateTimeOffset.UtcNow,
-            Type = DtoEventType.Positive,
-            Title = "Test",
-            Intensity = 5
-        };
-
-        var result = await service.CreateEventAsync(userId, dto);
+        var result = await _service.CreateEventAsync(Guid.NewGuid(), TestHelpers.MakeCreateDto());
 
         Assert.NotEqual(Guid.Empty, result.Id);
     }
@@ -454,117 +348,60 @@ public class EventServiceTests
     [Fact]
     public async Task CreateEventAsync_WithNewTagNames_CreatesAndLinksTags()
     {
-        var db = CreateDbContext();
-        var service = new EventService(db);
         var userId = Guid.NewGuid();
-        var dto = new CreateEventDto
-        {
-            Timestamp = DateTimeOffset.UtcNow,
-            Type = DtoEventType.Positive,
-            Title = "T",
-            Intensity = 5,
-            TagNames = ["Work", "Health"]
-        };
+        var dto = TestHelpers.MakeCreateDto(tagNames: ["Work", "Health"]);
 
-        var result = await service.CreateEventAsync(userId, dto);
+        var result = await _service.CreateEventAsync(userId, dto);
 
         Assert.Equal(2, result.Tags.Count);
         Assert.Contains(result.Tags, t => t.Name == "Work");
         Assert.Contains(result.Tags, t => t.Name == "Health");
-        Assert.Equal(2, await db.Tags.CountAsync(t => t.UserId == userId));
+        Assert.Equal(2, await _db.Tags.CountAsync(t => t.UserId == userId));
     }
 
     [Fact]
     public async Task CreateEventAsync_ExistingTagName_ReusesTag()
     {
-        var db = CreateDbContext();
-        var service = new EventService(db);
         var userId = Guid.NewGuid();
-        var existingTag = new Tag { Id = Guid.NewGuid(), Name = "Work", UserId = userId, CreatedAt = DateTimeOffset.UtcNow };
-        db.Tags.Add(existingTag);
-        await db.SaveChangesAsync();
+        var existingTag = TestHelpers.MakeTag(userId, "Work");
+        _db.Tags.Add(existingTag);
+        await _db.SaveChangesAsync();
 
-        var dto = new CreateEventDto
-        {
-            Timestamp = DateTimeOffset.UtcNow,
-            Type = DtoEventType.Positive,
-            Title = "T",
-            Intensity = 5,
-            TagNames = ["Work"]
-        };
-
-        var result = await service.CreateEventAsync(userId, dto);
+        var result = await _service.CreateEventAsync(userId, TestHelpers.MakeCreateDto(tagNames: ["Work"]));
 
         Assert.Single(result.Tags);
         Assert.Equal(existingTag.Id, result.Tags[0].Id);
-        Assert.Equal(1, await db.Tags.CountAsync(t => t.UserId == userId));
+        Assert.Equal(1, await _db.Tags.CountAsync(t => t.UserId == userId));
     }
 
     [Fact]
     public async Task CreateEventAsync_EmptyTagNames_NoTagsCreated()
     {
-        var db = CreateDbContext();
-        var service = new EventService(db);
-        var userId = Guid.NewGuid();
-        var dto = new CreateEventDto
-        {
-            Timestamp = DateTimeOffset.UtcNow,
-            Type = DtoEventType.Positive,
-            Title = "T",
-            Intensity = 5,
-            TagNames = []
-        };
-
-        var result = await service.CreateEventAsync(userId, dto);
+        var result = await _service.CreateEventAsync(Guid.NewGuid(), TestHelpers.MakeCreateDto(tagNames: []));
 
         Assert.Empty(result.Tags);
-        Assert.Equal(0, await db.Tags.CountAsync());
+        Assert.Equal(0, await _db.Tags.CountAsync());
     }
 
     [Fact]
     public async Task CreateEventAsync_TagNameExistsForOtherUser_CreatesNewTag()
     {
-        var db = CreateDbContext();
-        var service = new EventService(db);
         var userId = Guid.NewGuid();
-        var otherUserId = Guid.NewGuid();
+        var otherTag = TestHelpers.MakeTag(Guid.NewGuid(), "Work");
+        _db.Tags.Add(otherTag);
+        await _db.SaveChangesAsync();
 
-        var otherTag = new Tag { Id = Guid.NewGuid(), Name = "Work", UserId = otherUserId, CreatedAt = DateTimeOffset.UtcNow };
-        db.Tags.Add(otherTag);
-        await db.SaveChangesAsync();
-
-        var dto = new CreateEventDto
-        {
-            Timestamp = DateTimeOffset.UtcNow,
-            Type = DtoEventType.Positive,
-            Title = "T",
-            Intensity = 5,
-            TagNames = ["Work"]
-        };
-
-        var result = await service.CreateEventAsync(userId, dto);
+        var result = await _service.CreateEventAsync(userId, TestHelpers.MakeCreateDto(tagNames: ["Work"]));
 
         Assert.Single(result.Tags);
         Assert.NotEqual(otherTag.Id, result.Tags[0].Id);
-        Assert.Equal(2, await db.Tags.CountAsync(t => t.Name == "Work"));
+        Assert.Equal(2, await _db.Tags.CountAsync(t => t.Name == "Work"));
     }
 
     [Fact]
     public async Task CreateEventAsync_TagNamesWithWhitespace_AreTrimmed()
     {
-        var db = CreateDbContext();
-        var service = new EventService(db);
-        var userId = Guid.NewGuid();
-        var dto = new CreateEventDto
-        {
-            Timestamp = DateTimeOffset.UtcNow,
-            Type = DtoEventType.Positive,
-            Title = "T",
-            Intensity = 5,
-            TagNames = ["  Work  "]
-        };
-
-        var result = await service.CreateEventAsync(userId, dto);
+        var result = await _service.CreateEventAsync(Guid.NewGuid(), TestHelpers.MakeCreateDto(tagNames: ["  Work  "]));
 
         Assert.Single(result.Tags);
         Assert.Equal("Work", result.Tags[0].Name);
@@ -573,33 +410,17 @@ public class EventServiceTests
     [Fact]
     public async Task CreateEventAsync_DuplicateTagNames_CreatesOnlyOneTag()
     {
-        var db = CreateDbContext();
-        var service = new EventService(db);
         var userId = Guid.NewGuid();
-        var dto = new CreateEventDto
-        {
-            Timestamp = DateTimeOffset.UtcNow,
-            Type = DtoEventType.Positive,
-            Title = "T",
-            Intensity = 5,
-            TagNames = ["Work", "Work"]
-        };
-
-        var result = await service.CreateEventAsync(userId, dto);
+        var result = await _service.CreateEventAsync(userId, TestHelpers.MakeCreateDto(tagNames: ["Work", "Work"]));
 
         Assert.Single(result.Tags);
-        Assert.Equal(1, await db.Tags.CountAsync(t => t.UserId == userId));
+        Assert.Equal(1, await _db.Tags.CountAsync(t => t.UserId == userId));
     }
 
     [Fact]
     public async Task CreateEventAsync_IntensityZero_SavesSuccessfully()
     {
-        var db = CreateDbContext();
-        var service = new EventService(db);
-        var userId = Guid.NewGuid();
-        var dto = new CreateEventDto { Timestamp = DateTimeOffset.UtcNow, Type = DtoEventType.Positive, Title = "Zero", Intensity = 0 };
-
-        var result = await service.CreateEventAsync(userId, dto);
+        var result = await _service.CreateEventAsync(Guid.NewGuid(), TestHelpers.MakeCreateDto(intensity: 0));
 
         Assert.Equal(0, result.Intensity);
     }
@@ -607,12 +428,7 @@ public class EventServiceTests
     [Fact]
     public async Task CreateEventAsync_IntensityTen_SavesSuccessfully()
     {
-        var db = CreateDbContext();
-        var service = new EventService(db);
-        var userId = Guid.NewGuid();
-        var dto = new CreateEventDto { Timestamp = DateTimeOffset.UtcNow, Type = DtoEventType.Positive, Title = "Ten", Intensity = 10 };
-
-        var result = await service.CreateEventAsync(userId, dto);
+        var result = await _service.CreateEventAsync(Guid.NewGuid(), TestHelpers.MakeCreateDto(intensity: 10));
 
         Assert.Equal(10, result.Intensity);
     }
@@ -624,43 +440,26 @@ public class EventServiceTests
     [Fact]
     public async Task UpdateEventAsync_EmptyUserId_ThrowsArgumentException()
     {
-        var db = CreateDbContext();
-        var service = new EventService(db);
         var dto = new UpdateEventDto { Timestamp = DateTimeOffset.UtcNow, Type = DtoEventType.Positive, Title = "T", Intensity = 5 };
 
         await Assert.ThrowsAsync<ArgumentException>(() =>
-            service.UpdateEventAsync(Guid.Empty, Guid.NewGuid(), dto));
+            _service.UpdateEventAsync(Guid.Empty, Guid.NewGuid(), dto));
     }
 
     [Fact]
     public async Task UpdateEventAsync_ValidDto_UpdatesAllFields()
     {
-        var db = CreateDbContext();
-        var service = new EventService(db);
         var userId = Guid.NewGuid();
-        var eventId = Guid.NewGuid();
         var newTs = new DateTimeOffset(2024, 8, 1, 18, 0, 0, TimeSpan.Zero);
-        db.Events.Add(new Event
-        {
-            Id = eventId,
-            UserId = userId,
-            Timestamp = new DateTimeOffset(2024, 1, 1, 10, 0, 0, TimeSpan.Zero),
-            Type = EventType.Negative,
-            Title = "Old Title",
-            Intensity = 3
-        });
-        await db.SaveChangesAsync();
-        var dto = new UpdateEventDto
-        {
-            Timestamp = newTs,
-            Type = DtoEventType.Positive,
-            Title = "New Title",
-            Intensity = 9
-        };
+        var ev = TestHelpers.MakeEvent(userId, "Old Title", EventType.Negative, 3,
+            new DateTimeOffset(2024, 1, 1, 10, 0, 0, TimeSpan.Zero));
+        _db.Events.Add(ev);
+        await _db.SaveChangesAsync();
 
-        var result = await service.UpdateEventAsync(userId, eventId, dto);
+        var dto = new UpdateEventDto { Timestamp = newTs, Type = DtoEventType.Positive, Title = "New Title", Intensity = 9 };
+        var result = await _service.UpdateEventAsync(userId, ev.Id, dto);
 
-        var updated = await db.Events.FirstAsync();
+        var updated = await _db.Events.FirstAsync();
         Assert.True(result);
         Assert.Equal(EventType.Positive, updated.Type);
         Assert.Equal("New Title", updated.Title);
@@ -671,11 +470,9 @@ public class EventServiceTests
     [Fact]
     public async Task UpdateEventAsync_NonExistentEvent_ReturnsFalse()
     {
-        var db = CreateDbContext();
-        var service = new EventService(db);
         var dto = new UpdateEventDto { Timestamp = DateTimeOffset.UtcNow, Type = DtoEventType.Positive, Title = "Updated", Intensity = 5 };
 
-        var result = await service.UpdateEventAsync(Guid.NewGuid(), Guid.NewGuid(), dto);
+        var result = await _service.UpdateEventAsync(Guid.NewGuid(), Guid.NewGuid(), dto);
 
         Assert.False(result);
     }
@@ -683,96 +480,76 @@ public class EventServiceTests
     [Fact]
     public async Task UpdateEventAsync_OtherUsersEvent_ReturnsFalse()
     {
-        var db = CreateDbContext();
-        var service = new EventService(db);
         var ownerId = Guid.NewGuid();
-        var otherUserId = Guid.NewGuid();
-        var eventId = Guid.NewGuid();
-        db.Events.Add(new Event { Id = eventId, UserId = ownerId, Timestamp = DateTimeOffset.UtcNow, Type = EventType.Positive, Title = "T", Intensity = 5 });
-        await db.SaveChangesAsync();
-        var dto = new UpdateEventDto { Timestamp = DateTimeOffset.UtcNow, Type = DtoEventType.Positive, Title = "Hacked", Intensity = 5 };
+        var ev = TestHelpers.MakeEvent(ownerId, "T");
+        _db.Events.Add(ev);
+        await _db.SaveChangesAsync();
 
-        var result = await service.UpdateEventAsync(otherUserId, eventId, dto);
+        var dto = new UpdateEventDto { Timestamp = DateTimeOffset.UtcNow, Type = DtoEventType.Positive, Title = "Hacked", Intensity = 5 };
+        var result = await _service.UpdateEventAsync(Guid.NewGuid(), ev.Id, dto);
 
         Assert.False(result);
-        var unchanged = await db.Events.FirstAsync();
+        var unchanged = await _db.Events.FirstAsync();
         Assert.Equal("T", unchanged.Title);
     }
 
     [Fact]
     public async Task UpdateEventAsync_WithNewTagName_AddsTag()
     {
-        var db = CreateDbContext();
-        var service = new EventService(db);
         var userId = Guid.NewGuid();
-        var eventId = Guid.NewGuid();
-        db.Events.Add(new Event { Id = eventId, UserId = userId, Timestamp = DateTimeOffset.UtcNow, Type = EventType.Positive, Title = "T", Intensity = 5 });
-        await db.SaveChangesAsync();
+        var ev = TestHelpers.MakeEvent(userId, "T");
+        _db.Events.Add(ev);
+        await _db.SaveChangesAsync();
 
-        await service.UpdateEventAsync(userId, eventId, new UpdateEventDto
+        await _service.UpdateEventAsync(userId, ev.Id, new UpdateEventDto
         {
-            Timestamp = DateTimeOffset.UtcNow,
-            Type = DtoEventType.Positive,
-            Title = "T",
-            Intensity = 5,
+            Timestamp = DateTimeOffset.UtcNow, Type = DtoEventType.Positive, Title = "T", Intensity = 5,
             TagNames = ["Work"]
         });
 
-        Assert.Equal(1, await db.EventTags.CountAsync(et => et.EventId == eventId));
+        Assert.Equal(1, await _db.EventTags.CountAsync(et => et.EventId == ev.Id));
     }
 
     [Fact]
     public async Task UpdateEventAsync_EmptyTagNames_RemovesAllTags()
     {
-        var db = CreateDbContext();
-        var service = new EventService(db);
         var userId = Guid.NewGuid();
-        var eventId = Guid.NewGuid();
-        var tag = new Tag { Id = Guid.NewGuid(), Name = "Work", UserId = userId, CreatedAt = DateTimeOffset.UtcNow };
-        db.Tags.Add(tag);
-        var ev = new Event { Id = eventId, UserId = userId, Timestamp = DateTimeOffset.UtcNow, Type = EventType.Positive, Title = "T", Intensity = 5 };
-        db.Events.Add(ev);
-        db.EventTags.Add(new EventTag { EventId = eventId, TagId = tag.Id });
-        await db.SaveChangesAsync();
+        var tag = TestHelpers.MakeTag(userId, "Work");
+        var ev  = TestHelpers.MakeEvent(userId, "T");
+        _db.Tags.Add(tag);
+        _db.Events.Add(ev);
+        _db.EventTags.Add(new EventTag { EventId = ev.Id, TagId = tag.Id });
+        await _db.SaveChangesAsync();
 
-        await service.UpdateEventAsync(userId, eventId, new UpdateEventDto
+        await _service.UpdateEventAsync(userId, ev.Id, new UpdateEventDto
         {
-            Timestamp = DateTimeOffset.UtcNow,
-            Type = DtoEventType.Positive,
-            Title = "T",
-            Intensity = 5,
+            Timestamp = DateTimeOffset.UtcNow, Type = DtoEventType.Positive, Title = "T", Intensity = 5,
             TagNames = []
         });
 
-        Assert.Equal(0, await db.EventTags.CountAsync(et => et.EventId == eventId));
+        Assert.Equal(0, await _db.EventTags.CountAsync(et => et.EventId == ev.Id));
     }
 
     [Fact]
     public async Task UpdateEventAsync_ReplacesExistingTagWithNewTag()
     {
-        var db = CreateDbContext();
-        var service = new EventService(db);
         var userId = Guid.NewGuid();
-        var eventId = Guid.NewGuid();
+        var tagWork = TestHelpers.MakeTag(userId, "Work");
+        var ev      = TestHelpers.MakeEvent(userId, "T");
+        _db.Tags.Add(tagWork);
+        _db.Events.Add(ev);
+        _db.EventTags.Add(new EventTag { EventId = ev.Id, TagId = tagWork.Id });
+        await _db.SaveChangesAsync();
 
-        var tagWork = new Tag { Id = Guid.NewGuid(), Name = "Work", UserId = userId, CreatedAt = DateTimeOffset.UtcNow };
-        db.Tags.Add(tagWork);
-        db.Events.Add(new Event { Id = eventId, UserId = userId, Timestamp = DateTimeOffset.UtcNow, Type = EventType.Positive, Title = "T", Intensity = 5 });
-        db.EventTags.Add(new EventTag { EventId = eventId, TagId = tagWork.Id });
-        await db.SaveChangesAsync();
-
-        await service.UpdateEventAsync(userId, eventId, new UpdateEventDto
+        await _service.UpdateEventAsync(userId, ev.Id, new UpdateEventDto
         {
-            Timestamp = DateTimeOffset.UtcNow,
-            Type = DtoEventType.Positive,
-            Title = "T",
-            Intensity = 5,
+            Timestamp = DateTimeOffset.UtcNow, Type = DtoEventType.Positive, Title = "T", Intensity = 5,
             TagNames = ["Health"]
         });
 
-        var eventTags = await db.EventTags.Where(et => et.EventId == eventId).ToListAsync();
+        var eventTags = await _db.EventTags.Where(et => et.EventId == ev.Id).ToListAsync();
         Assert.Single(eventTags);
-        var tag = await db.Tags.FindAsync(eventTags[0].TagId);
+        var tag = await _db.Tags.FindAsync(eventTags[0].TagId);
         Assert.Equal("Health", tag!.Name);
     }
 
@@ -783,35 +560,27 @@ public class EventServiceTests
     [Fact]
     public async Task DeleteEventAsync_EmptyUserId_ThrowsArgumentException()
     {
-        var db = CreateDbContext();
-        var service = new EventService(db);
-
         await Assert.ThrowsAsync<ArgumentException>(() =>
-            service.DeleteEventAsync(Guid.Empty, Guid.NewGuid()));
+            _service.DeleteEventAsync(Guid.Empty, Guid.NewGuid()));
     }
 
     [Fact]
     public async Task DeleteEventAsync_ExistingEvent_RemovesIt()
     {
-        var db = CreateDbContext();
-        var service = new EventService(db);
         var userId = Guid.NewGuid();
-        var eventId = Guid.NewGuid();
-        db.Events.Add(new Event { Id = eventId, UserId = userId, Timestamp = DateTimeOffset.UtcNow, Type = EventType.Positive, Title = "Test", Intensity = 5 });
-        await db.SaveChangesAsync();
+        var ev = TestHelpers.MakeEvent(userId, "Test");
+        _db.Events.Add(ev);
+        await _db.SaveChangesAsync();
 
-        await service.DeleteEventAsync(userId, eventId);
+        await _service.DeleteEventAsync(userId, ev.Id);
 
-        Assert.False(await db.Events.AnyAsync());
+        Assert.False(await _db.Events.AnyAsync());
     }
 
     [Fact]
     public async Task DeleteEventAsync_NonExistentEvent_DoesNotThrow()
     {
-        var db = CreateDbContext();
-        var service = new EventService(db);
-
-        var exception = await Record.ExceptionAsync(() => service.DeleteEventAsync(Guid.NewGuid(), Guid.NewGuid()));
+        var exception = await Record.ExceptionAsync(() => _service.DeleteEventAsync(Guid.NewGuid(), Guid.NewGuid()));
 
         Assert.Null(exception);
     }
@@ -819,37 +588,31 @@ public class EventServiceTests
     [Fact]
     public async Task DeleteEventAsync_OtherUsersEvent_DoesNotDelete()
     {
-        var db = CreateDbContext();
-        var service = new EventService(db);
         var ownerId = Guid.NewGuid();
-        var otherUserId = Guid.NewGuid();
-        var eventId = Guid.NewGuid();
-        db.Events.Add(new Event { Id = eventId, UserId = ownerId, Timestamp = DateTimeOffset.UtcNow, Type = EventType.Positive, Title = "T", Intensity = 5 });
-        await db.SaveChangesAsync();
+        var ev = TestHelpers.MakeEvent(ownerId, "T");
+        _db.Events.Add(ev);
+        await _db.SaveChangesAsync();
 
-        await service.DeleteEventAsync(otherUserId, eventId);
+        await _service.DeleteEventAsync(Guid.NewGuid(), ev.Id);
 
-        Assert.True(await db.Events.AnyAsync());
+        Assert.True(await _db.Events.AnyAsync());
     }
 
     [Fact]
     public async Task DeleteEventAsync_EventWithTags_RemovesEventTags()
     {
-        var db = CreateDbContext();
-        var service = new EventService(db);
         var userId = Guid.NewGuid();
-        var eventId = Guid.NewGuid();
+        var tag = TestHelpers.MakeTag(userId, "Work");
+        var ev  = TestHelpers.MakeEvent(userId, "T");
+        _db.Tags.Add(tag);
+        _db.Events.Add(ev);
+        _db.EventTags.Add(new EventTag { EventId = ev.Id, TagId = tag.Id });
+        await _db.SaveChangesAsync();
 
-        var tag = new Tag { Id = Guid.NewGuid(), Name = "Work", UserId = userId, CreatedAt = DateTimeOffset.UtcNow };
-        db.Tags.Add(tag);
-        db.Events.Add(new Event { Id = eventId, UserId = userId, Timestamp = DateTimeOffset.UtcNow, Type = EventType.Positive, Title = "T", Intensity = 5 });
-        db.EventTags.Add(new EventTag { EventId = eventId, TagId = tag.Id });
-        await db.SaveChangesAsync();
+        await _service.DeleteEventAsync(userId, ev.Id);
 
-        await service.DeleteEventAsync(userId, eventId);
-
-        Assert.False(await db.Events.AnyAsync());
-        Assert.False(await db.EventTags.AnyAsync(et => et.EventId == eventId));
+        Assert.False(await _db.Events.AnyAsync());
+        Assert.False(await _db.EventTags.AnyAsync(et => et.EventId == ev.Id));
     }
 
     #endregion

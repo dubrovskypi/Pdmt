@@ -13,13 +13,20 @@ namespace Pdmt.Api.Integration.Tests
 {
     public class AuthServiceTests
     {
-        private AppDbContext CreateDbContext() =>
-            new AppDbContext(new DbContextOptionsBuilder<AppDbContext>()
+        private readonly AppDbContext _db;
+        private readonly AuthService _service;
+
+        public AuthServiceTests()
+        {
+            _db = new AppDbContext(new DbContextOptionsBuilder<AppDbContext>()
                 .UseInMemoryDatabase(Guid.NewGuid().ToString())
                 .Options);
 
-        private IConfiguration CreateConfig() =>
-            new ConfigurationBuilder()
+            var rateLimitMock = new Mock<IRateLimitService>();
+            rateLimitMock.Setup(x => x.CheckAsync(It.IsAny<string>(), It.IsAny<string>()))
+                .Returns(Task.CompletedTask);
+
+            _service = new AuthService(_db, new ConfigurationBuilder()
                 .AddInMemoryCollection(new Dictionary<string, string?>
                 {
                     ["Jwt:Secret"] = "test-secret-key-long-enough-32chars!",
@@ -28,7 +35,8 @@ namespace Pdmt.Api.Integration.Tests
                     ["Jwt:TokenLifetimeMinutes"] = "60",
                     ["Jwt:RefreshTokenLifetimeDays"] = "7"
                 })
-                .Build();
+                .Build(), rateLimitMock.Object);
+        }
 
         private static string HashToken(string token)
         {
@@ -37,25 +45,13 @@ namespace Pdmt.Api.Integration.Tests
             return Convert.ToBase64String(bytes);
         }
 
-        private Mock<IRateLimitService> CreateRateLimitMock()
-        {
-            var mock = new Mock<IRateLimitService>();
-            mock.Setup(x => x.CheckAsync(It.IsAny<string>(), It.IsAny<string>()))
-                .Returns(Task.CompletedTask);
-            return mock;
-        }
-
         #region RegisterAsync
 
         [Fact]
         public async Task RegisterAsync_ValidCredentials_ReturnsAuthResult()
         {
-            var db = CreateDbContext();
-            var rateLimitMock = CreateRateLimitMock();
-            var service = new AuthService(db, CreateConfig(), rateLimitMock.Object);
-
             var dto = new UserDto { Email = "test@example.com", Password = "password123" };
-            var result = await service.RegisterAsync(dto, "192.168.1.1");
+            var result = await _service.RegisterAsync(dto, "192.168.1.1");
 
             Assert.NotNull(result.AccessToken);
             Assert.NotEmpty(result.AccessToken);
@@ -66,72 +62,52 @@ namespace Pdmt.Api.Integration.Tests
         [Fact]
         public async Task RegisterAsync_ValidCredentials_CreatesUserInDb()
         {
-            var db = CreateDbContext();
-            var rateLimitMock = CreateRateLimitMock();
-            var service = new AuthService(db, CreateConfig(), rateLimitMock.Object);
-
             var dto = new UserDto { Email = "test@example.com", Password = "password123" };
-            await service.RegisterAsync(dto, "192.168.1.1");
+            await _service.RegisterAsync(dto, "192.168.1.1");
 
-            Assert.Single(db.Users);
-            var user = await db.Users.FirstAsync();
+            Assert.Single(_db.Users);
+            var user = await _db.Users.FirstAsync();
             Assert.Equal("test@example.com", user.Email);
         }
 
         [Fact]
         public async Task RegisterAsync_ValidCredentials_HashesPassword()
         {
-            var db = CreateDbContext();
-            var rateLimitMock = CreateRateLimitMock();
-            var service = new AuthService(db, CreateConfig(), rateLimitMock.Object);
-
             var password = "password123";
             var dto = new UserDto { Email = "test@example.com", Password = password };
-            await service.RegisterAsync(dto, "192.168.1.1");
+            await _service.RegisterAsync(dto, "192.168.1.1");
 
-            var user = await db.Users.FirstAsync();
+            var user = await _db.Users.FirstAsync();
             Assert.NotEqual(password, user.PasswordHash);
         }
 
         [Fact]
         public async Task RegisterAsync_ValidCredentials_CreatesRefreshToken()
         {
-            var db = CreateDbContext();
-            var rateLimitMock = CreateRateLimitMock();
-            var service = new AuthService(db, CreateConfig(), rateLimitMock.Object);
-
             var dto = new UserDto { Email = "test@example.com", Password = "password123" };
-            await service.RegisterAsync(dto, "192.168.1.1");
+            await _service.RegisterAsync(dto, "192.168.1.1");
 
-            Assert.Single(db.RefreshTokens);
+            Assert.Single(_db.RefreshTokens);
         }
 
         [Fact]
         public async Task RegisterAsync_EmailWithUppercase_NormalizesEmail()
         {
-            var db = CreateDbContext();
-            var rateLimitMock = CreateRateLimitMock();
-            var service = new AuthService(db, CreateConfig(), rateLimitMock.Object);
-
             var dto = new UserDto { Email = "Test@EXAMPLE.COM", Password = "password123" };
-            await service.RegisterAsync(dto, "192.168.1.1");
+            await _service.RegisterAsync(dto, "192.168.1.1");
 
-            var user = await db.Users.FirstAsync();
+            var user = await _db.Users.FirstAsync();
             Assert.Equal("test@example.com", user.Email);
         }
 
         [Fact]
         public async Task RegisterAsync_DuplicateEmail_ThrowsInvalidOperationException()
         {
-            var db = CreateDbContext();
-            var rateLimitMock = CreateRateLimitMock();
-            var service = new AuthService(db, CreateConfig(), rateLimitMock.Object);
-
             var dto = new UserDto { Email = "test@example.com", Password = "password123" };
-            await service.RegisterAsync(dto, "192.168.1.1");
+            await _service.RegisterAsync(dto, "192.168.1.1");
 
             var dto2 = new UserDto { Email = "test@example.com", Password = "password456" };
-            await Assert.ThrowsAsync<InvalidOperationException>(() => service.RegisterAsync(dto2, "192.168.1.2"));
+            await Assert.ThrowsAsync<InvalidOperationException>(() => _service.RegisterAsync(dto2, "192.168.1.2"));
         }
 
         #endregion
@@ -141,16 +117,12 @@ namespace Pdmt.Api.Integration.Tests
         [Fact]
         public async Task LoginAsync_ValidCredentials_ReturnsAuthResult()
         {
-            var db = CreateDbContext();
-            var rateLimitMock = CreateRateLimitMock();
-            var service = new AuthService(db, CreateConfig(), rateLimitMock.Object);
-
             var password = "password123";
             var registerDto = new UserDto { Email = "test@example.com", Password = password };
-            await service.RegisterAsync(registerDto, "192.168.1.1");
+            await _service.RegisterAsync(registerDto, "192.168.1.1");
 
             var loginDto = new UserDto { Email = "test@example.com", Password = password };
-            var result = await service.LoginAsync(loginDto, "192.168.1.2");
+            var result = await _service.LoginAsync(loginDto, "192.168.1.2");
 
             Assert.NotNull(result.AccessToken);
             Assert.NotNull(result.RefreshToken);
@@ -159,22 +131,18 @@ namespace Pdmt.Api.Integration.Tests
         [Fact]
         public async Task LoginAsync_ValidCredentials_RevokesOldRefreshTokens()
         {
-            var db = CreateDbContext();
-            var rateLimitMock = CreateRateLimitMock();
-            var service = new AuthService(db, CreateConfig(), rateLimitMock.Object);
-
             var password = "password123";
             var registerDto = new UserDto { Email = "test@example.com", Password = password };
-            await service.RegisterAsync(registerDto, "192.168.1.1");
+            await _service.RegisterAsync(registerDto, "192.168.1.1");
 
-            var oldTokenCount = db.RefreshTokens.Count();
+            var oldTokenCount = _db.RefreshTokens.Count();
             Assert.Equal(1, oldTokenCount);
 
             var loginDto = new UserDto { Email = "test@example.com", Password = password };
-            await service.LoginAsync(loginDto, "192.168.1.2");
+            await _service.LoginAsync(loginDto, "192.168.1.2");
 
-            var revokedCount = db.RefreshTokens.Where(rt => rt.IsRevoked).Count();
-            var activeCount = db.RefreshTokens.Where(rt => !rt.IsRevoked).Count();
+            var revokedCount = _db.RefreshTokens.Where(rt => rt.IsRevoked).Count();
+            var activeCount = _db.RefreshTokens.Where(rt => !rt.IsRevoked).Count();
 
             Assert.Equal(1, revokedCount);
             Assert.Equal(1, activeCount);
@@ -183,42 +151,30 @@ namespace Pdmt.Api.Integration.Tests
         [Fact]
         public async Task LoginAsync_WrongPassword_ThrowsUnauthorizedAccessException()
         {
-            var db = CreateDbContext();
-            var rateLimitMock = CreateRateLimitMock();
-            var service = new AuthService(db, CreateConfig(), rateLimitMock.Object);
-
             var registerDto = new UserDto { Email = "test@example.com", Password = "password123" };
-            await service.RegisterAsync(registerDto, "192.168.1.1");
+            await _service.RegisterAsync(registerDto, "192.168.1.1");
 
             var loginDto = new UserDto { Email = "test@example.com", Password = "wrongpassword" };
-            await Assert.ThrowsAsync<UnauthorizedAccessException>(() => service.LoginAsync(loginDto, "192.168.1.2"));
+            await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _service.LoginAsync(loginDto, "192.168.1.2"));
         }
 
         [Fact]
         public async Task LoginAsync_WrongPassword_RecordsFailedLoginAttempt()
         {
-            var db = CreateDbContext();
-            var rateLimitMock = CreateRateLimitMock();
-            var service = new AuthService(db, CreateConfig(), rateLimitMock.Object);
-
             var registerDto = new UserDto { Email = "test@example.com", Password = "password123" };
-            await service.RegisterAsync(registerDto, "192.168.1.1");
+            await _service.RegisterAsync(registerDto, "192.168.1.1");
 
             var loginDto = new UserDto { Email = "test@example.com", Password = "wrongpassword" };
-            await Assert.ThrowsAsync<UnauthorizedAccessException>(() => service.LoginAsync(loginDto, "192.168.1.2"));
+            await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _service.LoginAsync(loginDto, "192.168.1.2"));
 
-            Assert.Single(db.FailedLoginAttempts);
+            Assert.Single(_db.FailedLoginAttempts);
         }
 
         [Fact]
         public async Task LoginAsync_UnknownEmail_ThrowsUnauthorizedAccessException()
         {
-            var db = CreateDbContext();
-            var rateLimitMock = CreateRateLimitMock();
-            var service = new AuthService(db, CreateConfig(), rateLimitMock.Object);
-
             var loginDto = new UserDto { Email = "nonexistent@example.com", Password = "password123" };
-            await Assert.ThrowsAsync<UnauthorizedAccessException>(() => service.LoginAsync(loginDto, "192.168.1.1"));
+            await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _service.LoginAsync(loginDto, "192.168.1.1"));
         }
 
         #endregion
@@ -228,14 +184,10 @@ namespace Pdmt.Api.Integration.Tests
         [Fact]
         public async Task RefreshAsync_ValidToken_ReturnsNewAuthResult()
         {
-            var db = CreateDbContext();
-            var rateLimitMock = CreateRateLimitMock();
-            var service = new AuthService(db, CreateConfig(), rateLimitMock.Object);
-
             var registerDto = new UserDto { Email = "test@example.com", Password = "password123" };
-            var registerResult = await service.RegisterAsync(registerDto, "192.168.1.1");
+            var registerResult = await _service.RegisterAsync(registerDto, "192.168.1.1");
 
-            var refreshResult = await service.RefreshAsync(registerResult.RefreshToken, "192.168.1.2");
+            var refreshResult = await _service.RefreshAsync(registerResult.RefreshToken, "192.168.1.2");
 
             Assert.NotNull(refreshResult.AccessToken);
             Assert.NotNull(refreshResult.RefreshToken);
@@ -244,26 +196,21 @@ namespace Pdmt.Api.Integration.Tests
         [Fact]
         public async Task RefreshAsync_ValidToken_RevokesOldToken()
         {
-            var db = CreateDbContext();
-            var rateLimitMock = CreateRateLimitMock();
-            var service = new AuthService(db, CreateConfig(), rateLimitMock.Object);
-
             var registerDto = new UserDto { Email = "test@example.com", Password = "password123" };
-            var registerResult = await service.RegisterAsync(registerDto, "192.168.1.1");
+            var registerResult = await _service.RegisterAsync(registerDto, "192.168.1.1");
 
-            var oldToken = await db.RefreshTokens.FirstAsync();
+            var oldToken = await _db.RefreshTokens.FirstAsync();
             Assert.False(oldToken.IsRevoked);
 
-            await service.RefreshAsync(registerResult.RefreshToken, "192.168.1.2");
+            await _service.RefreshAsync(registerResult.RefreshToken, "192.168.1.2");
 
-            oldToken = await db.RefreshTokens.Where(rt => rt.Token == oldToken.Token).FirstAsync();
+            oldToken = await _db.RefreshTokens.Where(rt => rt.Token == oldToken.Token).FirstAsync();
             Assert.True(oldToken.IsRevoked);
         }
 
         [Fact]
         public async Task RefreshAsync_ExpiredToken_ThrowsUnauthorizedAccessException()
         {
-            var db = CreateDbContext();
             var user = new User
             {
                 Id = Guid.NewGuid(),
@@ -271,7 +218,7 @@ namespace Pdmt.Api.Integration.Tests
                 PasswordHash = "hash",
                 CreatedAt = DateTimeOffset.UtcNow
             };
-            db.Users.Add(user);
+            _db.Users.Add(user);
 
             var expiredToken = new RefreshToken
             {
@@ -282,19 +229,15 @@ namespace Pdmt.Api.Integration.Tests
                 IsRevoked = false,
                 CreatedAt = DateTimeOffset.UtcNow
             };
-            db.RefreshTokens.Add(expiredToken);
-            await db.SaveChangesAsync();
+            _db.RefreshTokens.Add(expiredToken);
+            await _db.SaveChangesAsync();
 
-            var rateLimitMock = CreateRateLimitMock();
-            var service = new AuthService(db, CreateConfig(), rateLimitMock.Object);
-
-            await Assert.ThrowsAsync<UnauthorizedAccessException>(() => service.RefreshAsync("expired-token", "192.168.1.1"));
+            await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _service.RefreshAsync("expired-token", "192.168.1.1"));
         }
 
         [Fact]
         public async Task RefreshAsync_RevokedToken_ThrowsUnauthorizedAccessException()
         {
-            var db = CreateDbContext();
             var user = new User
             {
                 Id = Guid.NewGuid(),
@@ -302,7 +245,7 @@ namespace Pdmt.Api.Integration.Tests
                 PasswordHash = "hash",
                 CreatedAt = DateTimeOffset.UtcNow
             };
-            db.Users.Add(user);
+            _db.Users.Add(user);
 
             var revokedToken = new RefreshToken
             {
@@ -313,23 +256,16 @@ namespace Pdmt.Api.Integration.Tests
                 IsRevoked = true,
                 CreatedAt = DateTimeOffset.UtcNow
             };
-            db.RefreshTokens.Add(revokedToken);
-            await db.SaveChangesAsync();
+            _db.RefreshTokens.Add(revokedToken);
+            await _db.SaveChangesAsync();
 
-            var rateLimitMock = CreateRateLimitMock();
-            var service = new AuthService(db, CreateConfig(), rateLimitMock.Object);
-
-            await Assert.ThrowsAsync<UnauthorizedAccessException>(() => service.RefreshAsync("revoked-token", "192.168.1.1"));
+            await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _service.RefreshAsync("revoked-token", "192.168.1.1"));
         }
 
         [Fact]
         public async Task RefreshAsync_NonExistentToken_ThrowsUnauthorizedAccessException()
         {
-            var db = CreateDbContext();
-            var rateLimitMock = CreateRateLimitMock();
-            var service = new AuthService(db, CreateConfig(), rateLimitMock.Object);
-
-            await Assert.ThrowsAsync<UnauthorizedAccessException>(() => service.RefreshAsync("nonexistent-token", "192.168.1.1"));
+            await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _service.RefreshAsync("nonexistent-token", "192.168.1.1"));
         }
 
         #endregion
@@ -339,14 +275,10 @@ namespace Pdmt.Api.Integration.Tests
         [Fact]
         public async Task LogoutAsync_WithActiveTokens_RevokesAllTokens()
         {
-            var db = CreateDbContext();
-            var rateLimitMock = CreateRateLimitMock();
-            var service = new AuthService(db, CreateConfig(), rateLimitMock.Object);
-
             var registerDto = new UserDto { Email = "test@example.com", Password = "password123" };
-            var registerResult = await service.RegisterAsync(registerDto, "192.168.1.1");
+            var registerResult = await _service.RegisterAsync(registerDto, "192.168.1.1");
 
-            var user = await db.Users.FirstAsync();
+            var user = await _db.Users.FirstAsync();
             var token2 = new RefreshToken
             {
                 Id = Guid.NewGuid(),
@@ -356,27 +288,23 @@ namespace Pdmt.Api.Integration.Tests
                 IsRevoked = false,
                 CreatedAt = DateTimeOffset.UtcNow
             };
-            db.RefreshTokens.Add(token2);
-            await db.SaveChangesAsync();
+            _db.RefreshTokens.Add(token2);
+            await _db.SaveChangesAsync();
 
-            Assert.Equal(2, db.RefreshTokens.Where(rt => !rt.IsRevoked).Count());
+            Assert.Equal(2, _db.RefreshTokens.Where(rt => !rt.IsRevoked).Count());
 
-            await service.LogoutAsync(user.Id);
+            await _service.LogoutAsync(user.Id);
 
-            Assert.Equal(0, db.RefreshTokens.Where(rt => !rt.IsRevoked).Count());
-            Assert.Equal(2, db.RefreshTokens.Where(rt => rt.IsRevoked).Count());
+            Assert.Equal(0, _db.RefreshTokens.Where(rt => !rt.IsRevoked).Count());
+            Assert.Equal(2, _db.RefreshTokens.Where(rt => rt.IsRevoked).Count());
         }
 
         [Fact]
         public async Task LogoutAsync_WithNoTokens_DoesNotThrow()
         {
-            var db = CreateDbContext();
-            var rateLimitMock = CreateRateLimitMock();
-            var service = new AuthService(db, CreateConfig(), rateLimitMock.Object);
-
             var userId = Guid.NewGuid();
 
-            await service.LogoutAsync(userId);
+            await _service.LogoutAsync(userId);
             // No exception thrown
         }
 
