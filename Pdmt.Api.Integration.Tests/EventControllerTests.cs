@@ -20,7 +20,7 @@ public class EventsControllerTests(CustomWebAppFactory factory) : IClassFixture<
     {
         var client = CreateAnonymousClient();
 
-        var response = await client.GetAsync("/api/events");
+        var response = await client.GetAsync("/api/events", TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
@@ -30,7 +30,7 @@ public class EventsControllerTests(CustomWebAppFactory factory) : IClassFixture<
     {
         var client = CreateJwtClient("invalid_token");
 
-        var response = await client.GetAsync("/api/events");
+        var response = await client.GetAsync("/api/events", TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
@@ -40,7 +40,7 @@ public class EventsControllerTests(CustomWebAppFactory factory) : IClassFixture<
     {
         var client = CreateTestAuthClient();
 
-        var response = await client.GetAsync("/api/events");
+        var response = await client.GetAsync("/api/events", TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
@@ -50,7 +50,7 @@ public class EventsControllerTests(CustomWebAppFactory factory) : IClassFixture<
     {
         var client = CreateJwtClient(GenerateJwtToken());
 
-        var response = await client.GetAsync("/api/events");
+        var response = await client.GetAsync("/api/events", TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
@@ -59,15 +59,15 @@ public class EventsControllerTests(CustomWebAppFactory factory) : IClassFixture<
     public async Task GetEvents_OtherUsersEvents_NotIncluded()
     {
         var clientA = CreateTestAuthClient();
-        await clientA.PostAsJsonAsync("/api/events", MakeDto("User A Secret Event", DtoEventType.Positive, 5));
+        await clientA.PostAsJsonAsync("/api/events", MakeDto("User A Secret Event", DtoEventType.Positive, 5), TestContext.Current.CancellationToken);
 
-        var responseA = await clientA.GetAsync("/api/events");
-        var eventsA = await responseA.Content.ReadFromJsonAsync<IEnumerable<EventResponseDto>>();
+        var responseA = await clientA.GetAsync("/api/events", TestContext.Current.CancellationToken);
+        var eventsA = await responseA.Content.ReadFromJsonAsync<IEnumerable<EventResponseDto>>(TestContext.Current.CancellationToken);
         Assert.Contains(eventsA!, e => e.Title == "User A Secret Event");
 
         var clientB = CreateJwtClient(GenerateJwtToken());
-        var responseB = await clientB.GetAsync("/api/events");
-        var eventsB = await responseB.Content.ReadFromJsonAsync<IEnumerable<EventResponseDto>>();
+        var responseB = await clientB.GetAsync("/api/events", TestContext.Current.CancellationToken);
+        var eventsB = await responseB.Content.ReadFromJsonAsync<IEnumerable<EventResponseDto>>(TestContext.Current.CancellationToken);
 
         Assert.DoesNotContain(eventsB!, e => e.Title == "User A Secret Event");
     }
@@ -76,11 +76,11 @@ public class EventsControllerTests(CustomWebAppFactory factory) : IClassFixture<
     public async Task GetEvents_FilterByType_ReturnsMatchingEvents()
     {
         var client = CreateJwtClient(GenerateJwtToken());
-        await client.PostAsJsonAsync("/api/events", MakeDto("Positive Event", DtoEventType.Positive, 5));
-        await client.PostAsJsonAsync("/api/events", MakeDto("Negative Event", DtoEventType.Negative, 5));
+        await client.PostAsJsonAsync("/api/events", MakeDto("Positive Event", DtoEventType.Positive, 5), TestContext.Current.CancellationToken);
+        await client.PostAsJsonAsync("/api/events", MakeDto("Negative Event", DtoEventType.Negative, 5), TestContext.Current.CancellationToken);
 
-        var response = await client.GetAsync("/api/events?type=Negative");
-        var events = await response.Content.ReadFromJsonAsync<IEnumerable<EventResponseDto>>();
+        var response = await client.GetAsync("/api/events?type=Negative", TestContext.Current.CancellationToken);
+        var events = await response.Content.ReadFromJsonAsync<IEnumerable<EventResponseDto>>(TestContext.Current.CancellationToken);
 
         Assert.All(events!, e => Assert.Equal(DtoEventType.Negative, e.Type));
         Assert.DoesNotContain(events!, e => e.Title == "Positive Event");
@@ -90,12 +90,12 @@ public class EventsControllerTests(CustomWebAppFactory factory) : IClassFixture<
     public async Task GetEvents_FilterByDateRange_ReturnsMatchingEvents()
     {
         var client = CreateJwtClient(GenerateJwtToken());
-        await client.PostAsJsonAsync("/api/events", MakeDto("In Range",  DtoEventType.Positive, 5, DateTimeOffset.UtcNow.AddDays(-3)));
-        await client.PostAsJsonAsync("/api/events", MakeDto("Out Range", DtoEventType.Positive, 5, DateTimeOffset.UtcNow.AddDays(-10)));
+        await client.PostAsJsonAsync("/api/events", MakeDto("In Range", DtoEventType.Positive, 5, DateTimeOffset.UtcNow.AddDays(-3)), TestContext.Current.CancellationToken);
+        await client.PostAsJsonAsync("/api/events", MakeDto("Out Range", DtoEventType.Positive, 5, DateTimeOffset.UtcNow.AddDays(-10)), TestContext.Current.CancellationToken);
 
         var from = DateTimeOffset.UtcNow.AddDays(-5).ToString("O");
-        var response = await client.GetAsync($"/api/events?from={Uri.EscapeDataString(from)}");
-        var events = await response.Content.ReadFromJsonAsync<IEnumerable<EventResponseDto>>();
+        var response = await client.GetAsync($"/api/events?from={Uri.EscapeDataString(from)}", TestContext.Current.CancellationToken);
+        var events = await response.Content.ReadFromJsonAsync<IEnumerable<EventResponseDto>>(TestContext.Current.CancellationToken);
 
         Assert.Contains(events!, e => e.Title == "In Range");
         Assert.DoesNotContain(events!, e => e.Title == "Out Range");
@@ -105,12 +105,12 @@ public class EventsControllerTests(CustomWebAppFactory factory) : IClassFixture<
     public async Task GetEvents_FilterByIntensityRange_ReturnsMatchingEvents()
     {
         var client = CreateJwtClient(GenerateJwtToken());
-        await client.PostAsJsonAsync("/api/events", MakeDto("Low",    DtoEventType.Positive, 2));
-        await client.PostAsJsonAsync("/api/events", MakeDto("Medium", DtoEventType.Positive, 5));
-        await client.PostAsJsonAsync("/api/events", MakeDto("High",   DtoEventType.Positive, 9));
+        await client.PostAsJsonAsync("/api/events", MakeDto("Low", DtoEventType.Positive, 2), TestContext.Current.CancellationToken);
+        await client.PostAsJsonAsync("/api/events", MakeDto("Medium", DtoEventType.Positive, 5), TestContext.Current.CancellationToken);
+        await client.PostAsJsonAsync("/api/events", MakeDto("High", DtoEventType.Positive, 9), TestContext.Current.CancellationToken);
 
-        var response = await client.GetAsync("/api/events?minIntensity=4&maxIntensity=6");
-        var events = await response.Content.ReadFromJsonAsync<IEnumerable<EventResponseDto>>();
+        var response = await client.GetAsync("/api/events?minIntensity=4&maxIntensity=6", TestContext.Current.CancellationToken);
+        var events = await response.Content.ReadFromJsonAsync<IEnumerable<EventResponseDto>>(TestContext.Current.CancellationToken);
 
         Assert.Contains(events!, e => e.Title == "Medium");
         Assert.DoesNotContain(events!, e => e.Title == "Low");
@@ -123,12 +123,12 @@ public class EventsControllerTests(CustomWebAppFactory factory) : IClassFixture<
         var client = CreateJwtClient(GenerateJwtToken());
 
         var taggedDto = new CreateEventDto { Timestamp = DateTimeOffset.UtcNow, Type = DtoEventType.Positive, Title = "Tagged", Intensity = 5, TagNames = ["FilterTag"] };
-        var tagged = await (await client.PostAsJsonAsync("/api/events", taggedDto)).Content.ReadFromJsonAsync<EventResponseDto>();
-        await client.PostAsJsonAsync("/api/events", MakeDto("Untagged", DtoEventType.Positive, 5));
+        var tagged = await (await client.PostAsJsonAsync("/api/events", taggedDto, TestContext.Current.CancellationToken)).Content.ReadFromJsonAsync<EventResponseDto>(TestContext.Current.CancellationToken);
+        await client.PostAsJsonAsync("/api/events", MakeDto("Untagged", DtoEventType.Positive, 5), TestContext.Current.CancellationToken);
 
         var tagId = tagged!.Tags.Single(t => t.Name == "FilterTag").Id;
-        var response = await client.GetAsync($"/api/events?tags={tagId}");
-        var events = await response.Content.ReadFromJsonAsync<IEnumerable<EventResponseDto>>();
+        var response = await client.GetAsync($"/api/events?tags={tagId}", TestContext.Current.CancellationToken);
+        var events = await response.Content.ReadFromJsonAsync<IEnumerable<EventResponseDto>>(TestContext.Current.CancellationToken);
 
         Assert.Contains(events!, e => e.Title == "Tagged");
         Assert.DoesNotContain(events!, e => e.Title == "Untagged");
@@ -138,13 +138,13 @@ public class EventsControllerTests(CustomWebAppFactory factory) : IClassFixture<
     public async Task GetEvents_InvalidTagIds_ReturnsAllEvents()
     {
         var client = CreateJwtClient(GenerateJwtToken());
-        await client.PostAsJsonAsync("/api/events", MakeDto("Event A", DtoEventType.Positive, 5));
-        await client.PostAsJsonAsync("/api/events", MakeDto("Event B", DtoEventType.Positive, 5));
+        await client.PostAsJsonAsync("/api/events", MakeDto("Event A", DtoEventType.Positive, 5), TestContext.Current.CancellationToken);
+        await client.PostAsJsonAsync("/api/events", MakeDto("Event B", DtoEventType.Positive, 5), TestContext.Current.CancellationToken);
 
-        var response = await client.GetAsync("/api/events?tags=not-a-guid,also-invalid");
+        var response = await client.GetAsync("/api/events?tags=not-a-guid,also-invalid", TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var events = await response.Content.ReadFromJsonAsync<IEnumerable<EventResponseDto>>();
+        var events = await response.Content.ReadFromJsonAsync<IEnumerable<EventResponseDto>>(TestContext.Current.CancellationToken);
         Assert.Equal(2, events!.Count());
     }
 
@@ -157,7 +157,7 @@ public class EventsControllerTests(CustomWebAppFactory factory) : IClassFixture<
     {
         var client = CreateTestAuthClient();
 
-        var response = await client.GetAsync($"/api/events/{Guid.NewGuid()}");
+        var response = await client.GetAsync($"/api/events/{Guid.NewGuid()}", TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
@@ -169,7 +169,7 @@ public class EventsControllerTests(CustomWebAppFactory factory) : IClassFixture<
         var created = await CreateEventAndRead(ownerClient, "Owner Only");
 
         var otherClient = CreateJwtClient(GenerateJwtToken());
-        var response = await otherClient.GetAsync($"/api/events/{created.Id}");
+        var response = await otherClient.GetAsync($"/api/events/{created.Id}", TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
@@ -183,7 +183,7 @@ public class EventsControllerTests(CustomWebAppFactory factory) : IClassFixture<
     {
         var client = CreateTestAuthClient();
 
-        var response = await client.PostAsJsonAsync("/api/events", MakeDto("Integration Test", DtoEventType.Positive, 5));
+        var response = await client.PostAsJsonAsync("/api/events", MakeDto("Integration Test", DtoEventType.Positive, 5), TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
     }
@@ -193,14 +193,14 @@ public class EventsControllerTests(CustomWebAppFactory factory) : IClassFixture<
     {
         var client = CreateTestAuthClient();
 
-        var createResponse = await client.PostAsJsonAsync("/api/events", MakeDto("Morning Run", DtoEventType.Positive, 7));
+        var createResponse = await client.PostAsJsonAsync("/api/events", MakeDto("Morning Run", DtoEventType.Positive, 7), TestContext.Current.CancellationToken);
         Assert.Equal(HttpStatusCode.Created, createResponse.StatusCode);
-        var created = await createResponse.Content.ReadFromJsonAsync<EventResponseDto>();
+        var created = await createResponse.Content.ReadFromJsonAsync<EventResponseDto>(TestContext.Current.CancellationToken);
         Assert.NotNull(created);
 
-        var getResponse = await client.GetAsync($"/api/events/{created!.Id}");
+        var getResponse = await client.GetAsync($"/api/events/{created!.Id}", TestContext.Current.CancellationToken);
         Assert.Equal(HttpStatusCode.OK, getResponse.StatusCode);
-        var fetched = await getResponse.Content.ReadFromJsonAsync<EventResponseDto>();
+        var fetched = await getResponse.Content.ReadFromJsonAsync<EventResponseDto>(TestContext.Current.CancellationToken);
         Assert.Equal("Morning Run", fetched!.Title);
         Assert.Empty(fetched.Tags);
     }
@@ -218,8 +218,8 @@ public class EventsControllerTests(CustomWebAppFactory factory) : IClassFixture<
             TagNames = ["Work", "Health"]
         };
 
-        var response = await client.PostAsJsonAsync("/api/events", dto);
-        var created = await response.Content.ReadFromJsonAsync<EventResponseDto>();
+        var response = await client.PostAsJsonAsync("/api/events", dto, TestContext.Current.CancellationToken);
+        var created = await response.Content.ReadFromJsonAsync<EventResponseDto>(TestContext.Current.CancellationToken);
 
         Assert.Equal(2, created!.Tags.Count);
         Assert.Contains(created.Tags, t => t.Name == "Work");
@@ -231,8 +231,8 @@ public class EventsControllerTests(CustomWebAppFactory factory) : IClassFixture<
     {
         var client = CreateTestAuthClient();
 
-        var response = await client.PostAsJsonAsync("/api/events", MakeDto("Location Test", DtoEventType.Positive, 5));
-        var created = await response.Content.ReadFromJsonAsync<EventResponseDto>();
+        var response = await client.PostAsJsonAsync("/api/events", MakeDto("Location Test", DtoEventType.Positive, 5), TestContext.Current.CancellationToken);
+        var created = await response.Content.ReadFromJsonAsync<EventResponseDto>(TestContext.Current.CancellationToken);
 
         Assert.NotNull(response.Headers.Location);
         Assert.Contains(created!.Id.ToString(), response.Headers.Location!.ToString());
@@ -244,7 +244,7 @@ public class EventsControllerTests(CustomWebAppFactory factory) : IClassFixture<
         var client = CreateTestAuthClient();
         var payload = new { Timestamp = DateTimeOffset.UtcNow, Type = 0, Intensity = 5 };
 
-        var response = await client.PostAsJsonAsync("/api/events", payload);
+        var response = await client.PostAsJsonAsync("/api/events", payload, TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
@@ -255,7 +255,7 @@ public class EventsControllerTests(CustomWebAppFactory factory) : IClassFixture<
         var client = CreateTestAuthClient();
         var payload = new { Timestamp = DateTimeOffset.UtcNow, Type = 0, Title = "Test", Intensity = 11 };
 
-        var response = await client.PostAsJsonAsync("/api/events", payload);
+        var response = await client.PostAsJsonAsync("/api/events", payload, TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
@@ -266,7 +266,7 @@ public class EventsControllerTests(CustomWebAppFactory factory) : IClassFixture<
         var client = CreateTestAuthClient();
         var payload = new { Timestamp = DateTimeOffset.UtcNow, Type = 0, Title = "Zero intensity", Intensity = 0 };
 
-        var response = await client.PostAsJsonAsync("/api/events", payload);
+        var response = await client.PostAsJsonAsync("/api/events", payload, TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
     }
@@ -282,10 +282,11 @@ public class EventsControllerTests(CustomWebAppFactory factory) : IClassFixture<
         var created = await CreateEventAndRead(client, "Original Title");
 
         var updateDto = new UpdateEventDto { Timestamp = created.Timestamp, Type = DtoEventType.Positive, Title = "Updated Title", Intensity = 8 };
-        var updateResponse = await client.PutAsJsonAsync($"/api/events/{created.Id}", updateDto);
+        var updateResponse = await client.PutAsJsonAsync($"/api/events/{created.Id}", updateDto, TestContext.Current.CancellationToken);
         Assert.Equal(HttpStatusCode.NoContent, updateResponse.StatusCode);
 
-        var updated = await (await client.GetAsync($"/api/events/{created.Id}")).Content.ReadFromJsonAsync<EventResponseDto>();
+        var updated = await (await client.GetAsync($"/api/events/{created.Id}", TestContext.Current.CancellationToken))
+            .Content.ReadFromJsonAsync<EventResponseDto>(TestContext.Current.CancellationToken);
         Assert.Equal("Updated Title", updated!.Title);
         Assert.Equal(8, updated.Intensity);
     }
@@ -296,7 +297,7 @@ public class EventsControllerTests(CustomWebAppFactory factory) : IClassFixture<
         var client = CreateTestAuthClient();
         var dto = new UpdateEventDto { Timestamp = DateTimeOffset.UtcNow, Type = DtoEventType.Positive, Title = "Ghost", Intensity = 5 };
 
-        var response = await client.PutAsJsonAsync($"/api/events/{Guid.NewGuid()}", dto);
+        var response = await client.PutAsJsonAsync($"/api/events/{Guid.NewGuid()}", dto, TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
@@ -309,7 +310,7 @@ public class EventsControllerTests(CustomWebAppFactory factory) : IClassFixture<
 
         var otherClient = CreateJwtClient(GenerateJwtToken());
         var dto = new UpdateEventDto { Timestamp = created.Timestamp, Type = DtoEventType.Positive, Title = "Hacked", Intensity = 5 };
-        var response = await otherClient.PutAsJsonAsync($"/api/events/{created.Id}", dto);
+        var response = await otherClient.PutAsJsonAsync($"/api/events/{created.Id}", dto, TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
@@ -324,10 +325,10 @@ public class EventsControllerTests(CustomWebAppFactory factory) : IClassFixture<
         var client = CreateTestAuthClient();
         var created = await CreateEventAndRead(client, "To Be Deleted");
 
-        var deleteResponse = await client.DeleteAsync($"/api/events/{created.Id}");
+        var deleteResponse = await client.DeleteAsync($"/api/events/{created.Id}", TestContext.Current.CancellationToken);
         Assert.Equal(HttpStatusCode.NoContent, deleteResponse.StatusCode);
 
-        var getResponse = await client.GetAsync($"/api/events/{created.Id}");
+        var getResponse = await client.GetAsync($"/api/events/{created.Id}", TestContext.Current.CancellationToken);
         Assert.Equal(HttpStatusCode.NotFound, getResponse.StatusCode);
     }
 
@@ -336,7 +337,7 @@ public class EventsControllerTests(CustomWebAppFactory factory) : IClassFixture<
     {
         var client = CreateTestAuthClient();
 
-        var response = await client.DeleteAsync($"/api/events/{Guid.NewGuid()}");
+        var response = await client.DeleteAsync($"/api/events/{Guid.NewGuid()}", TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
@@ -348,7 +349,7 @@ public class EventsControllerTests(CustomWebAppFactory factory) : IClassFixture<
         var created = await CreateEventAndRead(ownerClient, "Owner Only");
 
         var otherClient = CreateJwtClient(GenerateJwtToken());
-        var response = await otherClient.DeleteAsync($"/api/events/{created.Id}");
+        var response = await otherClient.DeleteAsync($"/api/events/{created.Id}", TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
