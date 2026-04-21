@@ -28,6 +28,7 @@ jobs:
           dotnet test Pdmt.Api.Unit.Tests/Pdmt.Api.Unit.Tests.csproj
           --no-build
           --collect:"XPlat Code Coverage"
+          --settings Pdmt.runsettings
           --results-directory ./coverage/unit
           --logger "trx;LogFileName=unit-results.trx"
 
@@ -58,6 +59,7 @@ jobs:
           dotnet test Pdmt.Api.Integration.Tests/Pdmt.Api.Integration.Tests.csproj
           --no-build
           --collect:"XPlat Code Coverage"
+          --settings Pdmt.runsettings
           --results-directory ./coverage/integration
           --logger "trx;LogFileName=integration-results.trx"
 
