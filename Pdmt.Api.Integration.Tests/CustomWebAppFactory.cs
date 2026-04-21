@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Pdmt.Api.Data;
@@ -14,6 +15,18 @@ namespace Pdmt.Api.Integration.Tests
     {
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
+            builder.ConfigureAppConfiguration((_, config) =>
+            {
+                config.AddInMemoryCollection(new Dictionary<string, string?>
+                {
+                    ["Jwt:Secret"] = "test-super-secret-key-min-32-chars!!",
+                    ["Jwt:Issuer"] = "pdmt-test",
+                    ["Jwt:Audience"] = "pdmt-test",
+                    ["Jwt:TokenLifetimeMinutes"] = "60",
+                    ["Jwt:RefreshTokenLifetimeDays"] = "1",
+                });
+            });
+
             builder.ConfigureServices(services =>
             {
                 // --- Remove the real DbContext registrations ---
@@ -27,7 +40,7 @@ namespace Pdmt.Api.Integration.Tests
                 // --- Replace authentication ---
                 // Add a policy scheme that forwards to either TestScheme or JwtBearer depending on the Authorization header.
                 // This allows tests to exercise both the test auth handler (when using "TestScheme") and real JWT flow (when using "Bearer").
-                var testJwtSecret = "your-super-secret-test-key-123456";
+                var testJwtSecret = "test-super-secret-key-min-32-chars!!";
                 services.AddAuthentication(options =>
                 {
                     options.DefaultAuthenticateScheme = "TestOrJwt";
