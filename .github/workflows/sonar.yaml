@@ -38,7 +38,10 @@ jobs:
         run: dotnet build Pdmt.Api/Pdmt.Api.csproj
 
       - name: Test
-        run: dotnet test --collect:"XPlat Code Coverage"
+        run: >
+          dotnet test Pdmt.Api.Unit.Tests/Pdmt.Api.Unit.Tests.csproj
+          --collect:"XPlat Code Coverage"
+          --settings Pdmt.runsettings
 
       - name: End Sonar scan
         run: |
