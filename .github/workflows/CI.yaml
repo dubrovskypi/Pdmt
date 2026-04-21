@@ -21,12 +21,12 @@ jobs:
         run: dotnet restore Pdmt.Api.Unit.Tests/Pdmt.Api.Unit.Tests.csproj
 
       - name: Build
-        run: dotnet build Pdmt.Api.Unit.Tests/Pdmt.Api.Unit.Tests.csproj --no-restore --configuration Release
+        run: dotnet build Pdmt.Api.Unit.Tests/Pdmt.Api.Unit.Tests.csproj --no-restore
 
       - name: Test
         run: >
           dotnet test Pdmt.Api.Unit.Tests/Pdmt.Api.Unit.Tests.csproj
-          --no-build --configuration Release
+          --no-build
           --collect:"XPlat Code Coverage"
           --results-directory ./coverage/unit
           --logger "trx;LogFileName=unit-results.trx"
@@ -51,12 +51,12 @@ jobs:
         run: dotnet restore Pdmt.Api.Integration.Tests/Pdmt.Api.Integration.Tests.csproj
 
       - name: Build
-        run: dotnet build Pdmt.Api.Integration.Tests/Pdmt.Api.Integration.Tests.csproj --no-restore --configuration Release
+        run: dotnet build Pdmt.Api.Integration.Tests/Pdmt.Api.Integration.Tests.csproj --no-restore
 
       - name: Test
         run: >
           dotnet test Pdmt.Api.Integration.Tests/Pdmt.Api.Integration.Tests.csproj
-          --no-build --configuration Release
+          --no-build
           --collect:"XPlat Code Coverage"
           --results-directory ./coverage/integration
           --logger "trx;LogFileName=integration-results.trx"
