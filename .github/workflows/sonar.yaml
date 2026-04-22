@@ -5,11 +5,12 @@ on:
     branches: [master, dev, test]
   pull_request:
     branches: [master, dev]
+  workflow_dispatch:
 
 jobs:
   build:
     name: Sonar build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest #fix version later
 
     steps:
       - name: Checkout
@@ -17,13 +18,20 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup .NET
+      - name: Setup .NET 8
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
 
+      - name: Cache SonarScanner
+        uses: actions/cache@v4
+        with:
+          path: ~/.dotnet/tools
+          key: sonarscanner-${{ runner.os }}-11.2.1
+          restore-keys: sonarscanner-${{ runner.os }}-
+
       - name: Install SonarScanner
-        run: dotnet tool install --global dotnet-sonarscanner
+        run: dotnet tool install --global dotnet-sonarscanner --version 11.2.1 --ignore-failed-sources
 
       - name: Begin Sonar scan
         run: |
@@ -32,18 +40,36 @@ jobs:
             /o:"dubrovskypi" \
             /d:sonar.token="${{ secrets.SONAR_TOKEN }}" \
             /d:sonar.host.url="https://sonarcloud.io" \
-            /d:sonar.cs.opencover.reportsPaths="**/coverage.cobertura.xml"
+            /d:sonar.cs.cobertura.reportsPaths="**/coverage.cobertura.xml" \
+            /d:sonar.exclusions="Pdmt.Maui/**,**/Migrations/**"
+
+      - name: Cache NuGet
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('Pdmt.Api/**/*.csproj', 'Pdmt.Client/**/*.csproj', 'Pdmt.Api.Unit.Tests/**/*.csproj', 'Pdmt.Api.Integration.Tests/**/*.csproj') }}
+          restore-keys: nuget-${{ runner.os }}-
 
       - name: Build
-        run: dotnet build Pdmt.Api/Pdmt.Api.csproj
+        run: |
+          dotnet build Pdmt.Api/Pdmt.Api.csproj -c Release
+          dotnet build Pdmt.Client/Pdmt.Client.csproj -c Release
+          dotnet build Pdmt.Api.Unit.Tests/Pdmt.Api.Unit.Tests.csproj -c Release
+          dotnet build Pdmt.Api.Integration.Tests/Pdmt.Api.Integration.Tests.csproj -c Release
 
       - name: Test
-        run: >
-          dotnet test Pdmt.Api.Unit.Tests/Pdmt.Api.Unit.Tests.csproj
-          --collect:"XPlat Code Coverage"
-          --settings Pdmt.runsettings
+        run: |
+          dotnet test Pdmt.Api.Unit.Tests/Pdmt.Api.Unit.Tests.csproj \
+            --no-build -c Release \
+            --collect:"XPlat Code Coverage" \
+            --settings Pdmt.runsettings
+          dotnet test Pdmt.Api.Integration.Tests/Pdmt.Api.Integration.Tests.csproj \
+            --no-build -c Release \
+            --collect:"XPlat Code Coverage" \
+            --settings Pdmt.runsettings
 
       - name: End Sonar scan
+        if: always()
         run: |
           dotnet sonarscanner end \
             /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
