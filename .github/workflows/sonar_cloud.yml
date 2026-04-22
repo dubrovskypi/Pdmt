@@ -1,8 +1,7 @@
 name: SonarQube3
 on:
   push:
-    branches:
-      - master, test, dev
+    branches: [master, dev, test]
   pull_request:
     types: [opened, synchronize, reopened]
   workflow_dispatch:
