@@ -41,7 +41,7 @@ jobs:
             /k:"dubrovskypi_Pdmt" \
             /o:"dubrovskypi" \
             /d:sonar.host.url="https://sonarcloud.io" \
-            /d:sonar.cs.cobertura.reportsPaths="TestResults/unit.cobertura.xml,TestResults/integration.cobertura.xml" \
+            /d:sonar.cs.cobertura.reportsPaths="${{ github.workspace }}/TestResults/unit.cobertura.xml,${{ github.workspace }}/TestResults/integration.cobertura.xml" \
             /d:sonar.exclusions="Pdmt.Maui/**,**/Migrations/**"
 
       - name: Cache NuGet
