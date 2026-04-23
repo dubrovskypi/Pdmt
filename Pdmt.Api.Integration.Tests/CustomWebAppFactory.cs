@@ -8,10 +8,21 @@ using Microsoft.IdentityModel.Tokens;
 using Pdmt.Api.Data;
 using System.Text;
 
-namespace Pdmt.Api.Tests
+namespace Pdmt.Api.Integration.Tests
 {
     public class CustomWebAppFactory : WebApplicationFactory<Program>
     {
+        public const string TestJwtSecret = "test-super-secret-key-min-32-chars!!";
+
+        public CustomWebAppFactory()
+        {
+            Environment.SetEnvironmentVariable("Jwt__Secret", TestJwtSecret);
+            Environment.SetEnvironmentVariable("Jwt__Issuer", "pdmt-test");
+            Environment.SetEnvironmentVariable("Jwt__Audience", "pdmt-test");
+            Environment.SetEnvironmentVariable("Jwt__TokenLifetimeMinutes", "60");
+            Environment.SetEnvironmentVariable("Jwt__RefreshTokenLifetimeDays", "1");
+        }
+
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
             builder.ConfigureServices(services =>
@@ -27,7 +38,6 @@ namespace Pdmt.Api.Tests
                 // --- Replace authentication ---
                 // Add a policy scheme that forwards to either TestScheme or JwtBearer depending on the Authorization header.
                 // This allows tests to exercise both the test auth handler (when using "TestScheme") and real JWT flow (when using "Bearer").
-                var testJwtSecret = "your-super-secret-test-key-123456";
                 services.AddAuthentication(options =>
                 {
                     options.DefaultAuthenticateScheme = "TestOrJwt";
@@ -56,7 +66,7 @@ namespace Pdmt.Api.Tests
                         ValidateAudience = false,
                         ValidateLifetime = true,
                         ValidateIssuerSigningKey = true,
-                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(testJwtSecret))
+                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(TestJwtSecret))
                     }
                     ;
                 });

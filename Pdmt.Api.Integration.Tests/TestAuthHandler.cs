@@ -4,11 +4,12 @@ using Microsoft.Extensions.Options;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
 
-namespace Pdmt.Api.Tests
+namespace Pdmt.Api.Integration.Tests
 {
     public class TestAuthHandler : AuthenticationHandler<AuthenticationSchemeOptions>
     {
         public const string SchemeName = "TestScheme";
+        public static readonly Guid TestUserId = Guid.Parse("00000000-0000-0000-0000-000000000001");
 
         public TestAuthHandler(
             IOptionsMonitor<AuthenticationSchemeOptions> options,
@@ -31,7 +32,7 @@ namespace Pdmt.Api.Tests
                 return Task.FromResult(AuthenticateResult.NoResult());
             var claims = new[]
             {
-                new Claim(ClaimTypes.NameIdentifier, "00000000-0000-0000-0000-000000000001"),
+                new Claim(ClaimTypes.NameIdentifier, TestUserId.ToString()),
             };
             var identity = new ClaimsIdentity(claims, SchemeName);
             var principal = new ClaimsPrincipal(identity);

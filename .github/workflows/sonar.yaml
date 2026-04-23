@@ -1,0 +1,75 @@
+name: SonarCloud
+
+on:
+  push:
+    branches: [master, dev]
+  pull_request:
+    branches: [master, dev]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Sonar build
+    runs-on: ubuntu-latest
+    env:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Cache dotnet tools
+        uses: actions/cache@v4
+        with:
+          path: ~/.dotnet/tools
+          key: dotnet-tools-${{ runner.os }}-sonar11.2.1-coverage
+          restore-keys: dotnet-tools-${{ runner.os }}-
+
+      - name: Install tools
+        run: |
+          dotnet tool install --global dotnet-sonarscanner --version 11.2.1 --ignore-failed-sources
+          dotnet tool install --global dotnet-coverage --ignore-failed-sources
+
+      - name: Cache NuGet
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('Pdmt.Api/**/*.csproj', 'Pdmt.Client/**/*.csproj', 'Pdmt.Api.Unit.Tests/**/*.csproj', 'Pdmt.Api.Integration.Tests/**/*.csproj') }}
+          restore-keys: nuget-${{ runner.os }}-
+
+      - name: Begin Sonar scan
+        run: |
+          dotnet sonarscanner begin \
+            /k:"dubrovskypi_Pdmt" \
+            /o:"dubrovskypi" \
+            /d:sonar.host.url="https://sonarcloud.io" \
+            /d:sonar.cs.vscoveragexml.reportsPaths="coverage.xml" \
+            /d:sonar.exclusions="Pdmt.Maui/**,**/Migrations/**"
+
+      - name: Build
+        run: |
+          dotnet build Pdmt.Api/Pdmt.Api.csproj -c Release
+          dotnet build Pdmt.Client/Pdmt.Client.csproj -c Release
+          dotnet build Pdmt.Api.Unit.Tests/Pdmt.Api.Unit.Tests.csproj -c Release
+          dotnet build Pdmt.Api.Integration.Tests/Pdmt.Api.Integration.Tests.csproj -c Release
+
+      - name: Test
+        run: |
+          dotnet-coverage collect \
+            "dotnet test Pdmt.Api.Unit.Tests/Pdmt.Api.Unit.Tests.csproj --no-build -c Release" \
+            -f xml -o unit.xml
+          dotnet-coverage collect \
+            "dotnet test Pdmt.Api.Integration.Tests/Pdmt.Api.Integration.Tests.csproj --no-build -c Release" \
+            -f xml -o integration.xml
+          dotnet-coverage merge -f xml -o coverage.xml unit.xml integration.xml
+
+      - name: End Sonar scan
+        if: always()
+        run: dotnet sonarscanner end

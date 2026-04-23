@@ -6,12 +6,12 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 
-namespace Pdmt.Api.Tests;
+namespace Pdmt.Api.Integration.Tests;
 
 public class InsightsControllerTests : IClassFixture<CustomWebAppFactory>
 {
-    private static readonly Guid TestUserId = Guid.Parse("00000000-0000-0000-0000-000000000001");
-    private static readonly Guid OtherUserId = Guid.Parse("00000000-0000-0000-0000-000000000002");
+    private static readonly Guid TestUserId = TestAuthHandler.TestUserId;
+    private static readonly Guid OtherUserId = Guid.NewGuid();
 
     private readonly CustomWebAppFactory _factory;
 
