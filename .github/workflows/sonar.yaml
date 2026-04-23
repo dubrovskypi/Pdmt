@@ -41,6 +41,7 @@ jobs:
             /k:"dubrovskypi_Pdmt" \
             /o:"dubrovskypi" \
             /d:sonar.host.url="https://sonarcloud.io" \
+            /d:sonar.cs.cobertura.reportsPaths="TestResults/unit.cobertura.xml,TestResults/integration.cobertura.xml" \
             /d:sonar.exclusions="Pdmt.Maui/**,**/Migrations/**"
 
       - name: Cache NuGet
@@ -62,17 +63,19 @@ jobs:
           dotnet test Pdmt.Api.Unit.Tests/Pdmt.Api.Unit.Tests.csproj \
             --no-build -c Release \
             --collect:"XPlat Code Coverage" \
-            --results-directory ./TestResults \
+            --results-directory ./TestResults/unit \
             --settings Pdmt.runsettings
           dotnet test Pdmt.Api.Integration.Tests/Pdmt.Api.Integration.Tests.csproj \
             --no-build -c Release \
             --collect:"XPlat Code Coverage" \
-            --results-directory ./TestResults \
+            --results-directory ./TestResults/integration \
             --settings Pdmt.runsettings
+
+      - name: Collect coverage
+        run: |
+          find TestResults/unit -name "coverage.cobertura.xml" -exec cp {} TestResults/unit.cobertura.xml \;
+          find TestResults/integration -name "coverage.cobertura.xml" -exec cp {} TestResults/integration.cobertura.xml \;
 
       - name: End Sonar scan
         if: always()
-        run: |
-          PATHS=$(find TestResults -name "coverage.cobertura.xml" | paste -sd,)
-          echo "Coverage paths: $PATHS"
-          dotnet sonarscanner end /d:sonar.cs.cobertura.reportsPaths="$PATHS"
+        run: dotnet sonarscanner end
