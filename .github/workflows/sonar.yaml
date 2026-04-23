@@ -41,7 +41,7 @@ jobs:
             /k:"dubrovskypi_Pdmt" \
             /o:"dubrovskypi" \
             /d:sonar.host.url="https://sonarcloud.io" \
-            /d:sonar.cs.cobertura.reportsPaths="**/coverage.cobertura.xml" \
+            /d:sonar.cs.cobertura.reportsPaths="TestResults/**/coverage.cobertura.xml" \
             /d:sonar.exclusions="Pdmt.Maui/**,**/Migrations/**"
 
       - name: Cache NuGet
@@ -63,10 +63,12 @@ jobs:
           dotnet test Pdmt.Api.Unit.Tests/Pdmt.Api.Unit.Tests.csproj \
             --no-build -c Release \
             --collect:"XPlat Code Coverage" \
+            --results-directory ./TestResults \
             --settings Pdmt.runsettings
           dotnet test Pdmt.Api.Integration.Tests/Pdmt.Api.Integration.Tests.csproj \
             --no-build -c Release \
             --collect:"XPlat Code Coverage" \
+            --results-directory ./TestResults \
             --settings Pdmt.runsettings
 
       - name: End Sonar scan
