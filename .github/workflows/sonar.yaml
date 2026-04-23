@@ -11,6 +11,8 @@ jobs:
   build:
     name: Sonar build
     runs-on: ubuntu-latest #fix version later
+    env:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
     steps:
       - name: Checkout
@@ -38,7 +40,6 @@ jobs:
           dotnet sonarscanner begin \
             /k:"dubrovskypi_Pdmt" \
             /o:"dubrovskypi" \
-            /d:sonar.token="${{ secrets.SONAR_TOKEN }}" \
             /d:sonar.host.url="https://sonarcloud.io" \
             /d:sonar.cs.cobertura.reportsPaths="**/coverage.cobertura.xml" \
             /d:sonar.exclusions="Pdmt.Maui/**,**/Migrations/**"
@@ -70,6 +71,4 @@ jobs:
 
       - name: End Sonar scan
         if: always()
-        run: |
-          dotnet sonarscanner end \
-            /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
+        run: dotnet sonarscanner end

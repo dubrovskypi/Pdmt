@@ -9,3 +9,4 @@
 - [ ] **Tests: Testcontainers-Npgsql-DateTimeOffset** - in-memory EF хранит offset как есть, Npgsql нормализует в UTC; нужны интеграционные тесты с реальным PostgreSQL для CreateEventAsync / UpdateEventAsync / GetByIdAsync с offset +03:00
 - [ ] **Tests: InsightsServiceTests** - расширить тесты: покрыть все методы с акцентом на группировку по дням/неделям на границах таймзоны Europe/Vilnius; использовать Testcontainers вместо in-memory
 - [ ] **API: Seed data для новых пользователей** — наполнять аккаунт тестовыми событиями и тегами при регистрации, чтобы инсайты сразу показывали данные (онбординг)
+- [ ] **Tests: WebAuthController** unit tests
