@@ -10,7 +10,7 @@ on:
 jobs:
   build:
     name: Sonar build
-    runs-on: ubuntu-latest #fix version later
+    runs-on: ubuntu-latest
     env:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
@@ -25,24 +25,17 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
-      - name: Cache SonarScanner
+      - name: Cache dotnet tools
         uses: actions/cache@v4
         with:
           path: ~/.dotnet/tools
-          key: sonarscanner-${{ runner.os }}-11.2.1
-          restore-keys: sonarscanner-${{ runner.os }}-
+          key: dotnet-tools-${{ runner.os }}-sonar11.2.1-coverage
+          restore-keys: dotnet-tools-${{ runner.os }}-
 
-      - name: Install SonarScanner
-        run: dotnet tool install --global dotnet-sonarscanner --version 11.2.1 --ignore-failed-sources
-
-      - name: Begin Sonar scan
+      - name: Install tools
         run: |
-          dotnet sonarscanner begin \
-            /k:"dubrovskypi_Pdmt" \
-            /o:"dubrovskypi" \
-            /d:sonar.host.url="https://sonarcloud.io" \
-            /d:sonar.cs.cobertura.reportsPaths="${{ github.workspace }}/TestResults/unit.cobertura.xml,${{ github.workspace }}/TestResults/integration.cobertura.xml" \
-            /d:sonar.exclusions="Pdmt.Maui/**,**/Migrations/**"
+          dotnet tool install --global dotnet-sonarscanner --version 11.2.1 --ignore-failed-sources
+          dotnet tool install --global dotnet-coverage --ignore-failed-sources
 
       - name: Cache NuGet
         uses: actions/cache@v4
@@ -50,6 +43,15 @@ jobs:
           path: ~/.nuget/packages
           key: nuget-${{ runner.os }}-${{ hashFiles('Pdmt.Api/**/*.csproj', 'Pdmt.Client/**/*.csproj', 'Pdmt.Api.Unit.Tests/**/*.csproj', 'Pdmt.Api.Integration.Tests/**/*.csproj') }}
           restore-keys: nuget-${{ runner.os }}-
+
+      - name: Begin Sonar scan
+        run: |
+          dotnet sonarscanner begin \
+            /k:"dubrovskypi_Pdmt" \
+            /o:"dubrovskypi" \
+            /d:sonar.host.url="https://sonarcloud.io" \
+            /d:sonar.cs.vscoveragexml.reportsPaths="coverage.xml" \
+            /d:sonar.exclusions="Pdmt.Maui/**,**/Migrations/**"
 
       - name: Build
         run: |
@@ -60,21 +62,13 @@ jobs:
 
       - name: Test
         run: |
-          dotnet test Pdmt.Api.Unit.Tests/Pdmt.Api.Unit.Tests.csproj \
-            --no-build -c Release \
-            --collect:"XPlat Code Coverage" \
-            --results-directory ./TestResults/unit \
-            --settings Pdmt.runsettings
-          dotnet test Pdmt.Api.Integration.Tests/Pdmt.Api.Integration.Tests.csproj \
-            --no-build -c Release \
-            --collect:"XPlat Code Coverage" \
-            --results-directory ./TestResults/integration \
-            --settings Pdmt.runsettings
-
-      - name: Collect coverage
-        run: |
-          find TestResults/unit -name "coverage.cobertura.xml" -exec cp {} TestResults/unit.cobertura.xml \;
-          find TestResults/integration -name "coverage.cobertura.xml" -exec cp {} TestResults/integration.cobertura.xml \;
+          dotnet-coverage collect \
+            "dotnet test Pdmt.Api.Unit.Tests/Pdmt.Api.Unit.Tests.csproj --no-build -c Release" \
+            -f xml -o unit.xml
+          dotnet-coverage collect \
+            "dotnet test Pdmt.Api.Integration.Tests/Pdmt.Api.Integration.Tests.csproj --no-build -c Release" \
+            -f xml -o integration.xml
+          dotnet-coverage merge -f xml -o coverage.xml unit.xml integration.xml
 
       - name: End Sonar scan
         if: always()
