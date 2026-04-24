@@ -391,7 +391,6 @@ public sealed class EventBuilder
 - [ ] Заменить `IClassFixture<CustomWebAppFactory>` → унаследовать `HttpTestBase`
 - [ ] Удалить `IAsyncLifetime` из класса (переехал в базовый)
 - [ ] Заменить все `Assert.*` на FluentAssertions
-- [ ] Убрать `#region`
 - [ ] Переименовать методы под единое соглашение `Subject_Scenario_ExpectedOutcome`
 - [ ] Убедиться что тесты проходят на реальном PostgreSQL
 
@@ -553,7 +552,6 @@ public class AnalyticsServiceTests : ServiceTestBase
 - [ ] Конвертировать `TagServiceTests`
 - [ ] Конвертировать `AuthServiceTests` (предварительно удалить rate limiting тесты — они в `AuthServiceUnitTests`)
 - [ ] Заменить `Assert.*` на FluentAssertions во всех файлах
-- [ ] Убрать `#region` во всех файлах
 - [ ] Привести именование к `Subject_Scenario_ExpectedOutcome`
 
 ---

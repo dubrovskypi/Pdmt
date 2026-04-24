@@ -1,3 +1,4 @@
+using FluentAssertions;
 using Microsoft.IdentityModel.Tokens;
 using Pdmt.Api.Dto;
 using Pdmt.Api.Integration.Tests.Infrastructure;
@@ -10,143 +11,131 @@ using System.Text;
 
 namespace Pdmt.Api.Integration.Tests;
 
-public class EventsControllerTests(PostgresWebAppFactory factory) : IClassFixture<PostgresWebAppFactory>
+public class EventsControllerTests(PostgresWebAppFactory factory) : HttpTestBase(factory)
 {
-    private readonly PostgresWebAppFactory _factory = factory;
-
     #region GetEvents
 
     [Fact]
-    public async Task GetEvents_AnonymousRequest_Returns401()
+    public async Task GetEvents_Unauthenticated_Returns401()
     {
-        var client = CreateAnonymousClient();
+        var response = await Factory.CreateClient().GetAsync("/api/events", TestContext.Current.CancellationToken);
 
-        var response = await client.GetAsync("/api/events", TestContext.Current.CancellationToken);
-
-        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 
     [Fact]
     public async Task GetEvents_InvalidJwt_Returns401()
     {
-        var client = CreateJwtClient("invalid_token");
+        var response = await CreateJwtClient("invalid_token").GetAsync("/api/events", TestContext.Current.CancellationToken);
 
-        var response = await client.GetAsync("/api/events", TestContext.Current.CancellationToken);
-
-        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 
     [Fact]
     public async Task GetEvents_Authenticated_Returns200()
     {
-        var client = CreateTestAuthClient();
+        var response = await Client.GetAsync("/api/events", TestContext.Current.CancellationToken);
 
-        var response = await client.GetAsync("/api/events", TestContext.Current.CancellationToken);
-
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
 
     [Fact]
     public async Task GetEvents_ValidJwt_Returns200()
     {
-        var client = CreateJwtClient(GenerateJwtToken());
+        var response = await CreateJwtClient(GenerateJwtToken()).GetAsync("/api/events", TestContext.Current.CancellationToken);
 
-        var response = await client.GetAsync("/api/events", TestContext.Current.CancellationToken);
-
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
 
     [Fact]
-    public async Task GetEvents_OtherUsersEvents_NotIncluded()
+    public async Task GetEvents_OtherUsersEventsExist_NotIncluded()
     {
-        var clientA = CreateTestAuthClient();
-        await clientA.PostAsJsonAsync("/api/events", MakeDto("User A Secret Event", DtoEventType.Positive, 5), TestContext.Current.CancellationToken);
+        await Client.PostAsJsonAsync("/api/events", MakeDto("User A Secret Event", DtoEventType.Positive, 5), TestContext.Current.CancellationToken);
+        var eventsA = await (await Client.GetAsync("/api/events", TestContext.Current.CancellationToken))
+            .Content.ReadFromJsonAsync<IEnumerable<EventResponseDto>>(TestContext.Current.CancellationToken);
+        eventsA.Should().Contain(e => e.Title == "User A Secret Event");
 
-        var responseA = await clientA.GetAsync("/api/events", TestContext.Current.CancellationToken);
-        var eventsA = await responseA.Content.ReadFromJsonAsync<IEnumerable<EventResponseDto>>(TestContext.Current.CancellationToken);
-        Assert.Contains(eventsA!, e => e.Title == "User A Secret Event");
+        var otherClient = CreateJwtClient(GenerateJwtToken());
+        var eventsB = await (await otherClient.GetAsync("/api/events", TestContext.Current.CancellationToken))
+            .Content.ReadFromJsonAsync<IEnumerable<EventResponseDto>>(TestContext.Current.CancellationToken);
 
-        var clientB = CreateJwtClient(GenerateJwtToken());
-        var responseB = await clientB.GetAsync("/api/events", TestContext.Current.CancellationToken);
-        var eventsB = await responseB.Content.ReadFromJsonAsync<IEnumerable<EventResponseDto>>(TestContext.Current.CancellationToken);
-
-        Assert.DoesNotContain(eventsB!, e => e.Title == "User A Secret Event");
+        eventsB.Should().NotContain(e => e.Title == "User A Secret Event");
     }
 
     [Fact]
-    public async Task GetEvents_FilterByType_ReturnsMatchingEvents()
+    public async Task GetEvents_FilterByType_ReturnsMatchingOnly()
     {
-        var client = CreateJwtClient(GenerateJwtToken());
-        await client.PostAsJsonAsync("/api/events", MakeDto("Positive Event", DtoEventType.Positive, 5), TestContext.Current.CancellationToken);
-        await client.PostAsJsonAsync("/api/events", MakeDto("Negative Event", DtoEventType.Negative, 5), TestContext.Current.CancellationToken);
+        var jwtClient = CreateJwtClient(GenerateJwtToken());
+        await jwtClient.PostAsJsonAsync("/api/events", MakeDto("Positive Event", DtoEventType.Positive, 5), TestContext.Current.CancellationToken);
+        await jwtClient.PostAsJsonAsync("/api/events", MakeDto("Negative Event", DtoEventType.Negative, 5), TestContext.Current.CancellationToken);
 
-        var response = await client.GetAsync("/api/events?type=Negative", TestContext.Current.CancellationToken);
-        var events = await response.Content.ReadFromJsonAsync<IEnumerable<EventResponseDto>>(TestContext.Current.CancellationToken);
+        var events = await (await jwtClient.GetAsync("/api/events?type=Negative", TestContext.Current.CancellationToken))
+            .Content.ReadFromJsonAsync<IEnumerable<EventResponseDto>>(TestContext.Current.CancellationToken);
 
-        Assert.All(events!, e => Assert.Equal(DtoEventType.Negative, e.Type));
-        Assert.DoesNotContain(events!, e => e.Title == "Positive Event");
+        events.Should().AllSatisfy(e => e.Type.Should().Be(DtoEventType.Negative));
+        events.Should().NotContain(e => e.Title == "Positive Event");
     }
 
     [Fact]
-    public async Task GetEvents_FilterByDateRange_ReturnsMatchingEvents()
+    public async Task GetEvents_FilterByDateRange_ReturnsMatchingOnly()
     {
-        var client = CreateJwtClient(GenerateJwtToken());
-        await client.PostAsJsonAsync("/api/events", MakeDto("In Range", DtoEventType.Positive, 5, DateTimeOffset.UtcNow.AddDays(-3)), TestContext.Current.CancellationToken);
-        await client.PostAsJsonAsync("/api/events", MakeDto("Out Range", DtoEventType.Positive, 5, DateTimeOffset.UtcNow.AddDays(-10)), TestContext.Current.CancellationToken);
+        var jwtClient = CreateJwtClient(GenerateJwtToken());
+        await jwtClient.PostAsJsonAsync("/api/events", MakeDto("In Range", DtoEventType.Positive, 5, DateTimeOffset.UtcNow.AddDays(-3)), TestContext.Current.CancellationToken);
+        await jwtClient.PostAsJsonAsync("/api/events", MakeDto("Out Range", DtoEventType.Positive, 5, DateTimeOffset.UtcNow.AddDays(-10)), TestContext.Current.CancellationToken);
 
         var from = DateTimeOffset.UtcNow.AddDays(-5).ToString("O");
-        var response = await client.GetAsync($"/api/events?from={Uri.EscapeDataString(from)}", TestContext.Current.CancellationToken);
-        var events = await response.Content.ReadFromJsonAsync<IEnumerable<EventResponseDto>>(TestContext.Current.CancellationToken);
+        var events = await (await jwtClient.GetAsync($"/api/events?from={Uri.EscapeDataString(from)}", TestContext.Current.CancellationToken))
+            .Content.ReadFromJsonAsync<IEnumerable<EventResponseDto>>(TestContext.Current.CancellationToken);
 
-        Assert.Contains(events!, e => e.Title == "In Range");
-        Assert.DoesNotContain(events!, e => e.Title == "Out Range");
+        events.Should().Contain(e => e.Title == "In Range");
+        events.Should().NotContain(e => e.Title == "Out Range");
     }
 
     [Fact]
-    public async Task GetEvents_FilterByIntensityRange_ReturnsMatchingEvents()
+    public async Task GetEvents_FilterByIntensityRange_ReturnsMatchingOnly()
     {
-        var client = CreateJwtClient(GenerateJwtToken());
-        await client.PostAsJsonAsync("/api/events", MakeDto("Low", DtoEventType.Positive, 2), TestContext.Current.CancellationToken);
-        await client.PostAsJsonAsync("/api/events", MakeDto("Medium", DtoEventType.Positive, 5), TestContext.Current.CancellationToken);
-        await client.PostAsJsonAsync("/api/events", MakeDto("High", DtoEventType.Positive, 9), TestContext.Current.CancellationToken);
+        var jwtClient = CreateJwtClient(GenerateJwtToken());
+        await jwtClient.PostAsJsonAsync("/api/events", MakeDto("Low", DtoEventType.Positive, 2), TestContext.Current.CancellationToken);
+        await jwtClient.PostAsJsonAsync("/api/events", MakeDto("Medium", DtoEventType.Positive, 5), TestContext.Current.CancellationToken);
+        await jwtClient.PostAsJsonAsync("/api/events", MakeDto("High", DtoEventType.Positive, 9), TestContext.Current.CancellationToken);
 
-        var response = await client.GetAsync("/api/events?minIntensity=4&maxIntensity=6", TestContext.Current.CancellationToken);
-        var events = await response.Content.ReadFromJsonAsync<IEnumerable<EventResponseDto>>(TestContext.Current.CancellationToken);
+        var events = await (await jwtClient.GetAsync("/api/events?minIntensity=4&maxIntensity=6", TestContext.Current.CancellationToken))
+            .Content.ReadFromJsonAsync<IEnumerable<EventResponseDto>>(TestContext.Current.CancellationToken);
 
-        Assert.Contains(events!, e => e.Title == "Medium");
-        Assert.DoesNotContain(events!, e => e.Title == "Low");
-        Assert.DoesNotContain(events!, e => e.Title == "High");
+        events.Should().Contain(e => e.Title == "Medium");
+        events.Should().NotContain(e => e.Title == "Low");
+        events.Should().NotContain(e => e.Title == "High");
     }
 
     [Fact]
-    public async Task GetEvents_FilterByTagIds_ReturnsTaggedEvents()
+    public async Task GetEvents_FilterByTagIds_ReturnsMatchingOnly()
     {
-        var client = CreateJwtClient(GenerateJwtToken());
-
+        var jwtClient = CreateJwtClient(GenerateJwtToken());
         var taggedDto = new CreateEventDto { Timestamp = DateTimeOffset.UtcNow, Type = DtoEventType.Positive, Title = "Tagged", Intensity = 5, TagNames = ["FilterTag"] };
-        var tagged = await (await client.PostAsJsonAsync("/api/events", taggedDto, TestContext.Current.CancellationToken)).Content.ReadFromJsonAsync<EventResponseDto>(TestContext.Current.CancellationToken);
-        await client.PostAsJsonAsync("/api/events", MakeDto("Untagged", DtoEventType.Positive, 5), TestContext.Current.CancellationToken);
+        var tagged = await (await jwtClient.PostAsJsonAsync("/api/events", taggedDto, TestContext.Current.CancellationToken))
+            .Content.ReadFromJsonAsync<EventResponseDto>(TestContext.Current.CancellationToken);
+        await jwtClient.PostAsJsonAsync("/api/events", MakeDto("Untagged", DtoEventType.Positive, 5), TestContext.Current.CancellationToken);
 
         var tagId = tagged!.Tags.Single(t => t.Name == "FilterTag").Id;
-        var response = await client.GetAsync($"/api/events?tags={tagId}", TestContext.Current.CancellationToken);
-        var events = await response.Content.ReadFromJsonAsync<IEnumerable<EventResponseDto>>(TestContext.Current.CancellationToken);
+        var events = await (await jwtClient.GetAsync($"/api/events?tags={tagId}", TestContext.Current.CancellationToken))
+            .Content.ReadFromJsonAsync<IEnumerable<EventResponseDto>>(TestContext.Current.CancellationToken);
 
-        Assert.Contains(events!, e => e.Title == "Tagged");
-        Assert.DoesNotContain(events!, e => e.Title == "Untagged");
+        events.Should().Contain(e => e.Title == "Tagged");
+        events.Should().NotContain(e => e.Title == "Untagged");
     }
 
     [Fact]
     public async Task GetEvents_InvalidTagIds_ReturnsAllEvents()
     {
-        var client = CreateJwtClient(GenerateJwtToken());
-        await client.PostAsJsonAsync("/api/events", MakeDto("Event A", DtoEventType.Positive, 5), TestContext.Current.CancellationToken);
-        await client.PostAsJsonAsync("/api/events", MakeDto("Event B", DtoEventType.Positive, 5), TestContext.Current.CancellationToken);
+        var jwtClient = CreateJwtClient(GenerateJwtToken());
+        await jwtClient.PostAsJsonAsync("/api/events", MakeDto("Event A", DtoEventType.Positive, 5), TestContext.Current.CancellationToken);
+        await jwtClient.PostAsJsonAsync("/api/events", MakeDto("Event B", DtoEventType.Positive, 5), TestContext.Current.CancellationToken);
 
-        var response = await client.GetAsync("/api/events?tags=not-a-guid,also-invalid", TestContext.Current.CancellationToken);
-
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var response = await jwtClient.GetAsync("/api/events?tags=not-a-guid,also-invalid", TestContext.Current.CancellationToken);
         var events = await response.Content.ReadFromJsonAsync<IEnumerable<EventResponseDto>>(TestContext.Current.CancellationToken);
-        Assert.Equal(2, events!.Count());
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        events.Should().HaveCount(2);
     }
 
     #endregion
@@ -154,25 +143,31 @@ public class EventsControllerTests(PostgresWebAppFactory factory) : IClassFixtur
     #region GetEvent
 
     [Fact]
-    public async Task GetEvent_NonExistentId_Returns404()
+    public async Task GetEvent_OwnEvent_Returns200()
     {
-        var client = CreateTestAuthClient();
+        var created = await CreateEventAndRead(Client, "My Event");
 
-        var response = await client.GetAsync($"/api/events/{Guid.NewGuid()}", TestContext.Current.CancellationToken);
+        var response = await Client.GetAsync($"/api/events/{created.Id}", TestContext.Current.CancellationToken);
 
-        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    [Fact]
+    public async Task GetEvent_NotFound_Returns404()
+    {
+        var response = await Client.GetAsync($"/api/events/{Guid.NewGuid()}", TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
     [Fact]
     public async Task GetEvent_OtherUsersEvent_Returns404()
     {
-        var ownerClient = CreateTestAuthClient();
-        var created = await CreateEventAndRead(ownerClient, "Owner Only");
+        var created = await CreateEventAndRead(Client, "Owner Only");
 
-        var otherClient = CreateJwtClient(GenerateJwtToken());
-        var response = await otherClient.GetAsync($"/api/events/{created.Id}", TestContext.Current.CancellationToken);
+        var response = await CreateJwtClient(GenerateJwtToken()).GetAsync($"/api/events/{created.Id}", TestContext.Current.CancellationToken);
 
-        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
     #endregion
@@ -180,36 +175,31 @@ public class EventsControllerTests(PostgresWebAppFactory factory) : IClassFixtur
     #region CreateEvent
 
     [Fact]
-    public async Task CreateEvent_ValidDto_Returns201()
+    public async Task CreateEvent_ValidRequest_Returns201WithLocation()
     {
-        var client = CreateTestAuthClient();
+        var response = await Client.PostAsJsonAsync("/api/events", MakeDto("Integration Test", DtoEventType.Positive, 5), TestContext.Current.CancellationToken);
+        var created = await response.Content.ReadFromJsonAsync<EventResponseDto>(TestContext.Current.CancellationToken);
 
-        var response = await client.PostAsJsonAsync("/api/events", MakeDto("Integration Test", DtoEventType.Positive, 5), TestContext.Current.CancellationToken);
-
-        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        response.Headers.Location.Should().NotBeNull();
+        response.Headers.Location!.ToString().Should().Contain(created!.Id.ToString());
     }
 
     [Fact]
-    public async Task CreateEvent_ValidDto_PersistedAndRetrievable()
+    public async Task CreateEvent_ValidRequest_PersistsToDatabase()
     {
-        var client = CreateTestAuthClient();
+        var created = await CreateEventAndRead(Client, "Morning Run");
 
-        var createResponse = await client.PostAsJsonAsync("/api/events", MakeDto("Morning Run", DtoEventType.Positive, 7), TestContext.Current.CancellationToken);
-        Assert.Equal(HttpStatusCode.Created, createResponse.StatusCode);
-        var created = await createResponse.Content.ReadFromJsonAsync<EventResponseDto>(TestContext.Current.CancellationToken);
-        Assert.NotNull(created);
+        var fetched = await (await Client.GetAsync($"/api/events/{created.Id}", TestContext.Current.CancellationToken))
+            .Content.ReadFromJsonAsync<EventResponseDto>(TestContext.Current.CancellationToken);
 
-        var getResponse = await client.GetAsync($"/api/events/{created!.Id}", TestContext.Current.CancellationToken);
-        Assert.Equal(HttpStatusCode.OK, getResponse.StatusCode);
-        var fetched = await getResponse.Content.ReadFromJsonAsync<EventResponseDto>(TestContext.Current.CancellationToken);
-        Assert.Equal("Morning Run", fetched!.Title);
-        Assert.Empty(fetched.Tags);
+        fetched!.Title.Should().Be("Morning Run");
+        fetched.Tags.Should().BeEmpty();
     }
 
     [Fact]
     public async Task CreateEvent_WithTags_ReturnsTagsInResponse()
     {
-        var client = CreateTestAuthClient();
         var dto = new CreateEventDto
         {
             Timestamp = DateTimeOffset.UtcNow,
@@ -219,57 +209,42 @@ public class EventsControllerTests(PostgresWebAppFactory factory) : IClassFixtur
             TagNames = ["Work", "Health"]
         };
 
-        var response = await client.PostAsJsonAsync("/api/events", dto, TestContext.Current.CancellationToken);
-        var created = await response.Content.ReadFromJsonAsync<EventResponseDto>(TestContext.Current.CancellationToken);
+        var created = await (await Client.PostAsJsonAsync("/api/events", dto, TestContext.Current.CancellationToken))
+            .Content.ReadFromJsonAsync<EventResponseDto>(TestContext.Current.CancellationToken);
 
-        Assert.Equal(2, created!.Tags.Count);
-        Assert.Contains(created.Tags, t => t.Name == "Work");
-        Assert.Contains(created.Tags, t => t.Name == "Health");
-    }
-
-    [Fact]
-    public async Task CreateEvent_ValidDto_ReturnsLocationHeader()
-    {
-        var client = CreateTestAuthClient();
-
-        var response = await client.PostAsJsonAsync("/api/events", MakeDto("Location Test", DtoEventType.Positive, 5), TestContext.Current.CancellationToken);
-        var created = await response.Content.ReadFromJsonAsync<EventResponseDto>(TestContext.Current.CancellationToken);
-
-        Assert.NotNull(response.Headers.Location);
-        Assert.Contains(created!.Id.ToString(), response.Headers.Location!.ToString());
+        created!.Tags.Should().HaveCount(2);
+        created.Tags.Should().Contain(t => t.Name == "Work");
+        created.Tags.Should().Contain(t => t.Name == "Health");
     }
 
     [Fact]
     public async Task CreateEvent_MissingTitle_Returns400()
     {
-        var client = CreateTestAuthClient();
         var payload = new { Timestamp = DateTimeOffset.UtcNow, Type = 0, Intensity = 5 };
 
-        var response = await client.PostAsJsonAsync("/api/events", payload, TestContext.Current.CancellationToken);
+        var response = await Client.PostAsJsonAsync("/api/events", payload, TestContext.Current.CancellationToken);
 
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
     [Fact]
     public async Task CreateEvent_IntensityOutOfRange_Returns400()
     {
-        var client = CreateTestAuthClient();
         var payload = new { Timestamp = DateTimeOffset.UtcNow, Type = 0, Title = "Test", Intensity = 11 };
 
-        var response = await client.PostAsJsonAsync("/api/events", payload, TestContext.Current.CancellationToken);
+        var response = await Client.PostAsJsonAsync("/api/events", payload, TestContext.Current.CancellationToken);
 
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
     [Fact]
     public async Task CreateEvent_IntensityZero_Returns201()
     {
-        var client = CreateTestAuthClient();
         var payload = new { Timestamp = DateTimeOffset.UtcNow, Type = 0, Title = "Zero intensity", Intensity = 0 };
 
-        var response = await client.PostAsJsonAsync("/api/events", payload, TestContext.Current.CancellationToken);
+        var response = await Client.PostAsJsonAsync("/api/events", payload, TestContext.Current.CancellationToken);
 
-        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
     }
 
     #endregion
@@ -277,43 +252,39 @@ public class EventsControllerTests(PostgresWebAppFactory factory) : IClassFixtur
     #region UpdateEvent
 
     [Fact]
-    public async Task UpdateEvent_ValidDto_Returns204AndUpdatesFields()
+    public async Task UpdateEvent_OwnEvent_Returns204()
     {
-        var client = CreateTestAuthClient();
-        var created = await CreateEventAndRead(client, "Original Title");
-
+        var created = await CreateEventAndRead(Client, "Original Title");
         var updateDto = new UpdateEventDto { Timestamp = created.Timestamp, Type = DtoEventType.Positive, Title = "Updated Title", Intensity = 8 };
-        var updateResponse = await client.PutAsJsonAsync($"/api/events/{created.Id}", updateDto, TestContext.Current.CancellationToken);
-        Assert.Equal(HttpStatusCode.NoContent, updateResponse.StatusCode);
 
-        var updated = await (await client.GetAsync($"/api/events/{created.Id}", TestContext.Current.CancellationToken))
+        var updateResponse = await Client.PutAsJsonAsync($"/api/events/{created.Id}", updateDto, TestContext.Current.CancellationToken);
+
+        updateResponse.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        var updated = await (await Client.GetAsync($"/api/events/{created.Id}", TestContext.Current.CancellationToken))
             .Content.ReadFromJsonAsync<EventResponseDto>(TestContext.Current.CancellationToken);
-        Assert.Equal("Updated Title", updated!.Title);
-        Assert.Equal(8, updated.Intensity);
+        updated!.Title.Should().Be("Updated Title");
+        updated.Intensity.Should().Be(8);
     }
 
     [Fact]
     public async Task UpdateEvent_NonExistentId_Returns404()
     {
-        var client = CreateTestAuthClient();
         var dto = new UpdateEventDto { Timestamp = DateTimeOffset.UtcNow, Type = DtoEventType.Positive, Title = "Ghost", Intensity = 5 };
 
-        var response = await client.PutAsJsonAsync($"/api/events/{Guid.NewGuid()}", dto, TestContext.Current.CancellationToken);
+        var response = await Client.PutAsJsonAsync($"/api/events/{Guid.NewGuid()}", dto, TestContext.Current.CancellationToken);
 
-        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
     [Fact]
     public async Task UpdateEvent_OtherUsersEvent_Returns404()
     {
-        var ownerClient = CreateTestAuthClient();
-        var created = await CreateEventAndRead(ownerClient, "Owner Only");
-
-        var otherClient = CreateJwtClient(GenerateJwtToken());
+        var created = await CreateEventAndRead(Client, "Owner Only");
         var dto = new UpdateEventDto { Timestamp = created.Timestamp, Type = DtoEventType.Positive, Title = "Hacked", Intensity = 5 };
-        var response = await otherClient.PutAsJsonAsync($"/api/events/{created.Id}", dto, TestContext.Current.CancellationToken);
 
-        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        var response = await CreateJwtClient(GenerateJwtToken()).PutAsJsonAsync($"/api/events/{created.Id}", dto, TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
     #endregion
@@ -321,57 +292,41 @@ public class EventsControllerTests(PostgresWebAppFactory factory) : IClassFixtur
     #region DeleteEvent
 
     [Fact]
-    public async Task DeleteEvent_ExistingEvent_Returns204AndEventGone()
+    public async Task DeleteEvent_OwnEvent_Returns204ThenGet404()
     {
-        var client = CreateTestAuthClient();
-        var created = await CreateEventAndRead(client, "To Be Deleted");
+        var created = await CreateEventAndRead(Client, "To Be Deleted");
 
-        var deleteResponse = await client.DeleteAsync($"/api/events/{created.Id}", TestContext.Current.CancellationToken);
-        Assert.Equal(HttpStatusCode.NoContent, deleteResponse.StatusCode);
+        var deleteResponse = await Client.DeleteAsync($"/api/events/{created.Id}", TestContext.Current.CancellationToken);
+        deleteResponse.StatusCode.Should().Be(HttpStatusCode.NoContent);
 
-        var getResponse = await client.GetAsync($"/api/events/{created.Id}", TestContext.Current.CancellationToken);
-        Assert.Equal(HttpStatusCode.NotFound, getResponse.StatusCode);
+        var getResponse = await Client.GetAsync($"/api/events/{created.Id}", TestContext.Current.CancellationToken);
+        getResponse.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
     [Fact]
     public async Task DeleteEvent_NonExistentId_Returns404()
     {
-        var client = CreateTestAuthClient();
+        var response = await Client.DeleteAsync($"/api/events/{Guid.NewGuid()}", TestContext.Current.CancellationToken);
 
-        var response = await client.DeleteAsync($"/api/events/{Guid.NewGuid()}", TestContext.Current.CancellationToken);
-
-        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
     [Fact]
     public async Task DeleteEvent_OtherUsersEvent_Returns404()
     {
-        var ownerClient = CreateTestAuthClient();
-        var created = await CreateEventAndRead(ownerClient, "Owner Only");
+        var created = await CreateEventAndRead(Client, "Owner Only");
 
-        var otherClient = CreateJwtClient(GenerateJwtToken());
-        var response = await otherClient.DeleteAsync($"/api/events/{created.Id}", TestContext.Current.CancellationToken);
+        var response = await CreateJwtClient(GenerateJwtToken()).DeleteAsync($"/api/events/{created.Id}", TestContext.Current.CancellationToken);
 
-        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
     #endregion
 
-    private HttpClient CreateAnonymousClient() => _factory.CreateClient();
-
-    private HttpClient CreateTestAuthClient()
-    {
-        var client = _factory.CreateClient();
-        client.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("TestScheme");
-        return client;
-    }
-
     private HttpClient CreateJwtClient(string token)
     {
-        var client = _factory.CreateClient();
-        client.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("Bearer", token);
+        var client = Factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         return client;
     }
 
@@ -379,23 +334,17 @@ public class EventsControllerTests(PostgresWebAppFactory factory) : IClassFixtur
     {
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(PostgresWebAppFactory.TestJwtSecret));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-        var claims = new[]
-        {
-            new Claim(ClaimTypes.NameIdentifier, (userId ?? Guid.NewGuid()).ToString())
-        };
-        var token = new JwtSecurityToken(
-            claims: claims,
-            expires: DateTime.UtcNow.AddMinutes(30),
-            signingCredentials: creds);
+        var claims = new[] { new Claim(ClaimTypes.NameIdentifier, (userId ?? Guid.NewGuid()).ToString()) };
+        var token = new JwtSecurityToken(claims: claims, expires: DateTime.UtcNow.AddMinutes(30), signingCredentials: creds);
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
 
     private static CreateEventDto MakeDto(string title, DtoEventType type, int intensity, DateTimeOffset? timestamp = null) =>
         new() { Title = title, Type = type, Intensity = intensity, Timestamp = timestamp ?? DateTimeOffset.UtcNow };
 
-    private static async Task<EventResponseDto> CreateEventAndRead(HttpClient client, string title)
+    private async Task<EventResponseDto> CreateEventAndRead(HttpClient client, string title)
     {
-        var response = await client.PostAsJsonAsync("/api/events", MakeDto(title, DtoEventType.Positive, 5));
-        return (await response.Content.ReadFromJsonAsync<EventResponseDto>())!;
+        var response = await client.PostAsJsonAsync("/api/events", MakeDto(title, DtoEventType.Positive, 5), TestContext.Current.CancellationToken);
+        return (await response.Content.ReadFromJsonAsync<EventResponseDto>(TestContext.Current.CancellationToken))!;
     }
 }
