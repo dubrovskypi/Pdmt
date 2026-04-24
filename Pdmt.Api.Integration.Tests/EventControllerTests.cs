@@ -1,5 +1,6 @@
 using Microsoft.IdentityModel.Tokens;
 using Pdmt.Api.Dto;
+using Pdmt.Api.Integration.Tests.Infrastructure;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Net.Http.Headers;
@@ -9,9 +10,9 @@ using System.Text;
 
 namespace Pdmt.Api.Integration.Tests;
 
-public class EventsControllerTests(CustomWebAppFactory factory) : IClassFixture<CustomWebAppFactory>
+public class EventsControllerTests(PostgresWebAppFactory factory) : IClassFixture<PostgresWebAppFactory>
 {
-    private readonly CustomWebAppFactory _factory = factory;
+    private readonly PostgresWebAppFactory _factory = factory;
 
     #region GetEvents
 
@@ -376,7 +377,7 @@ public class EventsControllerTests(CustomWebAppFactory factory) : IClassFixture<
 
     private string GenerateJwtToken(Guid? userId = null)
     {
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(CustomWebAppFactory.TestJwtSecret));
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(PostgresWebAppFactory.TestJwtSecret));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
         var claims = new[]
         {

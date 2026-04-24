@@ -1,11 +1,12 @@
 using Pdmt.Api.Dto;
+using Pdmt.Api.Integration.Tests.Infrastructure;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 
 namespace Pdmt.Api.Integration.Tests;
 
-public class WebAuthControllerTests(WebAuthWebAppFactory factory) : IClassFixture<WebAuthWebAppFactory>
+public class WebAuthControllerTests(PostgresWebAppFactory factory) : IClassFixture<PostgresWebAppFactory>
 {
 
     // ── Register ──────────────────────────────────────────────────────────────

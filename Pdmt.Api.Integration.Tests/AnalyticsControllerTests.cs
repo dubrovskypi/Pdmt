@@ -2,13 +2,14 @@ using Microsoft.Extensions.DependencyInjection;
 using Pdmt.Api.Data;
 using Pdmt.Api.Domain;
 using Pdmt.Api.Dto.Analytics;
+using Pdmt.Api.Integration.Tests.Infrastructure;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 
 namespace Pdmt.Api.Integration.Tests;
 
-public class AnalyticsControllerTests(CustomWebAppFactory factory) : IClassFixture<CustomWebAppFactory>
+public class AnalyticsControllerTests(PostgresWebAppFactory factory) : IClassFixture<PostgresWebAppFactory>
 {
     private static readonly Guid TestUserId = TestAuthHandler.TestUserId;
     private static readonly Guid OtherUserId = Guid.NewGuid();
