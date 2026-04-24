@@ -1,3 +1,4 @@
+using FluentAssertions;
 using Pdmt.Api.Dto;
 using Pdmt.Api.Integration.Tests.Infrastructure;
 using System.Net;
@@ -6,182 +7,178 @@ using System.Net.Http.Json;
 
 namespace Pdmt.Api.Integration.Tests;
 
-public class WebAuthControllerTests(PostgresWebAppFactory factory) : IClassFixture<PostgresWebAppFactory>
+public class WebAuthControllerTests(PostgresWebAppFactory factory) : HttpTestBase(factory)
 {
-
-    // ── Register ──────────────────────────────────────────────────────────────
+    #region Register
 
     [Fact]
-    public async Task Register_ValidCredentials_Returns201()
+    public async Task Register_ValidData_Returns201()
     {
-        var client = factory.CreateClient();
-        var dto = new UserDto { Email = UniqueEmail(), Password = "password123" };
+        var response = await Factory.CreateClient().PostAsJsonAsync("/api/auth/web/register",
+            new UserDto { Email = UniqueEmail(), Password = "Password123!" },
+            TestContext.Current.CancellationToken);
 
-        var response = await client.PostAsJsonAsync("/api/auth/web/register", dto, TestContext.Current.CancellationToken);
-
-        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
     }
 
     [Fact]
-    public async Task Register_ValidCredentials_SetsHttpOnlyCookie()
+    public async Task Register_ValidData_SetsHttpOnlyCookie()
     {
-        var client = factory.CreateClient();
-        var dto = new UserDto { Email = UniqueEmail(), Password = "password123" };
+        var response = await Factory.CreateClient().PostAsJsonAsync("/api/auth/web/register",
+            new UserDto { Email = UniqueEmail(), Password = "Password123!" },
+            TestContext.Current.CancellationToken);
+        var setCookie = response.Headers.GetValues("Set-Cookie").FirstOrDefault(h => h.Contains("refreshToken="));
 
-        var response = await client.PostAsJsonAsync("/api/auth/web/register", dto, TestContext.Current.CancellationToken);
-
-        var setCookie = response.Headers.GetValues("Set-Cookie").FirstOrDefault();
-        Assert.NotNull(setCookie);
-        Assert.Contains("refreshToken=", setCookie);
-        Assert.Contains("HttpOnly", setCookie, StringComparison.OrdinalIgnoreCase);
+        setCookie.Should().NotBeNull()
+            .And.Contain("refreshToken=")
+            .And.ContainEquivalentOf("httponly");
     }
 
     [Fact]
-    public async Task Register_ValidCredentials_DoesNotExposeRefreshTokenInBody()
+    public async Task Register_ValidData_RefreshTokenNotInBody()
     {
-        var client = factory.CreateClient();
-        var dto = new UserDto { Email = UniqueEmail(), Password = "password123" };
-
-        var response = await client.PostAsJsonAsync("/api/auth/web/register", dto, TestContext.Current.CancellationToken);
-        var body = await response.Content.ReadFromJsonAsync<WebAuthResultDto>(TestContext.Current.CancellationToken);
-
-        Assert.NotNull(body);
-        Assert.NotEmpty(body.AccessToken);
+        var response = await Factory.CreateClient().PostAsJsonAsync("/api/auth/web/register",
+            new UserDto { Email = UniqueEmail(), Password = "Password123!" },
+            TestContext.Current.CancellationToken);
         var json = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
-        Assert.DoesNotContain("refreshToken", json, StringComparison.OrdinalIgnoreCase);
+
+        json.Should().NotContainEquivalentOf("refreshToken");
     }
 
     [Fact]
     public async Task Register_EmptyEmail_Returns400()
     {
-        var client = factory.CreateClient();
-        var dto = new UserDto { Email = "", Password = "password123" };
+        var response = await Factory.CreateClient().PostAsJsonAsync("/api/auth/web/register",
+            new UserDto { Email = "", Password = "Password123!" },
+            TestContext.Current.CancellationToken);
 
-        var response = await client.PostAsJsonAsync("/api/auth/web/register", dto, TestContext.Current.CancellationToken);
-
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
-    // ── Login ─────────────────────────────────────────────────────────────────
+    #endregion
+
+    #region Login
 
     [Fact]
     public async Task Login_ValidCredentials_Returns200()
     {
-        var email = UniqueEmail();
-        var client = factory.CreateClient();
-        await client.PostAsJsonAsync("/api/auth/web/register",
-            new UserDto { Email = email, Password = "password123" }, TestContext.Current.CancellationToken);
+        var response = await Factory.CreateClient().PostAsJsonAsync("/api/auth/web/login",
+            new UserDto { Email = "test@pdmt.dev", Password = "Password123!" },
+            TestContext.Current.CancellationToken);
 
-        var response = await client.PostAsJsonAsync("/api/auth/web/login",
-            new UserDto { Email = email, Password = "password123" }, TestContext.Current.CancellationToken);
-
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
 
     [Fact]
-    public async Task Login_ValidCredentials_SetsRefreshCookie()
+    public async Task Login_ValidCredentials_SetsHttpOnlyCookie()
     {
-        var email = UniqueEmail();
-        var client = factory.CreateClient();
-        await client.PostAsJsonAsync("/api/auth/web/register",
-            new UserDto { Email = email, Password = "password123" }, TestContext.Current.CancellationToken);
+        var response = await Factory.CreateClient().PostAsJsonAsync("/api/auth/web/login",
+            new UserDto { Email = "test@pdmt.dev", Password = "Password123!" },
+            TestContext.Current.CancellationToken);
+        var setCookie = response.Headers.GetValues("Set-Cookie").FirstOrDefault(h => h.Contains("refreshToken="));
 
-        var response = await client.PostAsJsonAsync("/api/auth/web/login",
-            new UserDto { Email = email, Password = "password123" }, TestContext.Current.CancellationToken);
+        setCookie.Should().NotBeNull()
+            .And.Contain("refreshToken=")
+            .And.ContainEquivalentOf("httponly");
+    }
 
-        var setCookie = response.Headers.GetValues("Set-Cookie").FirstOrDefault();
-        Assert.NotNull(setCookie);
-        Assert.Contains("refreshToken=", setCookie);
+    [Fact]
+    public async Task Login_ValidCredentials_RefreshTokenNotInBody()
+    {
+        var response = await Factory.CreateClient().PostAsJsonAsync("/api/auth/web/login",
+            new UserDto { Email = "test@pdmt.dev", Password = "Password123!" },
+            TestContext.Current.CancellationToken);
+        var json = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+
+        json.Should().NotContainEquivalentOf("refreshToken");
     }
 
     [Fact]
     public async Task Login_WrongPassword_Returns401()
     {
-        var email = UniqueEmail();
-        var client = factory.CreateClient();
-        await client.PostAsJsonAsync("/api/auth/web/register",
-            new UserDto { Email = email, Password = "password123" }, TestContext.Current.CancellationToken);
+        var response = await Factory.CreateClient().PostAsJsonAsync("/api/auth/web/login",
+            new UserDto { Email = "test@pdmt.dev", Password = "wrongpassword" },
+            TestContext.Current.CancellationToken);
 
-        var response = await client.PostAsJsonAsync("/api/auth/web/login",
-            new UserDto { Email = email, Password = "wrongpassword" }, TestContext.Current.CancellationToken);
-
-        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 
-    // ── Refresh ───────────────────────────────────────────────────────────────
+    #endregion
+
+    #region Refresh
 
     [Fact]
-    public async Task Refresh_WithCookie_Returns200AndNewAccessToken()
+    public async Task Refresh_WithValidCookie_Returns200()
     {
-        var email = UniqueEmail();
-        var client = factory.CreateClient();
-        var registerResponse = await client.PostAsJsonAsync("/api/auth/web/register",
-            new UserDto { Email = email, Password = "password123" }, TestContext.Current.CancellationToken);
-        var refreshCookie = ExtractRefreshCookie(registerResponse);
+        var loginResponse = await Factory.CreateClient().PostAsJsonAsync("/api/auth/web/login",
+            new UserDto { Email = "test@pdmt.dev", Password = "Password123!" },
+            TestContext.Current.CancellationToken);
+        var cookie = ExtractRefreshCookie(loginResponse);
 
-        client.DefaultRequestHeaders.Add("Cookie", $"refreshToken={refreshCookie}");
-        var response = await client.PostAsync("/api/auth/web/refresh", null, TestContext.Current.CancellationToken);
+        var refreshClient = Factory.CreateClient();
+        refreshClient.DefaultRequestHeaders.Add("Cookie", $"refreshToken={cookie}");
+        var response = await refreshClient.PostAsync("/api/auth/web/refresh", null,
+            TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
         var body = await response.Content.ReadFromJsonAsync<WebAuthResultDto>(TestContext.Current.CancellationToken);
-
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.NotNull(body);
-        Assert.NotEmpty(body.AccessToken);
+        body!.AccessToken.Should().NotBeEmpty();
     }
 
     [Fact]
-    public async Task Refresh_WithCookie_RotatesRefreshCookie()
+    public async Task Refresh_WithValidCookie_RotatesRefreshToken()
     {
-        var email = UniqueEmail();
-        var client = factory.CreateClient();
-        var registerResponse = await client.PostAsJsonAsync("/api/auth/web/register",
-            new UserDto { Email = email, Password = "password123" }, TestContext.Current.CancellationToken);
-        var oldToken = ExtractRefreshCookie(registerResponse);
+        var loginResponse = await Factory.CreateClient().PostAsJsonAsync("/api/auth/web/login",
+            new UserDto { Email = "test@pdmt.dev", Password = "Password123!" },
+            TestContext.Current.CancellationToken);
+        var oldCookie = ExtractRefreshCookie(loginResponse);
 
-        client.DefaultRequestHeaders.Add("Cookie", $"refreshToken={oldToken}");
-        var refreshResponse = await client.PostAsync("/api/auth/web/refresh", null, TestContext.Current.CancellationToken);
-        var newToken = ExtractRefreshCookie(refreshResponse);
+        var refreshClient = Factory.CreateClient();
+        refreshClient.DefaultRequestHeaders.Add("Cookie", $"refreshToken={oldCookie}");
+        var refreshResponse = await refreshClient.PostAsync("/api/auth/web/refresh", null,
+            TestContext.Current.CancellationToken);
+        var newCookie = ExtractRefreshCookie(refreshResponse);
 
-        Assert.NotNull(newToken);
-        Assert.NotEqual(oldToken, newToken);
+        newCookie.Should().NotBeNull().And.NotBe(oldCookie);
     }
 
     [Fact]
     public async Task Refresh_WithoutCookie_Returns401()
     {
-        var client = factory.CreateClient();
+        var response = await Factory.CreateClient().PostAsync("/api/auth/web/refresh", null,
+            TestContext.Current.CancellationToken);
 
-        var response = await client.PostAsync("/api/auth/web/refresh", null, TestContext.Current.CancellationToken);
-
-        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 
-    // ── Logout ────────────────────────────────────────────────────────────────
+    #endregion
+
+    #region Logout
 
     [Fact]
     public async Task Logout_Authenticated_Returns204()
     {
-        var client = factory.CreateClient();
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("TestScheme");
+        var response = await Client.PostAsync("/api/auth/web/logout", null,
+            TestContext.Current.CancellationToken);
 
-        var response = await client.PostAsync("/api/auth/web/logout", null, TestContext.Current.CancellationToken);
-
-        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
     }
 
     [Fact]
-    public async Task Logout_Authenticated_ClearsRefreshCookie()
+    public async Task Logout_ClearsRefreshCookie()
     {
-        var client = factory.CreateClient();
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("TestScheme");
+        var authClient = Factory.CreateClient();
+        authClient.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue(TestAuthHandler.SchemeName);
 
-        var response = await client.PostAsync("/api/auth/web/logout", null, TestContext.Current.CancellationToken);
-        var setCookie = response.Headers.GetValues("Set-Cookie").FirstOrDefault();
+        var response = await authClient.PostAsync("/api/auth/web/logout", null,
+            TestContext.Current.CancellationToken);
+        var setCookie = response.Headers.GetValues("Set-Cookie").FirstOrDefault(h => h.Contains("refreshToken"));
 
-        Assert.NotNull(setCookie);
-        Assert.Contains("refreshToken=;", setCookie);
+        setCookie.Should().NotBeNull().And.Contain("refreshToken=;");
     }
 
-    // ── Helpers ───────────────────────────────────────────────────────────────
+    #endregion
 
     private static string UniqueEmail() => $"web_{Guid.NewGuid():N}@test.com";
 
