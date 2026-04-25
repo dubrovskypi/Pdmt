@@ -9,7 +9,7 @@ using System.Net.Http.Json;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace Pdmt.Api.Integration.Tests;
+namespace Pdmt.Api.Integration.Tests.Controllers;
 
 public class AuthControllerTests(PostgresWebAppFactory factory) : HttpTestBase(factory)
 {

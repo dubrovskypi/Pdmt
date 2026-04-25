@@ -7,7 +7,7 @@ using Pdmt.Api.Integration.Tests.Infrastructure;
 using System.Net;
 using System.Net.Http.Json;
 
-namespace Pdmt.Api.Integration.Tests;
+namespace Pdmt.Api.Integration.Tests.Controllers;
 
 public class TagsControllerTests(PostgresWebAppFactory factory) : HttpTestBase(factory)
 {

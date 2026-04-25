@@ -5,7 +5,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 
-namespace Pdmt.Api.Integration.Tests;
+namespace Pdmt.Api.Integration.Tests.Controllers;
 
 public class WebAuthControllerTests(PostgresWebAppFactory factory) : HttpTestBase(factory)
 {

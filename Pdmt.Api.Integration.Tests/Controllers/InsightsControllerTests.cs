@@ -8,7 +8,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 
-namespace Pdmt.Api.Integration.Tests;
+namespace Pdmt.Api.Integration.Tests.Controllers;
 
 public class InsightsControllerTests(PostgresWebAppFactory factory) : HttpTestBase(factory)
 {
