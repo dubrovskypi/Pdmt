@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Pdmt.Api.Data;
-using Pdmt.Api.Domain;
+using Pdmt.Api.Integration.Tests.Infrastructure.Builders;
 using Testcontainers.PostgreSql;
 
 namespace Pdmt.Api.Integration.Tests.Infrastructure;
@@ -33,13 +33,7 @@ public abstract class ServiceTestBase : IAsyncLifetime
 
     protected static async Task SeedDefaultUserAsync(AppDbContext db)
     {
-        db.Users.Add(new User
-        {
-            Id = TestAuthHandler.TestUserId,
-            Email = "test@pdmt.dev",
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword("Password123!"),
-            CreatedAt = DateTimeOffset.UtcNow
-        });
+        db.Users.Add(new UserBuilder().WithId(TestAuthHandler.TestUserId).WithEmail("test@pdmt.dev").Build());
         await db.SaveChangesAsync();
     }
 }

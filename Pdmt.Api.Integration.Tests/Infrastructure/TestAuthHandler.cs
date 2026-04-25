@@ -4,7 +4,7 @@ using Microsoft.Extensions.Options;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
 
-namespace Pdmt.Api.Integration.Tests
+namespace Pdmt.Api.Integration.Tests.Infrastructure
 {
     public class TestAuthHandler : AuthenticationHandler<AuthenticationSchemeOptions>
     {
