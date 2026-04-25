@@ -26,9 +26,9 @@ public class TagServiceTests : ServiceTestBase
     public async Task GetTagsAsync_ReturnsOnlyUserTags()
     {
         Db.Tags.AddRange(
-            TestHelpers.MakeTag(TestAuthHandler.TestUserId, "Work"),
-            TestHelpers.MakeTag(OtherUserId, "Personal"));
-        await Db.SaveChangesAsync();
+            new TagBuilder().WithUserId(TestAuthHandler.TestUserId).WithName("Work").Build(),
+            new TagBuilder().WithUserId(OtherUserId).WithName("Personal").Build());
+        await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var result = await _service.GetTagsAsync(TestAuthHandler.TestUserId);
 
@@ -41,10 +41,10 @@ public class TagServiceTests : ServiceTestBase
     {
         var userId = TestAuthHandler.TestUserId;
         Db.Tags.AddRange(
-            TestHelpers.MakeTag(userId, "Zebra"),
-            TestHelpers.MakeTag(userId, "Apple"),
-            TestHelpers.MakeTag(userId, "Mango"));
-        await Db.SaveChangesAsync();
+            new TagBuilder().WithUserId(userId).WithName("Zebra").Build(),
+            new TagBuilder().WithUserId(userId).WithName("Apple").Build(),
+            new TagBuilder().WithUserId(userId).WithName("Mango").Build());
+        await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var result = await _service.GetTagsAsync(userId);
 
@@ -57,17 +57,17 @@ public class TagServiceTests : ServiceTestBase
     public async Task GetTagsAsync_ReturnsCorrectEventCount()
     {
         var userId = TestAuthHandler.TestUserId;
-        var tag = TestHelpers.MakeTag(userId, "Work");
+        var tag = new TagBuilder().WithUserId(userId).WithName("Work").Build();
         Db.Tags.Add(tag);
-        var ev1 = TestHelpers.MakeEvent(userId, "E1");
-        var ev2 = TestHelpers.MakeEvent(userId, "E2");
-        var ev3 = TestHelpers.MakeEvent(userId, "E3");
+        var ev1 = new EventBuilder().WithUserId(userId).WithTitle("E1").Build();
+        var ev2 = new EventBuilder().WithUserId(userId).WithTitle("E2").Build();
+        var ev3 = new EventBuilder().WithUserId(userId).WithTitle("E3").Build();
         Db.Events.AddRange(ev1, ev2, ev3);
         Db.EventTags.AddRange(
             new Domain.EventTag { EventId = ev1.Id, TagId = tag.Id },
             new Domain.EventTag { EventId = ev2.Id, TagId = tag.Id },
             new Domain.EventTag { EventId = ev3.Id, TagId = tag.Id });
-        await Db.SaveChangesAsync();
+        await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var result = await _service.GetTagsAsync(userId);
 
@@ -143,9 +143,9 @@ public class TagServiceTests : ServiceTestBase
     public async Task DeleteTagAsync_ExistingTag_DeletesAndReturnsTrue()
     {
         var userId = TestAuthHandler.TestUserId;
-        var tag = TestHelpers.MakeTag(userId, "Work");
+        var tag = new TagBuilder().WithUserId(userId).WithName("Work").Build();
         Db.Tags.Add(tag);
-        await Db.SaveChangesAsync();
+        await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var result = await _service.DeleteTagAsync(userId, tag.Id);
 
@@ -164,9 +164,9 @@ public class TagServiceTests : ServiceTestBase
     [Fact]
     public async Task DeleteTagAsync_OtherUsersTag_ReturnsFalse()
     {
-        var tag = TestHelpers.MakeTag(TestAuthHandler.TestUserId, "Work");
+        var tag = new TagBuilder().WithUserId(TestAuthHandler.TestUserId).WithName("Work").Build();
         Db.Tags.Add(tag);
-        await Db.SaveChangesAsync();
+        await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var result = await _service.DeleteTagAsync(OtherUserId, tag.Id);
 

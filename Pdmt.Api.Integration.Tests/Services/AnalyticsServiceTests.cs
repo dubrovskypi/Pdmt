@@ -46,12 +46,12 @@ public class AnalyticsServiceTests : ServiceTestBase
         var now = DateTimeOffset.UtcNow;
         var monday = now.AddDays(-(int)now.DayOfWeek + 1);
         Db.Events.AddRange(
-            TestHelpers.MakeEvent(userId, "P1", EventType.Positive, 8, monday),
-            TestHelpers.MakeEvent(userId, "P2", EventType.Positive, 7, monday.AddDays(1)),
-            TestHelpers.MakeEvent(userId, "P3", EventType.Positive, 9, monday.AddDays(2)),
-            TestHelpers.MakeEvent(userId, "N1", EventType.Negative, 5, monday.AddDays(3)),
-            TestHelpers.MakeEvent(userId, "N2", EventType.Negative, 6, monday.AddDays(4)));
-        await Db.SaveChangesAsync();
+            new EventBuilder().WithUserId(userId).WithTitle("P1").WithIntensity(8).WithTimestamp(monday).Build(),
+            new EventBuilder().WithUserId(userId).WithTitle("P2").WithIntensity(7).WithTimestamp(monday.AddDays(1)).Build(),
+            new EventBuilder().WithUserId(userId).WithTitle("P3").WithIntensity(9).WithTimestamp(monday.AddDays(2)).Build(),
+            new EventBuilder().WithUserId(userId).WithTitle("N1").WithType(EventType.Negative).WithIntensity(5).WithTimestamp(monday.AddDays(3)).Build(),
+            new EventBuilder().WithUserId(userId).WithTitle("N2").WithType(EventType.Negative).WithIntensity(6).WithTimestamp(monday.AddDays(4)).Build());
+        await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var result = await _service.GetWeeklySummaryAsync(userId, DateOnly.FromDateTime(monday.DateTime));
 
@@ -66,13 +66,13 @@ public class AnalyticsServiceTests : ServiceTestBase
         var now = DateTimeOffset.UtcNow;
         var monday = now.AddDays(-(int)now.DayOfWeek + 1);
         Db.Events.AddRange(
-            TestHelpers.MakeEvent(userId, "P1", timestamp: monday),
-            TestHelpers.MakeEvent(userId, "P2", timestamp: monday),
-            TestHelpers.MakeEvent(userId, "P3", timestamp: monday),
-            TestHelpers.MakeEvent(userId, "P4", timestamp: monday),
-            TestHelpers.MakeEvent(userId, "N1", EventType.Negative, timestamp: monday),
-            TestHelpers.MakeEvent(userId, "N2", EventType.Negative, timestamp: monday));
-        await Db.SaveChangesAsync();
+            new EventBuilder().WithUserId(userId).WithTitle("P1").WithTimestamp(monday).Build(),
+            new EventBuilder().WithUserId(userId).WithTitle("P2").WithTimestamp(monday).Build(),
+            new EventBuilder().WithUserId(userId).WithTitle("P3").WithTimestamp(monday).Build(),
+            new EventBuilder().WithUserId(userId).WithTitle("P4").WithTimestamp(monday).Build(),
+            new EventBuilder().WithUserId(userId).WithTitle("N1").WithType(EventType.Negative).WithTimestamp(monday).Build(),
+            new EventBuilder().WithUserId(userId).WithTitle("N2").WithType(EventType.Negative).WithTimestamp(monday).Build());
+        await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var result = await _service.GetWeeklySummaryAsync(userId, DateOnly.FromDateTime(monday.DateTime));
 
@@ -86,9 +86,9 @@ public class AnalyticsServiceTests : ServiceTestBase
         var now = DateTimeOffset.UtcNow;
         var monday = now.AddDays(-(int)now.DayOfWeek + 1);
         Db.Events.AddRange(
-            TestHelpers.MakeEvent(userId, "P1", timestamp: monday),
-            TestHelpers.MakeEvent(userId, "P2", timestamp: monday));
-        await Db.SaveChangesAsync();
+            new EventBuilder().WithUserId(userId).WithTitle("P1").WithTimestamp(monday).Build(),
+            new EventBuilder().WithUserId(userId).WithTitle("P2").WithTimestamp(monday).Build());
+        await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var result = await _service.GetWeeklySummaryAsync(userId, DateOnly.FromDateTime(monday.DateTime));
 
@@ -101,13 +101,13 @@ public class AnalyticsServiceTests : ServiceTestBase
         var userId = TestAuthHandler.TestUserId;
         var now = DateTimeOffset.UtcNow;
         var monday = now.AddDays(-(int)now.DayOfWeek + 1);
-        var tags = Enumerable.Range(0, 7).Select(i => TestHelpers.MakeTag(userId, $"Tag{i}")).ToList();
+        var tags = Enumerable.Range(0, 7).Select(i => new TagBuilder().WithUserId(userId).WithName($"Tag{i}").Build()).ToList();
         Db.Tags.AddRange(tags);
-        var events = Enumerable.Range(0, 7).Select(i => TestHelpers.MakeEvent(userId, $"E{i}", timestamp: monday)).ToList();
+        var events = Enumerable.Range(0, 7).Select(i => new EventBuilder().WithUserId(userId).WithTitle($"E{i}").WithTimestamp(monday).Build()).ToList();
         Db.Events.AddRange(events);
         for (int i = 0; i < 7; i++)
             Db.EventTags.Add(new EventTag { EventId = events[i].Id, TagId = tags[i].Id });
-        await Db.SaveChangesAsync();
+        await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var result = await _service.GetWeeklySummaryAsync(userId, DateOnly.FromDateTime(monday.DateTime));
 
@@ -123,9 +123,9 @@ public class AnalyticsServiceTests : ServiceTestBase
         var monday = nowLocal.AddDays(-(int)nowLocal.DayOfWeek + 1);
         // PostgreSQL stores timestamptz in UTC — convert before seeding
         Db.Events.AddRange(
-            TestHelpers.MakeEvent(userId, "P1", timestamp: monday.AddDays(-1).ToUniversalTime()),
-            TestHelpers.MakeEvent(userId, "P2", timestamp: monday.ToUniversalTime()));
-        await Db.SaveChangesAsync();
+            new EventBuilder().WithUserId(userId).WithTitle("P1").WithTimestamp(monday.AddDays(-1).ToUniversalTime()).Build(),
+            new EventBuilder().WithUserId(userId).WithTitle("P2").WithTimestamp(monday.ToUniversalTime()).Build());
+        await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var result = await _service.GetWeeklySummaryAsync(userId, DateOnly.FromDateTime(monday.DateTime));
 
@@ -138,9 +138,9 @@ public class AnalyticsServiceTests : ServiceTestBase
         var now = DateTimeOffset.UtcNow;
         var monday = now.AddDays(-(int)now.DayOfWeek + 1);
         Db.Events.AddRange(
-            TestHelpers.MakeEvent(TestAuthHandler.TestUserId, "P1", timestamp: monday),
-            TestHelpers.MakeEvent(OtherUserId, "P2", timestamp: monday));
-        await Db.SaveChangesAsync();
+            new EventBuilder().WithTitle("P1").WithTimestamp(monday).Build(),
+            new EventBuilder().WithUserId(OtherUserId).WithTitle("P2").WithTimestamp(monday).Build());
+        await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var result = await _service.GetWeeklySummaryAsync(TestAuthHandler.TestUserId, DateOnly.FromDateTime(monday.DateTime));
 
@@ -154,9 +154,9 @@ public class AnalyticsServiceTests : ServiceTestBase
     [Fact]
     public async Task GetCorrelationsAsync_TagNotOwnedByUser_ThrowsNotFoundException()
     {
-        var tag = TestHelpers.MakeTag(OtherUserId, "Work");
+        var tag = new TagBuilder().WithUserId(OtherUserId).WithName("Work").Build();
         Db.Tags.Add(tag);
-        await Db.SaveChangesAsync();
+        await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
         var now = DateTimeOffset.UtcNow;
 
         var act = () => _service.GetCorrelationsAsync(TestAuthHandler.TestUserId, tag.Id, now, now.AddDays(7));
@@ -168,20 +168,20 @@ public class AnalyticsServiceTests : ServiceTestBase
     public async Task GetCorrelationsAsync_SplitsEventsByTagPresence()
     {
         var userId = TestAuthHandler.TestUserId;
-        var tag = TestHelpers.MakeTag(userId, "Work");
+        var tag = new TagBuilder().WithUserId(userId).WithName("Work").Build();
         Db.Tags.Add(tag);
         var now = DateTimeOffset.UtcNow;
         var eventsWithTag = Enumerable.Range(0, 3)
-            .Select(i => TestHelpers.MakeEvent(userId, $"With{i}", intensity: 6, timestamp: now.AddHours(i)))
+            .Select(i => new EventBuilder().WithUserId(userId).WithTitle($"With{i}").WithIntensity(6).WithTimestamp(now.AddHours(i)).Build())
             .ToList();
         var eventsWithout = Enumerable.Range(0, 2)
-            .Select(i => TestHelpers.MakeEvent(userId, $"Without{i}", intensity: 4, timestamp: now.AddHours(10 + i)))
+            .Select(i => new EventBuilder().WithUserId(userId).WithTitle($"Without{i}").WithIntensity(4).WithTimestamp(now.AddHours(10 + i)).Build())
             .ToList();
         Db.Events.AddRange(eventsWithTag);
         Db.Events.AddRange(eventsWithout);
         foreach (var ev in eventsWithTag)
             Db.EventTags.Add(new EventTag { EventId = ev.Id, TagId = tag.Id });
-        await Db.SaveChangesAsync();
+        await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var result = await _service.GetCorrelationsAsync(userId, tag.Id, now, now.AddDays(1));
 
@@ -194,10 +194,10 @@ public class AnalyticsServiceTests : ServiceTestBase
     public async Task GetCorrelationsAsync_NoEventsWithTag_AvgWithTagIsZero()
     {
         var userId = TestAuthHandler.TestUserId;
-        var tag = TestHelpers.MakeTag(userId, "Work");
+        var tag = new TagBuilder().WithUserId(userId).WithName("Work").Build();
         Db.Tags.Add(tag);
-        Db.Events.Add(TestHelpers.MakeEvent(userId, "E1"));
-        await Db.SaveChangesAsync();
+        Db.Events.Add(new EventBuilder().WithUserId(userId).WithTitle("E1").Build());
+        await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
         var now = DateTimeOffset.UtcNow;
 
         var result = await _service.GetCorrelationsAsync(userId, tag.Id, now, now.AddDays(1));
@@ -243,9 +243,9 @@ public class AnalyticsServiceTests : ServiceTestBase
         var monday = nowLocal.AddDays(-(int)nowLocal.DayOfWeek + 1);
         // PostgreSQL stores timestamptz in UTC — convert before seeding
         Db.Events.AddRange(
-            TestHelpers.MakeEvent(userId, "P1", intensity: 8, timestamp: monday.ToUniversalTime()),
-            TestHelpers.MakeEvent(userId, "N1", EventType.Negative, 4, monday.ToUniversalTime()));
-        await Db.SaveChangesAsync();
+            new EventBuilder().WithUserId(userId).WithTitle("P1").WithIntensity(8).WithTimestamp(monday.ToUniversalTime()).Build(),
+            new EventBuilder().WithUserId(userId).WithTitle("N1").WithType(EventType.Negative).WithIntensity(4).WithTimestamp(monday.ToUniversalTime()).Build());
+        await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var result = await _service.GetCalendarWeekAsync(userId, DateOnly.FromDateTime(monday.DateTime));
 
@@ -269,9 +269,9 @@ public class AnalyticsServiceTests : ServiceTestBase
     {
         var userId = TestAuthHandler.TestUserId;
         Db.Events.AddRange(
-            TestHelpers.MakeEvent(userId, "E1", timestamp: new DateTimeOffset(2024, 3, 1, 0, 0, 0, TimeSpan.Zero)),
-            TestHelpers.MakeEvent(userId, "E2", timestamp: new DateTimeOffset(2024, 3, 31, 0, 0, 0, TimeSpan.Zero)));
-        await Db.SaveChangesAsync();
+            new EventBuilder().WithUserId(userId).WithTitle("E1").WithTimestamp(new DateTimeOffset(2024, 3, 1, 0, 0, 0, TimeSpan.Zero)).Build(),
+            new EventBuilder().WithUserId(userId).WithTitle("E2").WithTimestamp(new DateTimeOffset(2024, 3, 31, 0, 0, 0, TimeSpan.Zero)).Build());
+        await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var result = await _service.GetCalendarMonthAsync(userId, 2024, 3);
 
@@ -284,9 +284,9 @@ public class AnalyticsServiceTests : ServiceTestBase
     {
         var userId = TestAuthHandler.TestUserId;
         Db.Events.AddRange(
-            TestHelpers.MakeEvent(userId, "E1", timestamp: new DateTimeOffset(2024, 3, 15, 0, 0, 0, TimeSpan.Zero)),
-            TestHelpers.MakeEvent(userId, "E2", timestamp: new DateTimeOffset(2024, 4, 15, 0, 0, 0, TimeSpan.Zero)));
-        await Db.SaveChangesAsync();
+            new EventBuilder().WithUserId(userId).WithTitle("E1").WithTimestamp(new DateTimeOffset(2024, 3, 15, 0, 0, 0, TimeSpan.Zero)).Build(),
+            new EventBuilder().WithUserId(userId).WithTitle("E2").WithTimestamp(new DateTimeOffset(2024, 4, 15, 0, 0, 0, TimeSpan.Zero)).Build());
+        await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var result = await _service.GetCalendarMonthAsync(userId, 2024, 3);
 

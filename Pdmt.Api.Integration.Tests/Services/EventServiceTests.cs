@@ -35,7 +35,9 @@ public class EventServiceTests : ServiceTestBase
     public async Task GetEventsAsync_NoFilters_ReturnsAllUserEvents()
     {
         var userId = TestAuthHandler.TestUserId;
-        Db.Events.AddRange(TestHelpers.MakeEvent(userId, "A"), TestHelpers.MakeEvent(userId, "B", EventType.Negative));
+        Db.Events.AddRange(
+            new EventBuilder().WithUserId(userId).WithTitle("A").Build(),
+            new EventBuilder().WithUserId(userId).WithTitle("B").WithType(EventType.Negative).Build());
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var result = await _service.GetEventsAsync(userId, null, null, null, null, null, null);
@@ -47,7 +49,9 @@ public class EventServiceTests : ServiceTestBase
     public async Task GetEventsAsync_OtherUsersEvents_NotReturned()
     {
         var userId = TestAuthHandler.TestUserId;
-        Db.Events.AddRange(TestHelpers.MakeEvent(userId, "Mine"), TestHelpers.MakeEvent(OtherUserId, "Theirs"));
+        Db.Events.AddRange(
+            new EventBuilder().WithUserId(userId).WithTitle("Mine").Build(),
+            new EventBuilder().WithUserId(OtherUserId).WithTitle("Theirs").Build());
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var result = await _service.GetEventsAsync(userId, null, null, null, null, null, null);
@@ -69,8 +73,8 @@ public class EventServiceTests : ServiceTestBase
     {
         var userId = TestAuthHandler.TestUserId;
         Db.Events.AddRange(
-            TestHelpers.MakeEvent(userId, "Pos", EventType.Positive, 7),
-            TestHelpers.MakeEvent(userId, "Neg", EventType.Negative, 4));
+            new EventBuilder().WithUserId(userId).WithTitle("Pos").WithIntensity(7).Build(),
+            new EventBuilder().WithUserId(userId).WithTitle("Neg").WithType(EventType.Negative).WithIntensity(4).Build());
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var result = await _service.GetEventsAsync(userId, null, null, DtoEventType.Negative, null, null, null);
@@ -85,9 +89,9 @@ public class EventServiceTests : ServiceTestBase
         var userId = TestAuthHandler.TestUserId;
         var from = new DateTimeOffset(2024, 6, 10, 0, 0, 0, TimeSpan.Zero);
         Db.Events.AddRange(
-            TestHelpers.MakeEvent(userId, "Before", timestamp: from.AddDays(-1)),
-            TestHelpers.MakeEvent(userId, "OnBoundary", timestamp: from),
-            TestHelpers.MakeEvent(userId, "After", timestamp: from.AddDays(1)));
+            new EventBuilder().WithUserId(userId).WithTitle("Before").WithTimestamp(from.AddDays(-1)).Build(),
+            new EventBuilder().WithUserId(userId).WithTitle("OnBoundary").WithTimestamp(from).Build(),
+            new EventBuilder().WithUserId(userId).WithTitle("After").WithTimestamp(from.AddDays(1)).Build());
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var result = await _service.GetEventsAsync(userId, from, null, null, null, null, null);
@@ -102,9 +106,9 @@ public class EventServiceTests : ServiceTestBase
         var userId = TestAuthHandler.TestUserId;
         var to = new DateTimeOffset(2024, 6, 10, 0, 0, 0, TimeSpan.Zero);
         Db.Events.AddRange(
-            TestHelpers.MakeEvent(userId, "Before", timestamp: to.AddDays(-1)),
-            TestHelpers.MakeEvent(userId, "OnBoundary", timestamp: to),
-            TestHelpers.MakeEvent(userId, "After", timestamp: to.AddDays(1)));
+            new EventBuilder().WithUserId(userId).WithTitle("Before").WithTimestamp(to.AddDays(-1)).Build(),
+            new EventBuilder().WithUserId(userId).WithTitle("OnBoundary").WithTimestamp(to).Build(),
+            new EventBuilder().WithUserId(userId).WithTitle("After").WithTimestamp(to.AddDays(1)).Build());
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var result = await _service.GetEventsAsync(userId, null, to, null, null, null, null);
@@ -120,11 +124,11 @@ public class EventServiceTests : ServiceTestBase
         var from = new DateTimeOffset(2024, 6, 10, 0, 0, 0, TimeSpan.Zero);
         var to = new DateTimeOffset(2024, 6, 20, 0, 0, 0, TimeSpan.Zero);
         Db.Events.AddRange(
-            TestHelpers.MakeEvent(userId, "TooEarly", timestamp: from.AddDays(-1)),
-            TestHelpers.MakeEvent(userId, "Start", timestamp: from),
-            TestHelpers.MakeEvent(userId, "Middle", timestamp: from.AddDays(5)),
-            TestHelpers.MakeEvent(userId, "End", timestamp: to),
-            TestHelpers.MakeEvent(userId, "TooLate", timestamp: to.AddDays(1)));
+            new EventBuilder().WithUserId(userId).WithTitle("TooEarly").WithTimestamp(from.AddDays(-1)).Build(),
+            new EventBuilder().WithUserId(userId).WithTitle("Start").WithTimestamp(from).Build(),
+            new EventBuilder().WithUserId(userId).WithTitle("Middle").WithTimestamp(from.AddDays(5)).Build(),
+            new EventBuilder().WithUserId(userId).WithTitle("End").WithTimestamp(to).Build(),
+            new EventBuilder().WithUserId(userId).WithTitle("TooLate").WithTimestamp(to.AddDays(1)).Build());
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var result = await _service.GetEventsAsync(userId, from, to, null, null, null, null);
@@ -140,9 +144,9 @@ public class EventServiceTests : ServiceTestBase
         var userId = TestAuthHandler.TestUserId;
         var point = new DateTimeOffset(2024, 6, 10, 12, 0, 0, TimeSpan.Zero);
         Db.Events.AddRange(
-            TestHelpers.MakeEvent(userId, "Before", timestamp: point.AddSeconds(-1)),
-            TestHelpers.MakeEvent(userId, "Exact", timestamp: point),
-            TestHelpers.MakeEvent(userId, "After", timestamp: point.AddSeconds(1)));
+            new EventBuilder().WithUserId(userId).WithTitle("Before").WithTimestamp(point.AddSeconds(-1)).Build(),
+            new EventBuilder().WithUserId(userId).WithTitle("Exact").WithTimestamp(point).Build(),
+            new EventBuilder().WithUserId(userId).WithTitle("After").WithTimestamp(point.AddSeconds(1)).Build());
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var result = await _service.GetEventsAsync(userId, point, point, null, null, null, null);
@@ -171,11 +175,11 @@ public class EventServiceTests : ServiceTestBase
 
         // PostgreSQL stores timestamptz in UTC — convert before seeding to avoid Npgsql offset rejection
         Db.Events.AddRange(
-            TestHelpers.MakeEvent(userId, "Inside", timestamp: insideOffset.ToUniversalTime()),
-            TestHelpers.MakeEvent(userId, "Before", timestamp: beforeOffset.ToUniversalTime()),
-            TestHelpers.MakeEvent(userId, "JustBeforeFrom", timestamp: justBeforeFrom.ToUniversalTime()),
-            TestHelpers.MakeEvent(userId, "JustAfterFrom", timestamp: justAfterFrom.ToUniversalTime()),
-            TestHelpers.MakeEvent(userId, "After", timestamp: afterOffset.ToUniversalTime()));
+            new EventBuilder().WithUserId(userId).WithTitle("Inside").WithTimestamp(insideOffset.ToUniversalTime()).Build(),
+            new EventBuilder().WithUserId(userId).WithTitle("Before").WithTimestamp(beforeOffset.ToUniversalTime()).Build(),
+            new EventBuilder().WithUserId(userId).WithTitle("JustBeforeFrom").WithTimestamp(justBeforeFrom.ToUniversalTime()).Build(),
+            new EventBuilder().WithUserId(userId).WithTitle("JustAfterFrom").WithTimestamp(justAfterFrom.ToUniversalTime()).Build(),
+            new EventBuilder().WithUserId(userId).WithTitle("After").WithTimestamp(afterOffset.ToUniversalTime()).Build());
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var result = await _service.GetEventsAsync(userId, from, to, null, null, null, null);
@@ -190,8 +194,8 @@ public class EventServiceTests : ServiceTestBase
     {
         var userId = TestAuthHandler.TestUserId;
         Db.Events.AddRange(
-            TestHelpers.MakeEvent(userId, "Low", intensity: 3),
-            TestHelpers.MakeEvent(userId, "High", intensity: 7));
+            new EventBuilder().WithUserId(userId).WithTitle("Low").WithIntensity(3).Build(),
+            new EventBuilder().WithUserId(userId).WithTitle("High").WithIntensity(7).Build());
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var result = await _service.GetEventsAsync(userId, null, null, null, null, 5, null);
@@ -205,8 +209,8 @@ public class EventServiceTests : ServiceTestBase
     {
         var userId = TestAuthHandler.TestUserId;
         Db.Events.AddRange(
-            TestHelpers.MakeEvent(userId, "Low", intensity: 3),
-            TestHelpers.MakeEvent(userId, "High", intensity: 7));
+            new EventBuilder().WithUserId(userId).WithTitle("Low").WithIntensity(3).Build(),
+            new EventBuilder().WithUserId(userId).WithTitle("High").WithIntensity(7).Build());
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var result = await _service.GetEventsAsync(userId, null, null, null, null, null, 5);
@@ -219,11 +223,11 @@ public class EventServiceTests : ServiceTestBase
     public async Task GetEventsAsync_FilterBySingleTag_ReturnsOnlyTaggedEvents()
     {
         var userId = TestAuthHandler.TestUserId;
-        var tag = TestHelpers.MakeTag(userId, "Work");
+        var tag = new TagBuilder().WithUserId(userId).WithName("Work").Build();
         Db.Tags.Add(tag);
 
-        var eventWithTag = TestHelpers.MakeEvent(userId, "A");
-        var eventWithoutTag = TestHelpers.MakeEvent(userId, "B");
+        var eventWithTag = new EventBuilder().WithUserId(userId).WithTitle("A").Build();
+        var eventWithoutTag = new EventBuilder().WithUserId(userId).WithTitle("B").Build();
         Db.Events.AddRange(eventWithTag, eventWithoutTag);
         Db.EventTags.Add(new EventTag { EventId = eventWithTag.Id, TagId = tag.Id });
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
@@ -238,13 +242,13 @@ public class EventServiceTests : ServiceTestBase
     public async Task GetEventsAsync_FilterByMultipleTags_ReturnsEventsWithAnyTag()
     {
         var userId = TestAuthHandler.TestUserId;
-        var tagWork = TestHelpers.MakeTag(userId, "Work");
-        var tagHealth = TestHelpers.MakeTag(userId, "Health");
+        var tagWork = new TagBuilder().WithUserId(userId).WithName("Work").Build();
+        var tagHealth = new TagBuilder().WithUserId(userId).WithName("Health").Build();
         Db.Tags.AddRange(tagWork, tagHealth);
 
-        var evWork = TestHelpers.MakeEvent(userId, "Work event");
-        var evHealth = TestHelpers.MakeEvent(userId, "Health event");
-        var evNone = TestHelpers.MakeEvent(userId, "No tags");
+        var evWork = new EventBuilder().WithUserId(userId).WithTitle("Work event").Build();
+        var evHealth = new EventBuilder().WithUserId(userId).WithTitle("Health event").Build();
+        var evNone = new EventBuilder().WithUserId(userId).WithTitle("No tags").Build();
         Db.Events.AddRange(evWork, evHealth, evNone);
         Db.EventTags.Add(new EventTag { EventId = evWork.Id, TagId = tagWork.Id });
         Db.EventTags.Add(new EventTag { EventId = evHealth.Id, TagId = tagHealth.Id });
@@ -273,7 +277,7 @@ public class EventServiceTests : ServiceTestBase
     {
         var userId = TestAuthHandler.TestUserId;
         var ts = new DateTimeOffset(2024, 5, 20, 15, 30, 0, TimeSpan.Zero);
-        var ev = TestHelpers.MakeEvent(userId, "My Event", intensity: 6, timestamp: ts);
+        var ev = new EventBuilder().WithUserId(userId).WithTitle("My Event").WithIntensity(6).WithTimestamp(ts).Build();
         Db.Events.Add(ev);
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
@@ -288,7 +292,7 @@ public class EventServiceTests : ServiceTestBase
     [Fact]
     public async Task GetByIdAsync_OtherUsersEvent_ReturnsNull()
     {
-        var ev = TestHelpers.MakeEvent(TestAuthHandler.TestUserId, "Test");
+        var ev = new EventBuilder().WithTitle("Test").Build();
         Db.Events.Add(ev);
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
@@ -368,7 +372,7 @@ public class EventServiceTests : ServiceTestBase
     public async Task CreateEventAsync_ExistingTagName_ReusesTag()
     {
         var userId = TestAuthHandler.TestUserId;
-        var existingTag = TestHelpers.MakeTag(userId, "Work");
+        var existingTag = new TagBuilder().WithUserId(userId).WithName("Work").Build();
         Db.Tags.Add(existingTag);
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
@@ -391,7 +395,7 @@ public class EventServiceTests : ServiceTestBase
     [Fact]
     public async Task CreateEventAsync_TagNameExistsForOtherUser_CreatesNewTag()
     {
-        var otherTag = TestHelpers.MakeTag(OtherUserId, "Work");
+        var otherTag = new TagBuilder().WithUserId(OtherUserId).WithName("Work").Build();
         Db.Tags.Add(otherTag);
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
@@ -455,8 +459,13 @@ public class EventServiceTests : ServiceTestBase
     {
         var userId = TestAuthHandler.TestUserId;
         var newTs = new DateTimeOffset(2024, 8, 1, 18, 0, 0, TimeSpan.Zero);
-        var ev = TestHelpers.MakeEvent(userId, "Old Title", EventType.Negative, 3,
-            new DateTimeOffset(2024, 1, 1, 10, 0, 0, TimeSpan.Zero));
+        var ev = new EventBuilder()
+            .WithUserId(userId)
+            .WithTitle("Old Title")
+            .WithType(EventType.Negative)
+            .WithIntensity(3)
+            .WithTimestamp(new DateTimeOffset(2024, 1, 1, 10, 0, 0, TimeSpan.Zero))
+            .Build();
         Db.Events.Add(ev);
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
@@ -484,7 +493,7 @@ public class EventServiceTests : ServiceTestBase
     [Fact]
     public async Task UpdateEventAsync_OtherUsersEvent_ReturnsFalse()
     {
-        var ev = TestHelpers.MakeEvent(TestAuthHandler.TestUserId, "T");
+        var ev = new EventBuilder().WithTitle("T").Build();
         Db.Events.Add(ev);
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
@@ -500,7 +509,7 @@ public class EventServiceTests : ServiceTestBase
     public async Task UpdateEventAsync_WithNewTagName_AddsTag()
     {
         var userId = TestAuthHandler.TestUserId;
-        var ev = TestHelpers.MakeEvent(userId, "T");
+        var ev = new EventBuilder().WithUserId(userId).WithTitle("T").Build();
         Db.Events.Add(ev);
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
@@ -520,8 +529,8 @@ public class EventServiceTests : ServiceTestBase
     public async Task UpdateEventAsync_EmptyTagNames_RemovesAllTags()
     {
         var userId = TestAuthHandler.TestUserId;
-        var tag = TestHelpers.MakeTag(userId, "Work");
-        var ev = TestHelpers.MakeEvent(userId, "T");
+        var tag = new TagBuilder().WithUserId(userId).WithName("Work").Build();
+        var ev = new EventBuilder().WithUserId(userId).WithTitle("T").Build();
         Db.Tags.Add(tag);
         Db.Events.Add(ev);
         Db.EventTags.Add(new EventTag { EventId = ev.Id, TagId = tag.Id });
@@ -543,8 +552,8 @@ public class EventServiceTests : ServiceTestBase
     public async Task UpdateEventAsync_ReplacesExistingTagWithNewTag()
     {
         var userId = TestAuthHandler.TestUserId;
-        var tagWork = TestHelpers.MakeTag(userId, "Work");
-        var ev = TestHelpers.MakeEvent(userId, "T");
+        var tagWork = new TagBuilder().WithUserId(userId).WithName("Work").Build();
+        var ev = new EventBuilder().WithUserId(userId).WithTitle("T").Build();
         Db.Tags.Add(tagWork);
         Db.Events.Add(ev);
         Db.EventTags.Add(new EventTag { EventId = ev.Id, TagId = tagWork.Id });
@@ -581,7 +590,7 @@ public class EventServiceTests : ServiceTestBase
     public async Task DeleteEventAsync_ExistingEvent_RemovesIt()
     {
         var userId = TestAuthHandler.TestUserId;
-        var ev = TestHelpers.MakeEvent(userId, "Test");
+        var ev = new EventBuilder().WithUserId(userId).WithTitle("Test").Build();
         Db.Events.Add(ev);
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
@@ -601,7 +610,7 @@ public class EventServiceTests : ServiceTestBase
     [Fact]
     public async Task DeleteEventAsync_OtherUsersEvent_DoesNotDelete()
     {
-        var ev = TestHelpers.MakeEvent(TestAuthHandler.TestUserId, "T");
+        var ev = new EventBuilder().WithTitle("T").Build();
         Db.Events.Add(ev);
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
@@ -614,8 +623,8 @@ public class EventServiceTests : ServiceTestBase
     public async Task DeleteEventAsync_EventWithTags_RemovesEventTags()
     {
         var userId = TestAuthHandler.TestUserId;
-        var tag = TestHelpers.MakeTag(userId, "Work");
-        var ev = TestHelpers.MakeEvent(userId, "T");
+        var tag = new TagBuilder().WithUserId(userId).WithName("Work").Build();
+        var ev = new EventBuilder().WithUserId(userId).WithTitle("T").Build();
         Db.Tags.Add(tag);
         Db.Events.Add(ev);
         Db.EventTags.Add(new EventTag { EventId = ev.Id, TagId = tag.Id });
