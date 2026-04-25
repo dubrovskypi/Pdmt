@@ -6,10 +6,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Net.Http.Headers;
-using Moq;
 using Pdmt.Api.Data;
 using Pdmt.Api.Services;
-using StackExchange.Redis;
 using Testcontainers.PostgreSql;
 
 namespace Pdmt.Api.Integration.Tests.Infrastructure;
@@ -53,9 +51,8 @@ public sealed class PostgresWebAppFactory : WebApplicationFactory<Program>, IAsy
             services.AddDbContext<AppDbContext>(o =>
                 o.UseNpgsql(_postgres.GetConnectionString()));
 
-            services.RemoveAll<IConnectionMultiplexer>();
-            services.AddSingleton<IConnectionMultiplexer>(new Mock<IConnectionMultiplexer>().Object);
-
+            services.RemoveAll<RedisRateLimitService>();
+            services.RemoveAll<InMemoryRateLimitService>();
             services.RemoveAll<IRateLimitService>();
             services.AddSingleton<IRateLimitService, NoOpRateLimitService>();
 
