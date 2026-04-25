@@ -32,7 +32,7 @@ public class InsightsServiceTests : ServiceTestBase
     {
         var now = DateTimeOffset.UtcNow;
 
-        var result = await _service.GetMostIntenseTagsAsync(TestAuthHandler.TestUserId, now.AddDays(-7), now);
+        var result = await _service.GetMostIntenseTagsAsync(TestUserId, now.AddDays(-7), now);
 
         result.TopPosTags.Should().BeEmpty();
         result.TopNegTags.Should().BeEmpty();
@@ -41,7 +41,7 @@ public class InsightsServiceTests : ServiceTestBase
     [Fact]
     public async Task GetMostIntenseTags_WithPositiveTaggedEvents_ReturnsTopByAvgIntensity()
     {
-        var userId = TestAuthHandler.TestUserId;
+        var userId = TestUserId;
         var now = DateTimeOffset.UtcNow;
         var tagHigh = new Tag { Id = Guid.NewGuid(), Name = "HighTag", UserId = userId, CreatedAt = DateTimeOffset.UtcNow };
         var tagLow = new Tag { Id = Guid.NewGuid(), Name = "LowTag", UserId = userId, CreatedAt = DateTimeOffset.UtcNow };
@@ -71,7 +71,7 @@ public class InsightsServiceTests : ServiceTestBase
         Db.EventTags.Add(new EventTag { EventId = ev.Id, TagId = tag.Id });
         await Db.SaveChangesAsync();
 
-        var result = await _service.GetMostIntenseTagsAsync(TestAuthHandler.TestUserId, now.AddDays(-1), now.AddDays(1));
+        var result = await _service.GetMostIntenseTagsAsync(TestUserId, now.AddDays(-1), now.AddDays(1));
 
         result.TopPosTags.Should().BeEmpty();
     }
@@ -83,7 +83,7 @@ public class InsightsServiceTests : ServiceTestBase
     [Fact]
     public async Task GetRepeatingTriggersAsync_TagWithExactlyMinCount_IsIncluded()
     {
-        var userId = TestAuthHandler.TestUserId;
+        var userId = TestUserId;
         var tag = new Tag { Id = Guid.NewGuid(), Name = "Work", UserId = userId, CreatedAt = DateTimeOffset.UtcNow };
         Db.Tags.Add(tag);
         var now = DateTimeOffset.UtcNow;
@@ -104,7 +104,7 @@ public class InsightsServiceTests : ServiceTestBase
     [Fact]
     public async Task GetRepeatingTriggersAsync_TagBelowMinCount_IsExcluded()
     {
-        var userId = TestAuthHandler.TestUserId;
+        var userId = TestUserId;
         var tag = new Tag { Id = Guid.NewGuid(), Name = "Work", UserId = userId, CreatedAt = DateTimeOffset.UtcNow };
         Db.Tags.Add(tag);
         var now = DateTimeOffset.UtcNow;
@@ -124,7 +124,7 @@ public class InsightsServiceTests : ServiceTestBase
     [Fact]
     public async Task GetRepeatingTriggersAsync_OnlyCountsNegativeEvents()
     {
-        var userId = TestAuthHandler.TestUserId;
+        var userId = TestUserId;
         var tag = new Tag { Id = Guid.NewGuid(), Name = "Work", UserId = userId, CreatedAt = DateTimeOffset.UtcNow };
         Db.Tags.Add(tag);
         var now = DateTimeOffset.UtcNow;
@@ -151,7 +151,7 @@ public class InsightsServiceTests : ServiceTestBase
     [Fact]
     public async Task GetRepeatingTriggersAsync_OrderedByAvgIntensityDescending()
     {
-        var userId = TestAuthHandler.TestUserId;
+        var userId = TestUserId;
         var tag1 = new Tag { Id = Guid.NewGuid(), Name = "HighIntensity", UserId = userId, CreatedAt = DateTimeOffset.UtcNow };
         var tag2 = new Tag { Id = Guid.NewGuid(), Name = "LowIntensity", UserId = userId, CreatedAt = DateTimeOffset.UtcNow };
         Db.Tags.AddRange(tag1, tag2);
@@ -178,7 +178,7 @@ public class InsightsServiceTests : ServiceTestBase
     {
         var now = DateTimeOffset.UtcNow;
 
-        var result = await _service.GetRepeatingTriggersAsync(TestAuthHandler.TestUserId, now, now.AddDays(7), minCount: 3);
+        var result = await _service.GetRepeatingTriggersAsync(TestUserId, now, now.AddDays(7), minCount: 3);
 
         result.Should().BeEmpty();
     }
@@ -186,7 +186,7 @@ public class InsightsServiceTests : ServiceTestBase
     [Fact]
     public async Task GetRepeatingTriggersAsync_FiltersOutsideDateRange()
     {
-        var userId = TestAuthHandler.TestUserId;
+        var userId = TestUserId;
         var tag = new Tag { Id = Guid.NewGuid(), Name = "Work", UserId = userId, CreatedAt = DateTimeOffset.UtcNow };
         Db.Tags.Add(tag);
         var start = DateTimeOffset.UtcNow;
@@ -211,13 +211,13 @@ public class InsightsServiceTests : ServiceTestBase
     [Fact]
     public async Task GetRepeatingTriggersAsync_IsolatesByUserId()
     {
-        var tag1 = new Tag { Id = Guid.NewGuid(), Name = "Work", UserId = TestAuthHandler.TestUserId, CreatedAt = DateTimeOffset.UtcNow };
+        var tag1 = new Tag { Id = Guid.NewGuid(), Name = "Work", UserId = TestUserId, CreatedAt = DateTimeOffset.UtcNow };
         var tag2 = new Tag { Id = Guid.NewGuid(), Name = "Work", UserId = OtherUserId, CreatedAt = DateTimeOffset.UtcNow };
         Db.Tags.AddRange(tag1, tag2);
         var now = DateTimeOffset.UtcNow;
         for (int i = 0; i < 3; i++)
         {
-            var ev1 = new Event { Id = Guid.NewGuid(), UserId = TestAuthHandler.TestUserId, Timestamp = now.AddDays(i), Type = EventType.Negative, Title = $"U1-{i}", Intensity = 5 };
+            var ev1 = new Event { Id = Guid.NewGuid(), UserId = TestUserId, Timestamp = now.AddDays(i), Type = EventType.Negative, Title = $"U1-{i}", Intensity = 5 };
             var ev2 = new Event { Id = Guid.NewGuid(), UserId = OtherUserId, Timestamp = now.AddDays(i), Type = EventType.Negative, Title = $"U2-{i}", Intensity = 5 };
             Db.Events.AddRange(ev1, ev2);
             Db.EventTags.Add(new EventTag { EventId = ev1.Id, TagId = tag1.Id });
@@ -225,7 +225,7 @@ public class InsightsServiceTests : ServiceTestBase
         }
         await Db.SaveChangesAsync();
 
-        var result = await _service.GetRepeatingTriggersAsync(TestAuthHandler.TestUserId, now, now.AddDays(7), minCount: 3);
+        var result = await _service.GetRepeatingTriggersAsync(TestUserId, now, now.AddDays(7), minCount: 3);
 
         result.Should().ContainSingle();
         result[0].TagName.Should().Be("Work");
@@ -240,7 +240,7 @@ public class InsightsServiceTests : ServiceTestBase
     {
         var now = DateTimeOffset.UtcNow;
 
-        var result = await _service.GetBalanceAsync(TestAuthHandler.TestUserId, now.AddDays(-7), now);
+        var result = await _service.GetBalanceAsync(TestUserId, now.AddDays(-7), now);
 
         result.PosCount.Should().Be(0);
         result.NegCount.Should().Be(0);
@@ -251,7 +251,7 @@ public class InsightsServiceTests : ServiceTestBase
     [Fact]
     public async Task GetBalance_MixedEvents_ReturnsCorrectCountsAndAverages()
     {
-        var userId = TestAuthHandler.TestUserId;
+        var userId = TestUserId;
         var now = DateTimeOffset.UtcNow;
         Db.Events.AddRange(
             new Event { Id = Guid.NewGuid(), UserId = userId, Timestamp = now, Type = EventType.Positive, Title = "P1", Intensity = 8 },
@@ -270,7 +270,7 @@ public class InsightsServiceTests : ServiceTestBase
     [Fact]
     public async Task GetBalance_OnlyPositiveEvents_NegAvgIsZero()
     {
-        var userId = TestAuthHandler.TestUserId;
+        var userId = TestUserId;
         var now = DateTimeOffset.UtcNow;
         Db.Events.Add(new Event { Id = Guid.NewGuid(), UserId = userId, Timestamp = now, Type = EventType.Positive, Title = "P1", Intensity = 7 });
         await Db.SaveChangesAsync();
@@ -289,7 +289,7 @@ public class InsightsServiceTests : ServiceTestBase
     [Fact]
     public async Task GetDiscountedPositivesAsync_TagWith5EventsAvgBelow4_IsIncluded()
     {
-        var userId = TestAuthHandler.TestUserId;
+        var userId = TestUserId;
         var tag = new Tag { Id = Guid.NewGuid(), Name = "Achievement", UserId = userId, CreatedAt = DateTimeOffset.UtcNow };
         Db.Tags.Add(tag);
         var now = DateTimeOffset.UtcNow;
@@ -310,7 +310,7 @@ public class InsightsServiceTests : ServiceTestBase
     [Fact]
     public async Task GetDiscountedPositivesAsync_TagWith4Events_IsExcluded()
     {
-        var userId = TestAuthHandler.TestUserId;
+        var userId = TestUserId;
         var tag = new Tag { Id = Guid.NewGuid(), Name = "Achievement", UserId = userId, CreatedAt = DateTimeOffset.UtcNow };
         Db.Tags.Add(tag);
         var now = DateTimeOffset.UtcNow;
@@ -330,7 +330,7 @@ public class InsightsServiceTests : ServiceTestBase
     [Fact]
     public async Task GetDiscountedPositivesAsync_TagWithAvgExactly4_IsExcluded()
     {
-        var userId = TestAuthHandler.TestUserId;
+        var userId = TestUserId;
         var tag = new Tag { Id = Guid.NewGuid(), Name = "Achievement", UserId = userId, CreatedAt = DateTimeOffset.UtcNow };
         Db.Tags.Add(tag);
         var now = DateTimeOffset.UtcNow;
@@ -350,7 +350,7 @@ public class InsightsServiceTests : ServiceTestBase
     [Fact]
     public async Task GetDiscountedPositivesAsync_OnlyPositiveEvents_Considered()
     {
-        var userId = TestAuthHandler.TestUserId;
+        var userId = TestUserId;
         var tag = new Tag { Id = Guid.NewGuid(), Name = "Achievement", UserId = userId, CreatedAt = DateTimeOffset.UtcNow };
         Db.Tags.Add(tag);
         var now = DateTimeOffset.UtcNow;
@@ -379,7 +379,7 @@ public class InsightsServiceTests : ServiceTestBase
     {
         var now = DateTimeOffset.UtcNow;
 
-        var result = await _service.GetDiscountedPositivesAsync(TestAuthHandler.TestUserId, now, now.AddDays(7));
+        var result = await _service.GetDiscountedPositivesAsync(TestUserId, now, now.AddDays(7));
 
         result.Should().BeEmpty();
     }
@@ -391,7 +391,7 @@ public class InsightsServiceTests : ServiceTestBase
     [Fact]
     public async Task GetNextDayEffectsAsync_TagOnExactly3Days_IsIncluded()
     {
-        var userId = TestAuthHandler.TestUserId;
+        var userId = TestUserId;
         var tag = new Tag { Id = Guid.NewGuid(), Name = "Exercise", UserId = userId, CreatedAt = DateTimeOffset.UtcNow };
         Db.Tags.Add(tag);
         var dayStart = DateTimeOffset.UtcNow.Date;
@@ -415,7 +415,7 @@ public class InsightsServiceTests : ServiceTestBase
     [Fact]
     public async Task GetNextDayEffectsAsync_TagOn2Days_IsExcluded()
     {
-        var userId = TestAuthHandler.TestUserId;
+        var userId = TestUserId;
         var tag = new Tag { Id = Guid.NewGuid(), Name = "Exercise", UserId = userId, CreatedAt = DateTimeOffset.UtcNow };
         Db.Tags.Add(tag);
         var dayStart = DateTimeOffset.UtcNow.Date;
@@ -435,7 +435,7 @@ public class InsightsServiceTests : ServiceTestBase
     [Fact]
     public async Task GetNextDayEffectsAsync_OrderedByAbsNextDayScore()
     {
-        var userId = TestAuthHandler.TestUserId;
+        var userId = TestUserId;
         var tagA = new Tag { Id = Guid.NewGuid(), Name = "TagA", UserId = userId, CreatedAt = DateTimeOffset.UtcNow };
         var tagB = new Tag { Id = Guid.NewGuid(), Name = "TagB", UserId = userId, CreatedAt = DateTimeOffset.UtcNow };
         Db.Tags.AddRange(tagA, tagB);
@@ -474,7 +474,7 @@ public class InsightsServiceTests : ServiceTestBase
     [Fact]
     public async Task GetTagCombosAsync_TwoTagsOnSameDay3Times_IsIncluded()
     {
-        var userId = TestAuthHandler.TestUserId;
+        var userId = TestUserId;
         var tag1 = new Tag { Id = Guid.NewGuid(), Name = "Work", UserId = userId, CreatedAt = DateTimeOffset.UtcNow };
         var tag2 = new Tag { Id = Guid.NewGuid(), Name = "Stress", UserId = userId, CreatedAt = DateTimeOffset.UtcNow };
         Db.Tags.AddRange(tag1, tag2);
@@ -499,7 +499,7 @@ public class InsightsServiceTests : ServiceTestBase
     [Fact]
     public async Task GetTagCombosAsync_CoOccurrences2_IsExcluded()
     {
-        var userId = TestAuthHandler.TestUserId;
+        var userId = TestUserId;
         var tag1 = new Tag { Id = Guid.NewGuid(), Name = "Work", UserId = userId, CreatedAt = DateTimeOffset.UtcNow };
         var tag2 = new Tag { Id = Guid.NewGuid(), Name = "Stress", UserId = userId, CreatedAt = DateTimeOffset.UtcNow };
         Db.Tags.AddRange(tag1, tag2);
@@ -523,7 +523,7 @@ public class InsightsServiceTests : ServiceTestBase
     [Fact]
     public async Task GetTagCombosAsync_PairOrdering_AlphabeticalKey()
     {
-        var userId = TestAuthHandler.TestUserId;
+        var userId = TestUserId;
         var tagZ = new Tag { Id = Guid.NewGuid(), Name = "Zebra", UserId = userId, CreatedAt = DateTimeOffset.UtcNow };
         var tagA = new Tag { Id = Guid.NewGuid(), Name = "Apple", UserId = userId, CreatedAt = DateTimeOffset.UtcNow };
         Db.Tags.AddRange(tagZ, tagA);
@@ -551,7 +551,7 @@ public class InsightsServiceTests : ServiceTestBase
     {
         var dayStart = DateTimeOffset.UtcNow.Date;
 
-        var result = await _service.GetTagCombosAsync(TestAuthHandler.TestUserId, new DateTimeOffset(dayStart, TimeSpan.Zero), new DateTimeOffset(dayStart.AddDays(7), TimeSpan.Zero));
+        var result = await _service.GetTagCombosAsync(TestUserId, new DateTimeOffset(dayStart, TimeSpan.Zero), new DateTimeOffset(dayStart.AddDays(7), TimeSpan.Zero));
 
         result.Should().BeEmpty();
     }
@@ -563,7 +563,7 @@ public class InsightsServiceTests : ServiceTestBase
     [Fact]
     public async Task GetTagTrendAsync_Week_GroupsByMonday()
     {
-        var userId = TestAuthHandler.TestUserId;
+        var userId = TestUserId;
         var tag = new Tag { Id = Guid.NewGuid(), Name = "Work", UserId = userId, CreatedAt = DateTimeOffset.UtcNow };
         Db.Tags.Add(tag);
         var now = DateTimeOffset.UtcNow;
@@ -585,7 +585,7 @@ public class InsightsServiceTests : ServiceTestBase
     [Fact]
     public async Task GetTagTrendAsync_Month_GroupsByFirstOfMonth()
     {
-        var userId = TestAuthHandler.TestUserId;
+        var userId = TestUserId;
         var tag = new Tag { Id = Guid.NewGuid(), Name = "Work", UserId = userId, CreatedAt = DateTimeOffset.UtcNow };
         Db.Tags.Add(tag);
         var jan = new DateTimeOffset(2024, 1, 15, 0, 0, 0, TimeSpan.Zero);
@@ -606,7 +606,7 @@ public class InsightsServiceTests : ServiceTestBase
     [Fact]
     public async Task GetTagTrendAsync_OnlyIncludesEventsWithTag()
     {
-        var userId = TestAuthHandler.TestUserId;
+        var userId = TestUserId;
         var tag = new Tag { Id = Guid.NewGuid(), Name = "Work", UserId = userId, CreatedAt = DateTimeOffset.UtcNow };
         Db.Tags.Add(tag);
         var now = DateTimeOffset.UtcNow;
@@ -633,7 +633,7 @@ public class InsightsServiceTests : ServiceTestBase
     [Fact]
     public async Task GetTrendsAsync_Week_GroupsByMonday()
     {
-        var userId = TestAuthHandler.TestUserId;
+        var userId = TestUserId;
         var now = DateTimeOffset.UtcNow;
         var monday1 = now.AddDays(-(int)now.DayOfWeek + 1);
         var monday2 = monday1.AddDays(7);
@@ -650,7 +650,7 @@ public class InsightsServiceTests : ServiceTestBase
     [Fact]
     public async Task GetTrendsAsync_Month_GroupsByFirstOfMonth()
     {
-        var userId = TestAuthHandler.TestUserId;
+        var userId = TestUserId;
         var jan = new DateTimeOffset(2024, 1, 15, 0, 0, 0, TimeSpan.Zero);
         var feb = new DateTimeOffset(2024, 2, 15, 0, 0, 0, TimeSpan.Zero);
         Db.Events.AddRange(
@@ -668,7 +668,7 @@ public class InsightsServiceTests : ServiceTestBase
     [Fact]
     public async Task GetTrendsAsync_FiltersOutsideDateRange()
     {
-        var userId = TestAuthHandler.TestUserId;
+        var userId = TestUserId;
         var start = new DateTimeOffset(2024, 1, 1, 0, 0, 0, TimeSpan.Zero);
         var end = new DateTimeOffset(2024, 1, 31, 0, 0, 0, TimeSpan.Zero);
         Db.Events.AddRange(
@@ -684,7 +684,7 @@ public class InsightsServiceTests : ServiceTestBase
     [Fact]
     public async Task GetTrendsAsync_EmptyRange_ReturnsEmpty()
     {
-        var result = await _service.GetTrendsAsync(TestAuthHandler.TestUserId, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddDays(30), Granularity.Week);
+        var result = await _service.GetTrendsAsync(TestUserId, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddDays(30), Granularity.Week);
 
         result.Should().BeEmpty();
     }
@@ -696,7 +696,7 @@ public class InsightsServiceTests : ServiceTestBase
     [Fact]
     public async Task GetInfluenceabilitySplitAsync_OnlyNegativeEvents_Considered()
     {
-        var userId = TestAuthHandler.TestUserId;
+        var userId = TestUserId;
         var now = DateTimeOffset.UtcNow;
         // 3 positive (should be ignored) + 2 negative
         for (int i = 0; i < 3; i++)
@@ -713,7 +713,7 @@ public class InsightsServiceTests : ServiceTestBase
     [Fact]
     public async Task GetInfluenceabilitySplitAsync_Split_CalculatedCorrectly()
     {
-        var userId = TestAuthHandler.TestUserId;
+        var userId = TestUserId;
         var now = DateTimeOffset.UtcNow;
         // 3 influenceable (intensity 6 each)
         for (int i = 0; i < 3; i++)
@@ -734,7 +734,7 @@ public class InsightsServiceTests : ServiceTestBase
     [Fact]
     public async Task GetInfluenceabilitySplitAsync_AllCanInfluence_CannotIsZero()
     {
-        var userId = TestAuthHandler.TestUserId;
+        var userId = TestUserId;
         var now = DateTimeOffset.UtcNow;
         for (int i = 0; i < 3; i++)
             Db.Events.Add(new Event { Id = Guid.NewGuid(), UserId = userId, Timestamp = now.AddHours(i), Type = EventType.Negative, Title = $"N{i}", Intensity = 6, CanInfluence = true });
@@ -752,7 +752,7 @@ public class InsightsServiceTests : ServiceTestBase
     {
         var now = DateTimeOffset.UtcNow;
 
-        var result = await _service.GetInfluenceabilitySplitAsync(TestAuthHandler.TestUserId, now, now.AddDays(7));
+        var result = await _service.GetInfluenceabilitySplitAsync(TestUserId, now, now.AddDays(7));
 
         result.CanInfluenceCount.Should().Be(0);
         result.CannotInfluenceCount.Should().Be(0);
@@ -767,7 +767,7 @@ public class InsightsServiceTests : ServiceTestBase
     [Fact]
     public async Task GetWeekdayStatsAsync_AlwaysReturnsSevenDays()
     {
-        var userId = TestAuthHandler.TestUserId;
+        var userId = TestUserId;
         // Events only on Monday 2024-04-01 and Wednesday 2024-04-03 (noon UTC — stays same calendar day in Vilnius UTC+3)
         var monday = new DateTimeOffset(2024, 4, 1, 12, 0, 0, TimeSpan.Zero);
         var wednesday = new DateTimeOffset(2024, 4, 3, 12, 0, 0, TimeSpan.Zero);
@@ -787,7 +787,7 @@ public class InsightsServiceTests : ServiceTestBase
     [Fact]
     public async Task GetWeekdayStatsAsync_OrderIsMonToSun()
     {
-        var result = await _service.GetWeekdayStatsAsync(TestAuthHandler.TestUserId, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddDays(30));
+        var result = await _service.GetWeekdayStatsAsync(TestUserId, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddDays(30));
 
         result.Should().HaveCount(7);
         result[0].Day.Should().Be("Monday");

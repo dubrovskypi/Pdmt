@@ -10,7 +10,7 @@ public abstract class HttpTestBase : IClassFixture<PostgresWebAppFactory>, IAsyn
 {
     protected readonly PostgresWebAppFactory Factory;
     protected HttpClient Client;
-    protected static readonly Guid TestUserId = TestAuthHandler.TestUserId;
+    protected readonly Guid TestUserId = TestUserHelper.TestUserId;
 
     protected HttpTestBase(PostgresWebAppFactory factory)
     {
@@ -27,14 +27,9 @@ public abstract class HttpTestBase : IClassFixture<PostgresWebAppFactory>, IAsyn
 
         await db.Database.MigrateAsync();
         await TestDatabaseCleaner.CleanAsync(db);
-        await SeedDefaultUserAsync(db);
+        db.Users.Add(new UserBuilder().WithId(TestUserId).WithEmail("test@pdmt.dev").Build());
+        await db.SaveChangesAsync();
     }
 
     public virtual ValueTask DisposeAsync() => ValueTask.CompletedTask;
-
-    protected static async Task SeedDefaultUserAsync(AppDbContext db)
-    {
-        db.Users.Add(new UserBuilder().WithId(TestAuthHandler.TestUserId).WithEmail("test@pdmt.dev").Build());
-        await db.SaveChangesAsync();
-    }
 }

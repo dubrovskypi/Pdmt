@@ -4,7 +4,7 @@ namespace Pdmt.Api.Integration.Tests.Infrastructure.Builders;
 
 public sealed class TagBuilder
 {
-    private Guid _userId = TestAuthHandler.TestUserId;
+    private Guid _userId = TestUserHelper.TestUserId;
     private string _name = "test-tag";
 
     public TagBuilder WithUserId(Guid userId) { _userId = userId; return this; }

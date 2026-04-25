@@ -209,7 +209,7 @@ public class AuthServiceTests : ServiceTestBase
         Db.RefreshTokens.Add(new RefreshToken
         {
             Id = Guid.NewGuid(),
-            UserId = TestAuthHandler.TestUserId,
+            UserId = TestUserId,
             Token = HashToken("expired-token"),
             ExpiresAt = DateTimeOffset.UtcNow.AddDays(-1),
             IsRevoked = false,
@@ -228,7 +228,7 @@ public class AuthServiceTests : ServiceTestBase
         Db.RefreshTokens.Add(new RefreshToken
         {
             Id = Guid.NewGuid(),
-            UserId = TestAuthHandler.TestUserId,
+            UserId = TestUserId,
             Token = HashToken("revoked-token"),
             ExpiresAt = DateTimeOffset.UtcNow.AddDays(7),
             IsRevoked = true,

@@ -334,7 +334,7 @@ public class EventsControllerTests(PostgresWebAppFactory factory) : HttpTestBase
     {
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(PostgresWebAppFactory.TestJwtSecret));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-        var claims = new[] { new Claim(ClaimTypes.NameIdentifier, (userId ?? TestAuthHandler.TestUserId).ToString()) };
+        var claims = new[] { new Claim(ClaimTypes.NameIdentifier, (userId ?? TestUserHelper.TestUserId).ToString()) };
         var token = new JwtSecurityToken(
             issuer: PostgresWebAppFactory.TestJwtIssuer,
             audience: PostgresWebAppFactory.TestJwtAudience,

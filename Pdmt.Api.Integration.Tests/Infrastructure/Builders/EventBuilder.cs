@@ -4,7 +4,7 @@ namespace Pdmt.Api.Integration.Tests.Infrastructure.Builders;
 
 public sealed class EventBuilder
 {
-    private Guid _userId = TestAuthHandler.TestUserId;
+    private Guid _userId = TestUserHelper.TestUserId;
     private EventType _type = EventType.Positive;
     private int _intensity = 5;
     private DateTimeOffset _timestamp = DateTimeOffset.UtcNow;

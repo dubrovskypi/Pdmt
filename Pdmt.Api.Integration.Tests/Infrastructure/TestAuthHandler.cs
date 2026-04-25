@@ -9,7 +9,6 @@ namespace Pdmt.Api.Integration.Tests.Infrastructure
     public class TestAuthHandler : AuthenticationHandler<AuthenticationSchemeOptions>
     {
         public const string SchemeName = "TestScheme";
-        public static readonly Guid TestUserId = Guid.Parse("00000000-0000-0000-0000-000000000001");
 
         public TestAuthHandler(
             IOptionsMonitor<AuthenticationSchemeOptions> options,
@@ -32,7 +31,7 @@ namespace Pdmt.Api.Integration.Tests.Infrastructure
                 return Task.FromResult(AuthenticateResult.NoResult());
             var claims = new[]
             {
-                new Claim(ClaimTypes.NameIdentifier, TestUserId.ToString()),
+                new Claim(ClaimTypes.NameIdentifier, TestUserHelper.TestUserId.ToString()),
             };
             var identity = new ClaimsIdentity(claims, SchemeName);
             var principal = new ClaimsPrincipal(identity);

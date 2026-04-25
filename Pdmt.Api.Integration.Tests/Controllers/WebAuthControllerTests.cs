@@ -167,12 +167,7 @@ public class WebAuthControllerTests(PostgresWebAppFactory factory) : HttpTestBas
     [Fact]
     public async Task Logout_ClearsRefreshCookie()
     {
-        var authClient = Factory.CreateClient();
-        authClient.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue(TestAuthHandler.SchemeName);
-
-        var response = await authClient.PostAsync("/api/auth/web/logout", null,
-            TestContext.Current.CancellationToken);
+        var response = await Client.PostAsync("/api/auth/web/logout", null, TestContext.Current.CancellationToken);
         var setCookie = response.Headers.GetValues("Set-Cookie").FirstOrDefault(h => h.Contains("refreshToken"));
 
         setCookie.Should().NotBeNull().And.Contain("refreshToken=;");

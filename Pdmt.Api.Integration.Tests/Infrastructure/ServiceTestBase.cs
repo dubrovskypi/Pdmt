@@ -11,6 +11,8 @@ public abstract class ServiceTestBase : IAsyncLifetime
 
     protected AppDbContext Db { get; private set; } = null!;
 
+    public readonly Guid TestUserId = TestUserHelper.TestUserId;
+
     public virtual async ValueTask InitializeAsync()
     {
         await _postgres.StartAsync();
@@ -22,18 +24,13 @@ public abstract class ServiceTestBase : IAsyncLifetime
         Db = new AppDbContext(options);
         await Db.Database.MigrateAsync();
         await TestDatabaseCleaner.CleanAsync(Db);
-        await SeedDefaultUserAsync(Db);
+        Db.Users.Add(new UserBuilder().WithId(TestUserId).WithEmail("test@pdmt.dev").Build());
+        await Db.SaveChangesAsync();
     }
 
     public async ValueTask DisposeAsync()
     {
         await Db.DisposeAsync();
         await _postgres.DisposeAsync();
-    }
-
-    protected static async Task SeedDefaultUserAsync(AppDbContext db)
-    {
-        db.Users.Add(new UserBuilder().WithId(TestAuthHandler.TestUserId).WithEmail("test@pdmt.dev").Build());
-        await db.SaveChangesAsync();
     }
 }
