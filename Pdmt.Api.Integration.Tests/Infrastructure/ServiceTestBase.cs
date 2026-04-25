@@ -11,7 +11,7 @@ public abstract class ServiceTestBase : IAsyncLifetime
 
     protected AppDbContext Db { get; private set; } = null!;
 
-    public async ValueTask InitializeAsync()
+    public virtual async ValueTask InitializeAsync()
     {
         await _postgres.StartAsync();
 
