@@ -55,7 +55,7 @@ public class EventsControllerTests(PostgresWebAppFactory factory) : HttpTestBase
             .Content.ReadFromJsonAsync<IEnumerable<EventResponseDto>>(TestContext.Current.CancellationToken);
         eventsA.Should().Contain(e => e.Title == "User A Secret Event");
 
-        var otherClient = CreateJwtClient(GenerateJwtToken());
+        var otherClient = CreateJwtClient(GenerateJwtToken(Guid.NewGuid()));
         var eventsB = await (await otherClient.GetAsync("/api/events", TestContext.Current.CancellationToken))
             .Content.ReadFromJsonAsync<IEnumerable<EventResponseDto>>(TestContext.Current.CancellationToken);
 
@@ -165,7 +165,7 @@ public class EventsControllerTests(PostgresWebAppFactory factory) : HttpTestBase
     {
         var created = await CreateEventAndRead(Client, "Owner Only");
 
-        var response = await CreateJwtClient(GenerateJwtToken()).GetAsync($"/api/events/{created.Id}", TestContext.Current.CancellationToken);
+        var response = await CreateJwtClient(GenerateJwtToken(Guid.NewGuid())).GetAsync($"/api/events/{created.Id}", TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
@@ -282,7 +282,7 @@ public class EventsControllerTests(PostgresWebAppFactory factory) : HttpTestBase
         var created = await CreateEventAndRead(Client, "Owner Only");
         var dto = new UpdateEventDto { Timestamp = created.Timestamp, Type = DtoEventType.Positive, Title = "Hacked", Intensity = 5 };
 
-        var response = await CreateJwtClient(GenerateJwtToken()).PutAsJsonAsync($"/api/events/{created.Id}", dto, TestContext.Current.CancellationToken);
+        var response = await CreateJwtClient(GenerateJwtToken(Guid.NewGuid())).PutAsJsonAsync($"/api/events/{created.Id}", dto, TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
@@ -316,7 +316,7 @@ public class EventsControllerTests(PostgresWebAppFactory factory) : HttpTestBase
     {
         var created = await CreateEventAndRead(Client, "Owner Only");
 
-        var response = await CreateJwtClient(GenerateJwtToken()).DeleteAsync($"/api/events/{created.Id}", TestContext.Current.CancellationToken);
+        var response = await CreateJwtClient(GenerateJwtToken(Guid.NewGuid())).DeleteAsync($"/api/events/{created.Id}", TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
@@ -334,7 +334,7 @@ public class EventsControllerTests(PostgresWebAppFactory factory) : HttpTestBase
     {
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(PostgresWebAppFactory.TestJwtSecret));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-        var claims = new[] { new Claim(ClaimTypes.NameIdentifier, (userId ?? Guid.NewGuid()).ToString()) };
+        var claims = new[] { new Claim(ClaimTypes.NameIdentifier, (userId ?? TestAuthHandler.TestUserId).ToString()) };
         var token = new JwtSecurityToken(
             issuer: PostgresWebAppFactory.TestJwtIssuer,
             audience: PostgresWebAppFactory.TestJwtAudience,
