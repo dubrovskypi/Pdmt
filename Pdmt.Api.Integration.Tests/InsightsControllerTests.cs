@@ -1,67 +1,88 @@
+using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Pdmt.Api.Data;
 using Pdmt.Api.Domain;
 using Pdmt.Api.Dto.Insights;
 using Pdmt.Api.Integration.Tests.Infrastructure;
 using System.Net;
-using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text.Json;
 
 namespace Pdmt.Api.Integration.Tests;
 
-public class InsightsControllerTests : IClassFixture<PostgresWebAppFactory>
+public class InsightsControllerTests(PostgresWebAppFactory factory) : HttpTestBase(factory)
 {
-    private static readonly Guid TestUserId = TestAuthHandler.TestUserId;
     private static readonly Guid OtherUserId = Guid.NewGuid();
 
-    private readonly PostgresWebAppFactory _factory;
-
-    public InsightsControllerTests(PostgresWebAppFactory factory)
-    {
-        _factory = factory;
-    }
-
-    // ── Auth ──────────────────────────────────────────────────────────────────
+    #region Auth
 
     [Theory]
-    [InlineData("/api/insights/repeating-triggers?from=2026-01-01&to=2026-01-31")]
-    [InlineData("/api/insights/discounted-positives?from=2026-01-01&to=2026-01-31")]
-    [InlineData("/api/insights/next-day-effects?from=2026-01-01&to=2026-01-31")]
-    [InlineData("/api/insights/tag-combos?from=2026-01-01&to=2026-01-31")]
-    [InlineData("/api/insights/tag-trend?from=2026-01-01&to=2026-01-31")]
-    [InlineData("/api/insights/influenceability?from=2026-01-01&to=2026-01-31")]
-    public async Task InsightEndpoints_Should_Return_401_For_Anonymous(string url)
+    [InlineData("/api/insights/repeating-triggers?from=2026-01-01T00:00:00Z&to=2026-01-31T00:00:00Z")]
+    [InlineData("/api/insights/discounted-positives?from=2026-01-01T00:00:00Z&to=2026-01-31T00:00:00Z")]
+    [InlineData("/api/insights/next-day-effects?from=2026-01-01T00:00:00Z&to=2026-01-31T00:00:00Z")]
+    [InlineData("/api/insights/tag-combos?from=2026-01-01T00:00:00Z&to=2026-01-31T00:00:00Z")]
+    [InlineData("/api/insights/tag-trend?from=2026-01-01T00:00:00Z&to=2026-01-31T00:00:00Z")]
+    [InlineData("/api/insights/influenceability?from=2026-01-01T00:00:00Z&to=2026-01-31T00:00:00Z")]
+    [InlineData("/api/insights/balance?from=2026-01-01T00:00:00Z&to=2026-01-31T00:00:00Z")]
+    [InlineData("/api/insights/trends?from=2026-01-01T00:00:00Z&to=2026-01-31T00:00:00Z")]
+    [InlineData("/api/insights/most-intense-tags?from=2026-01-01T00:00:00Z&to=2026-01-31T00:00:00Z")]
+    [InlineData("/api/insights/weekday-stats?from=2026-01-01T00:00:00Z&to=2026-01-31T00:00:00Z")]
+    public async Task InsightEndpoints_Unauthenticated_Returns401(string url)
     {
-        var client = _factory.CreateClient();
+        var anonClient = Factory.CreateClient();
 
-        var response = await client.GetAsync(url);
+        var response = await anonClient.GetAsync(url, TestContext.Current.CancellationToken);
 
-        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
-
-    // ── Validation ────────────────────────────────────────────────────────────
 
     [Theory]
-    [InlineData("/api/insights/repeating-triggers?from=2026-02-01&to=2026-01-01")]
-    [InlineData("/api/insights/discounted-positives?from=2026-02-01&to=2026-01-01")]
-    [InlineData("/api/insights/next-day-effects?from=2026-02-01&to=2026-01-01")]
-    [InlineData("/api/insights/tag-combos?from=2026-02-01&to=2026-01-01")]
-    [InlineData("/api/insights/influenceability?from=2026-02-01&to=2026-01-01")]
-    public async Task InsightEndpoints_Should_Return_400_When_From_After_To(string url)
+    [InlineData("/api/insights/repeating-triggers?from=2026-01-01T00:00:00Z&to=2026-01-31T00:00:00Z")]
+    [InlineData("/api/insights/discounted-positives?from=2026-01-01T00:00:00Z&to=2026-01-31T00:00:00Z")]
+    [InlineData("/api/insights/next-day-effects?from=2026-01-01T00:00:00Z&to=2026-01-31T00:00:00Z")]
+    [InlineData("/api/insights/tag-combos?from=2026-01-01T00:00:00Z&to=2026-01-31T00:00:00Z")]
+    [InlineData("/api/insights/tag-trend?from=2026-01-01T00:00:00Z&to=2026-01-31T00:00:00Z")]
+    [InlineData("/api/insights/influenceability?from=2026-01-01T00:00:00Z&to=2026-01-31T00:00:00Z")]
+    [InlineData("/api/insights/balance?from=2026-01-01T00:00:00Z&to=2026-01-31T00:00:00Z")]
+    [InlineData("/api/insights/trends?from=2026-01-01T00:00:00Z&to=2026-01-31T00:00:00Z")]
+    [InlineData("/api/insights/most-intense-tags?from=2026-01-01T00:00:00Z&to=2026-01-31T00:00:00Z")]
+    [InlineData("/api/insights/weekday-stats?from=2026-01-01T00:00:00Z&to=2026-01-31T00:00:00Z")]
+    public async Task InsightsEndpoint_Authenticated_Returns200(string url)
     {
-        var client = CreateTestAuthClient();
+        var response = await Client.GetAsync(url, TestContext.Current.CancellationToken);
 
-        var response = await client.GetAsync(url);
-
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
 
-    // ── RepeatingTriggers ─────────────────────────────────────────────────────
+    #endregion
+
+    #region Validation
+
+    [Theory]
+    [InlineData("/api/insights/repeating-triggers?from=2026-02-01T00:00:00Z&to=2026-01-01T00:00:00Z")]
+    [InlineData("/api/insights/discounted-positives?from=2026-02-01T00:00:00Z&to=2026-01-01T00:00:00Z")]
+    [InlineData("/api/insights/next-day-effects?from=2026-02-01T00:00:00Z&to=2026-01-01T00:00:00Z")]
+    [InlineData("/api/insights/tag-combos?from=2026-02-01T00:00:00Z&to=2026-01-01T00:00:00Z")]
+    [InlineData("/api/insights/tag-trend?from=2026-02-01T00:00:00Z&to=2026-01-01T00:00:00Z")]
+    [InlineData("/api/insights/influenceability?from=2026-02-01T00:00:00Z&to=2026-01-01T00:00:00Z")]
+    [InlineData("/api/insights/balance?from=2026-02-01T00:00:00Z&to=2026-01-01T00:00:00Z")]
+    [InlineData("/api/insights/trends?from=2026-02-01T00:00:00Z&to=2026-01-01T00:00:00Z")]
+    [InlineData("/api/insights/most-intense-tags?from=2026-02-01T00:00:00Z&to=2026-01-01T00:00:00Z")]
+    [InlineData("/api/insights/weekday-stats?from=2026-02-01T00:00:00Z&to=2026-01-01T00:00:00Z")]
+    public async Task InsightEndpoints_FromAfterTo_Returns400(string url)
+    {
+        var response = await Client.GetAsync(url, TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    #endregion
+
+    #region RepeatingTriggers
 
     [Fact]
-    public async Task GetRepeatingTriggers_Should_Return_Tags_Meeting_MinCount()
+    public async Task GetRepeatingTriggers_CountAboveMinCount_IncludesMatchingTags()
     {
-        // Jan 10-13: isolated from Feb/Mar TagCombo dayScore-sensitive tests
         var tag = await SeedTagAsync(TestUserId, "rt_argument");
         await SeedEventsWithTagAsync(TestUserId, tag, type: EventType.Negative, intensity: 7, count: 4,
             baseDate: new DateTime(2026, 1, 10, 0, 0, 0, DateTimeKind.Utc));
@@ -70,35 +91,38 @@ public class InsightsControllerTests : IClassFixture<PostgresWebAppFactory>
         await SeedEventsWithTagAsync(TestUserId, rareTag, type: EventType.Negative, intensity: 5, count: 2,
             baseDate: new DateTime(2026, 1, 20, 0, 0, 0, DateTimeKind.Utc));
 
-        var client = CreateTestAuthClient();
-        var response = await client.GetAsync("/api/insights/repeating-triggers?from=2026-01-10&to=2026-01-31&minCount=3");
-        var result = await response.Content.ReadFromJsonAsync<IReadOnlyList<RepeatingTriggerDto>>();
+        var response = await Client.GetAsync("/api/insights/repeating-triggers?from=2026-01-10T00:00:00Z&to=2026-01-31T00:00:00Z&minCount=3",
+            TestContext.Current.CancellationToken);
+        var result = await response.Content.ReadFromJsonAsync<IReadOnlyList<RepeatingTriggerDto>>(
+            TestContext.Current.CancellationToken);
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Contains(result!, r => r.TagName == "rt_argument");
-        Assert.DoesNotContain(result!, r => r.TagName == "rt_rare");
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        result.Should().Contain(r => r.TagName == "rt_argument");
+        result.Should().NotContain(r => r.TagName == "rt_rare");
     }
 
     [Fact]
-    public async Task GetRepeatingTriggers_Should_Only_Consider_Negative_Events()
+    public async Task GetRepeatingTriggers_PositiveEvents_NotIncluded()
     {
-        // Jan 22-26: isolated from Feb/Mar TagCombo dayScore-sensitive tests
         var tag = await SeedTagAsync(TestUserId, "rt_positive_tag");
         await SeedEventsWithTagAsync(TestUserId, tag, type: EventType.Positive, intensity: 6, count: 5,
             baseDate: new DateTime(2026, 1, 22, 0, 0, 0, DateTimeKind.Utc));
 
-        var client = CreateTestAuthClient();
-        var response = await client.GetAsync("/api/insights/repeating-triggers?from=2026-01-22&to=2026-01-31");
-        var result = await response.Content.ReadFromJsonAsync<IReadOnlyList<RepeatingTriggerDto>>();
+        var response = await Client.GetAsync("/api/insights/repeating-triggers?from=2026-01-22T00:00:00Z&to=2026-01-31T00:00:00Z",
+            TestContext.Current.CancellationToken);
+        var result = await response.Content.ReadFromJsonAsync<IReadOnlyList<RepeatingTriggerDto>>(
+            TestContext.Current.CancellationToken);
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.DoesNotContain(result!, r => r.TagName == "rt_positive_tag");
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        result.Should().NotContain(r => r.TagName == "rt_positive_tag");
     }
 
-    // ── DiscountedPositives ───────────────────────────────────────────────────
+    #endregion
+
+    #region DiscountedPositives
 
     [Fact]
-    public async Task GetDiscountedPositives_Should_Return_HighFrequency_LowIntensity_Tags()
+    public async Task GetDiscountedPositives_HighFrequencyLowIntensity_IncludesTag()
     {
         var tag = await SeedTagAsync(TestUserId, "dp_coffee");
         await SeedEventsWithTagAsync(TestUserId, tag, type: EventType.Positive, intensity: 2, count: 6,
@@ -108,39 +132,41 @@ public class InsightsControllerTests : IClassFixture<PostgresWebAppFactory>
         await SeedEventsWithTagAsync(TestUserId, highTag, type: EventType.Positive, intensity: 8, count: 6,
             baseDate: new DateTime(2026, 4, 10, 0, 0, 0, DateTimeKind.Utc));
 
-        var client = CreateTestAuthClient();
-        var response = await client.GetAsync("/api/insights/discounted-positives?from=2026-04-01&to=2026-04-30");
-        var result = await response.Content.ReadFromJsonAsync<IReadOnlyList<DiscountedPositiveDto>>();
+        var response = await Client.GetAsync("/api/insights/discounted-positives?from=2026-04-01T00:00:00Z&to=2026-04-30T00:00:00Z",
+            TestContext.Current.CancellationToken);
+        var result = await response.Content.ReadFromJsonAsync<IReadOnlyList<DiscountedPositiveDto>>(
+            TestContext.Current.CancellationToken);
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Contains(result!, r => r.TagName == "dp_coffee");
-        Assert.DoesNotContain(result!, r => r.TagName == "dp_achievement");
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        result.Should().Contain(r => r.TagName == "dp_coffee");
+        result.Should().NotContain(r => r.TagName == "dp_achievement");
     }
 
     [Fact]
-    public async Task GetDiscountedPositives_Should_Exclude_Tags_Below_Count_Threshold()
+    public async Task GetDiscountedPositives_BelowCountThreshold_ExcludesTag()
     {
         var tag = await SeedTagAsync(TestUserId, "dp_rare_low");
         await SeedEventsWithTagAsync(TestUserId, tag, type: EventType.Positive, intensity: 2, count: 3,
             baseDate: new DateTime(2026, 5, 1, 0, 0, 0, DateTimeKind.Utc));
 
-        var client = CreateTestAuthClient();
-        var response = await client.GetAsync("/api/insights/discounted-positives?from=2026-05-01&to=2026-05-31");
-        var result = await response.Content.ReadFromJsonAsync<IReadOnlyList<DiscountedPositiveDto>>();
+        var response = await Client.GetAsync("/api/insights/discounted-positives?from=2026-05-01T00:00:00Z&to=2026-05-31T00:00:00Z",
+            TestContext.Current.CancellationToken);
+        var result = await response.Content.ReadFromJsonAsync<IReadOnlyList<DiscountedPositiveDto>>(
+            TestContext.Current.CancellationToken);
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.DoesNotContain(result!, r => r.TagName == "dp_rare_low");
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        result.Should().NotContain(r => r.TagName == "dp_rare_low");
     }
 
-    // ── NextDayEffects ────────────────────────────────────────────────────────
+    #endregion
+
+    #region NextDayEffects
 
     [Fact]
-    public async Task GetNextDayEffects_Should_Compute_Correct_NextDay_Score()
+    public async Task GetNextDayEffects_WithTaggedEvents_ComputesPositiveScore()
     {
         var tag = await SeedTagAsync(TestUserId, "nde_gym");
-        // Tag appears on day 1, 2, 3 (3 occurrences)
-        // Day 2, 3, 4 — positive events (nextDay score positive)
-        using (var scope = _factory.Services.CreateScope())
+        using (var scope = Factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             for (var i = 0; i < 3; i++)
@@ -154,7 +180,6 @@ public class InsightsControllerTests : IClassFixture<PostgresWebAppFactory>
                 db.Events.Add(eventWithTag);
                 db.EventTags.Add(new EventTag { EventId = eventWithTag.Id, TagId = tag.Id });
 
-                // Next day: 1 positive event
                 var nextDayEvent = new Event
                 {
                     Id = Guid.NewGuid(), UserId = TestUserId,
@@ -163,46 +188,49 @@ public class InsightsControllerTests : IClassFixture<PostgresWebAppFactory>
                 };
                 db.Events.Add(nextDayEvent);
             }
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
-        var client = CreateTestAuthClient();
-        var response = await client.GetAsync("/api/insights/next-day-effects?from=2026-06-01&to=2026-06-03");
-        var result = await response.Content.ReadFromJsonAsync<IReadOnlyList<NextDayEffectDto>>();
+        var response = await Client.GetAsync("/api/insights/next-day-effects?from=2026-06-01T00:00:00Z&to=2026-06-03T00:00:00Z",
+            TestContext.Current.CancellationToken);
+        var result = await response.Content.ReadFromJsonAsync<IReadOnlyList<NextDayEffectDto>>(
+            TestContext.Current.CancellationToken);
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
         var gymEffect = result!.FirstOrDefault(r => r.TagName == "nde_gym");
-        Assert.NotNull(gymEffect);
-        Assert.True(gymEffect.NextDayAvgScore > 0);
+        gymEffect.Should().NotBeNull();
+        gymEffect!.NextDayAvgScore.Should().BeGreaterThan(0);
     }
 
     [Fact]
-    public async Task GetNextDayEffects_Should_Exclude_Tags_With_Fewer_Than_3_Occurrences()
+    public async Task GetNextDayEffects_FewerThan3Occurrences_ExcludesTag()
     {
         var tag = await SeedTagAsync(TestUserId, "nde_rare");
         await SeedEventsWithTagAsync(TestUserId, tag, type: EventType.Negative, intensity: 5, count: 2,
             baseDate: new DateTime(2026, 7, 1, 0, 0, 0, DateTimeKind.Utc));
 
-        var client = CreateTestAuthClient();
-        var response = await client.GetAsync("/api/insights/next-day-effects?from=2026-07-01&to=2026-07-31");
-        var result = await response.Content.ReadFromJsonAsync<IReadOnlyList<NextDayEffectDto>>();
+        var response = await Client.GetAsync("/api/insights/next-day-effects?from=2026-07-01T00:00:00Z&to=2026-07-31T00:00:00Z",
+            TestContext.Current.CancellationToken);
+        var result = await response.Content.ReadFromJsonAsync<IReadOnlyList<NextDayEffectDto>>(
+            TestContext.Current.CancellationToken);
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.DoesNotContain(result!, r => r.TagName == "nde_rare");
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        result.Should().NotContain(r => r.TagName == "nde_rare");
     }
 
-    // ── TagCombos ─────────────────────────────────────────────────────────────
+    #endregion
+
+    #region TagCombos
 
     [Fact]
-    public async Task GetTagCombos_Should_Return_Pairs_CoOccurring_3_Plus_Days()
+    public async Task GetTagCombos_CoOccurring3PlusDays_ReturnsPair()
     {
         var tagA = await SeedTagAsync(TestUserId, "tc_work");
         var tagB = await SeedTagAsync(TestUserId, "tc_stress");
 
-        using (var scope = _factory.Services.CreateScope())
+        using (var scope = Factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            // TagA + TagB together on 3 different days
             for (var i = 0; i < 3; i++)
             {
                 var date = new DateTime(2026, 8, i + 1, 10, 0, 0, DateTimeKind.Utc);
@@ -213,29 +241,29 @@ public class InsightsControllerTests : IClassFixture<PostgresWebAppFactory>
                     new EventTag { EventId = ev1.Id, TagId = tagA.Id },
                     new EventTag { EventId = ev2.Id, TagId = tagB.Id });
             }
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
-        var client = CreateTestAuthClient();
-        var response = await client.GetAsync("/api/insights/tag-combos?from=2026-08-01&to=2026-08-31");
-        var result = await response.Content.ReadFromJsonAsync<IReadOnlyList<TagComboDto>>();
+        var response = await Client.GetAsync("/api/insights/tag-combos?from=2026-08-01T00:00:00Z&to=2026-08-31T00:00:00Z",
+            TestContext.Current.CancellationToken);
+        var result = await response.Content.ReadFromJsonAsync<IReadOnlyList<TagComboDto>>(
+            TestContext.Current.CancellationToken);
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Contains(result!, r =>
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        result.Should().Contain(r =>
             (r.Tag1 == "tc_work" && r.Tag2 == "tc_stress") ||
             (r.Tag1 == "tc_stress" && r.Tag2 == "tc_work"));
     }
 
     [Fact]
-    public async Task GetTagCombos_Should_Not_Return_Pairs_Below_3_CoOccurrences()
+    public async Task GetTagCombos_Below3CoOccurrences_ExcludesPair()
     {
         var tagA = await SeedTagAsync(TestUserId, "tc_solo_a");
         var tagB = await SeedTagAsync(TestUserId, "tc_solo_b");
 
-        using (var scope = _factory.Services.CreateScope())
+        using (var scope = Factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            // Only 2 days together
             for (var i = 0; i < 2; i++)
             {
                 var date = new DateTime(2026, 9, i + 1, 10, 0, 0, DateTimeKind.Utc);
@@ -246,30 +274,29 @@ public class InsightsControllerTests : IClassFixture<PostgresWebAppFactory>
                     new EventTag { EventId = ev1.Id, TagId = tagA.Id },
                     new EventTag { EventId = ev2.Id, TagId = tagB.Id });
             }
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
-        var client = CreateTestAuthClient();
-        var response = await client.GetAsync("/api/insights/tag-combos?from=2026-09-01&to=2026-09-30");
-        var result = await response.Content.ReadFromJsonAsync<IReadOnlyList<TagComboDto>>();
+        var response = await Client.GetAsync("/api/insights/tag-combos?from=2026-09-01T00:00:00Z&to=2026-09-30T00:00:00Z",
+            TestContext.Current.CancellationToken);
+        var result = await response.Content.ReadFromJsonAsync<IReadOnlyList<TagComboDto>>(
+            TestContext.Current.CancellationToken);
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.DoesNotContain(result!, r =>
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        result.Should().NotContain(r =>
             (r.Tag1 == "tc_solo_a" || r.Tag2 == "tc_solo_a") &&
             (r.Tag1 == "tc_solo_b" || r.Tag2 == "tc_solo_b"));
     }
 
     [Fact]
-    public async Task GetTagCombos_Should_Return_Zero_Alone_Intensities_When_Tags_Only_CoOccur()
+    public async Task GetTagCombos_TagsOnlyCoOccur_ZeroAloneIntensity()
     {
         var tagA = await SeedTagAsync(TestUserId, "tc_always_together_a");
         var tagB = await SeedTagAsync(TestUserId, "tc_always_together_b");
 
-        using (var scope = _factory.Services.CreateScope())
+        using (var scope = Factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-
-            // Days 1-3: TagA + TagB together, never separately (use February to avoid conflicts with other tests)
             for (var i = 0; i < 3; i++)
             {
                 var date = new DateTime(2026, 2, i + 1, 10, 0, 0, DateTimeKind.Utc);
@@ -279,37 +306,34 @@ public class InsightsControllerTests : IClassFixture<PostgresWebAppFactory>
                 db.EventTags.Add(new EventTag { EventId = evA.Id, TagId = tagA.Id });
                 db.EventTags.Add(new EventTag { EventId = evB.Id, TagId = tagB.Id });
             }
-
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
-        var client = CreateTestAuthClient();
-        var response = await client.GetAsync("/api/insights/tag-combos?from=2026-02-01&to=2026-02-28");
-        var result = await response.Content.ReadFromJsonAsync<IReadOnlyList<TagComboDto>>();
+        var response = await Client.GetAsync("/api/insights/tag-combos?from=2026-02-01T00:00:00Z&to=2026-02-28T00:00:00Z",
+            TestContext.Current.CancellationToken);
+        var result = await response.Content.ReadFromJsonAsync<IReadOnlyList<TagComboDto>>(
+            TestContext.Current.CancellationToken);
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
         var combo = result!.FirstOrDefault(r =>
             (r.Tag1 == "tc_always_together_a" && r.Tag2 == "tc_always_together_b") ||
             (r.Tag1 == "tc_always_together_b" && r.Tag2 == "tc_always_together_a"));
-        Assert.NotNull(combo);
-
-        // Both alone intensities should be 0, since they never appear separately
-        Assert.Equal(0.0, combo.Tag1AloneAvgScore);
-        Assert.Equal(0.0, combo.Tag2AloneAvgScore);
-        Assert.Equal(8.0, combo.CombinedAvgScore);
+        combo.Should().NotBeNull();
+        combo!.Tag1AloneAvgScore.Should().Be(0.0);
+        combo.Tag2AloneAvgScore.Should().Be(0.0);
+        combo.CombinedAvgScore.Should().Be(8.0);
     }
 
     [Fact]
-    public async Task GetTagCombos_Should_Calculate_Alone_Intensities_Correctly()
+    public async Task GetTagCombos_WithMixedData_CalculatesAloneIntensitiesCorrectly()
     {
         var tagA = await SeedTagAsync(TestUserId, "tc_calc_a");
         var tagB = await SeedTagAsync(TestUserId, "tc_calc_b");
 
-        using (var scope = _factory.Services.CreateScope())
+        using (var scope = Factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-            // Days 1-3: TagA + TagB together (intensity 8) — use March to avoid conflicts
             for (var i = 0; i < 3; i++)
             {
                 var date = new DateTime(2026, 3, i + 1, 10, 0, 0, DateTimeKind.Utc);
@@ -320,7 +344,6 @@ public class InsightsControllerTests : IClassFixture<PostgresWebAppFactory>
                 db.EventTags.Add(new EventTag { EventId = evB.Id, TagId = tagB.Id });
             }
 
-            // Days 4-5: TagA alone (intensity 4)
             for (var i = 0; i < 2; i++)
             {
                 var date = new DateTime(2026, 3, i + 4, 10, 0, 0, DateTimeKind.Utc);
@@ -329,53 +352,50 @@ public class InsightsControllerTests : IClassFixture<PostgresWebAppFactory>
                 db.EventTags.Add(new EventTag { EventId = evA.Id, TagId = tagA.Id });
             }
 
-            // Day 6: TagB alone (intensity 6)
             var evBAlone = new Event { Id = Guid.NewGuid(), UserId = TestUserId, Timestamp = new DateTime(2026, 3, 6, 10, 0, 0, DateTimeKind.Utc), Type = EventType.Positive, Intensity = 6, Title = "tc_calc_b_alone" };
             db.Events.Add(evBAlone);
             db.EventTags.Add(new EventTag { EventId = evBAlone.Id, TagId = tagB.Id });
 
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
-        var client = CreateTestAuthClient();
-        var response = await client.GetAsync("/api/insights/tag-combos?from=2026-03-01&to=2026-03-31");
-        var result = await response.Content.ReadFromJsonAsync<IReadOnlyList<TagComboDto>>();
+        var response = await Client.GetAsync("/api/insights/tag-combos?from=2026-03-01T00:00:00Z&to=2026-03-31T00:00:00Z",
+            TestContext.Current.CancellationToken);
+        var result = await response.Content.ReadFromJsonAsync<IReadOnlyList<TagComboDto>>(
+            TestContext.Current.CancellationToken);
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
         var combo = result!.FirstOrDefault(r =>
             (r.Tag1 == "tc_calc_a" && r.Tag2 == "tc_calc_b") ||
             (r.Tag1 == "tc_calc_b" && r.Tag2 == "tc_calc_a"));
-        Assert.NotNull(combo);
-        Assert.Equal(3, combo.CoOccurrences);
+        combo.Should().NotBeNull();
+        combo!.CoOccurrences.Should().Be(3);
+        combo.CombinedAvgScore.Should().Be(8.0);
 
-        // Combined days: dayScore = (8+8)/2 = 8.0 per day, avg = 8.0
-        Assert.Equal(8.0, combo.CombinedAvgScore);
-
-        // Tag1 alone (intensity 4, positive only → dayScore 4.0)
-        // Tag2 alone (intensity 6, positive only → dayScore 6.0)
-        // Order can vary, so check both possibilities
         if (combo.Tag1 == "tc_calc_a")
         {
-            Assert.Equal(4.0, combo.Tag1AloneAvgScore);
-            Assert.Equal(6.0, combo.Tag2AloneAvgScore);
+            combo.Tag1AloneAvgScore.Should().Be(4.0);
+            combo.Tag2AloneAvgScore.Should().Be(6.0);
         }
         else
         {
-            Assert.Equal(6.0, combo.Tag1AloneAvgScore);
-            Assert.Equal(4.0, combo.Tag2AloneAvgScore);
+            combo.Tag1AloneAvgScore.Should().Be(6.0);
+            combo.Tag2AloneAvgScore.Should().Be(4.0);
         }
     }
 
-    // ── TagTrend ──────────────────────────────────────────────────────────────
+    #endregion
+
+    #region TagTrend
 
     [Fact]
-    public async Task GetTagTrend_Should_Return_Top3_Tags_Ordered_By_Count()
+    public async Task GetTagTrend_MultipleTagsWithDifferentCounts_ReturnsTop3Ordered()
     {
         var tag1 = await SeedTagAsync(TestUserId, "tt_top1_tag");
         var tag2 = await SeedTagAsync(TestUserId, "tt_top2_tag");
         var tag3 = await SeedTagAsync(TestUserId, "tt_top3_tag");
-        // tag1: 3 events, tag2: 2 events, tag3: 1 event
-        using (var scope = _factory.Services.CreateScope())
+
+        using (var scope = Factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var tag1Dates = new[]
@@ -403,27 +423,30 @@ public class InsightsControllerTests : IClassFixture<PostgresWebAppFactory>
             var ev3 = new Event { Id = Guid.NewGuid(), UserId = TestUserId, Timestamp = new DateTime(2026, 10, 1, 0, 0, 0, DateTimeKind.Utc), Type = EventType.Negative, Intensity = 5, Title = "tt_t3_0" };
             db.Events.Add(ev3);
             db.EventTags.Add(new EventTag { EventId = ev3.Id, TagId = tag3.Id });
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
-        var client = CreateTestAuthClient();
-        var response = await client.GetAsync("/api/insights/tag-trend?from=2026-10-01&to=2026-10-14&period=Week");
-        var result = await response.Content.ReadFromJsonAsync<IReadOnlyList<TagTrendSeriesDto>>();
+        var response = await Client.GetAsync("/api/insights/tag-trend?from=2026-10-01T00:00:00Z&to=2026-10-14T00:00:00Z&period=Week",
+            TestContext.Current.CancellationToken);
+        var result = await response.Content.ReadFromJsonAsync<IReadOnlyList<TagTrendSeriesDto>>(
+            TestContext.Current.CancellationToken);
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Equal(3, result!.Count);
-        Assert.Equal("tt_top1_tag", result[0].TagName);
-        Assert.Equal(2, result[0].Points.Count); // 2 weeks
-        Assert.Equal("tt_top2_tag", result[1].TagName);
-        Assert.Equal("tt_top3_tag", result[2].TagName);
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        result.Should().HaveCount(3);
+        result![0].TagName.Should().Be("tt_top1_tag");
+        result[0].Points.Should().HaveCount(2);
+        result[1].TagName.Should().Be("tt_top2_tag");
+        result[2].TagName.Should().Be("tt_top3_tag");
     }
 
-    // ── InfluenceabilitySplit ─────────────────────────────────────────────────
+    #endregion
+
+    #region InfluenceabilitySplit
 
     [Fact]
-    public async Task GetInfluenceabilitySplit_Should_Split_Negative_Events_By_CanInfluence()
+    public async Task GetInfluenceabilitySplit_WithMixedNegativeEvents_SplitsByCanInfluence()
     {
-        using (var scope = _factory.Services.CreateScope())
+        using (var scope = Factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var baseDate = new DateTime(2026, 11, 1, 0, 0, 0, DateTimeKind.Utc);
@@ -431,85 +454,271 @@ public class InsightsControllerTests : IClassFixture<PostgresWebAppFactory>
                 db.Events.Add(new Event { Id = Guid.NewGuid(), UserId = TestUserId, Timestamp = baseDate.AddDays(i), Type = EventType.Negative, Intensity = 6, CanInfluence = true, Title = $"inf_can_{i}" });
             for (var i = 0; i < 2; i++)
                 db.Events.Add(new Event { Id = Guid.NewGuid(), UserId = TestUserId, Timestamp = baseDate.AddDays(i + 10), Type = EventType.Negative, Intensity = 8, CanInfluence = false, Title = $"inf_cannot_{i}" });
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
-        var client = CreateTestAuthClient();
-        var response = await client.GetAsync("/api/insights/influenceability?from=2026-11-01&to=2026-11-30");
-        var result = await response.Content.ReadFromJsonAsync<InfluenceabilitySplitDto>();
+        var response = await Client.GetAsync("/api/insights/influenceability?from=2026-11-01T00:00:00Z&to=2026-11-30T00:00:00Z",
+            TestContext.Current.CancellationToken);
+        var result = await response.Content.ReadFromJsonAsync<InfluenceabilitySplitDto>(
+            TestContext.Current.CancellationToken);
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.NotNull(result);
-        Assert.Equal(3, result.CanInfluenceCount);
-        Assert.Equal(6.0, result.CanInfluenceAvgIntensity);
-        Assert.Equal(2, result.CannotInfluenceCount);
-        Assert.Equal(8.0, result.CannotInfluenceAvgIntensity);
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        result.Should().NotBeNull();
+        result!.CanInfluenceCount.Should().Be(3);
+        result.CanInfluenceAvgIntensity.Should().Be(6.0);
+        result.CannotInfluenceCount.Should().Be(2);
+        result.CannotInfluenceAvgIntensity.Should().Be(8.0);
     }
 
     [Fact]
-    public async Task GetInfluenceabilitySplit_Should_Ignore_Positive_Events()
+    public async Task GetInfluenceabilitySplit_PositiveEventsOnly_ReturnsZeroCounts()
     {
-        using (var scope = _factory.Services.CreateScope())
+        using (var scope = Factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var baseDate = new DateTime(2026, 12, 1, 0, 0, 0, DateTimeKind.Utc);
-            // Only positive events — should return zeros
             for (var i = 0; i < 5; i++)
                 db.Events.Add(new Event { Id = Guid.NewGuid(), UserId = TestUserId, Timestamp = baseDate.AddDays(i), Type = EventType.Positive, Intensity = 7, CanInfluence = true, Title = $"inf_pos_{i}" });
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
-        var client = CreateTestAuthClient();
-        var response = await client.GetAsync("/api/insights/influenceability?from=2026-12-01&to=2026-12-31");
-        var result = await response.Content.ReadFromJsonAsync<InfluenceabilitySplitDto>();
+        var response = await Client.GetAsync("/api/insights/influenceability?from=2026-12-01T00:00:00Z&to=2026-12-31T00:00:00Z",
+            TestContext.Current.CancellationToken);
+        var result = await response.Content.ReadFromJsonAsync<InfluenceabilitySplitDto>(
+            TestContext.Current.CancellationToken);
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.NotNull(result);
-        Assert.Equal(0, result.CanInfluenceCount);
-        Assert.Equal(0, result.CannotInfluenceCount);
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        result.Should().NotBeNull();
+        result!.CanInfluenceCount.Should().Be(0);
+        result.CannotInfluenceCount.Should().Be(0);
     }
 
-    // ── User Isolation ────────────────────────────────────────────────────────
+    #endregion
+
+    #region Balance
 
     [Fact]
-    public async Task GetRepeatingTriggers_Should_Not_Return_Other_Users_Data()
+    public async Task GetBalance_WithMixedEvents_ReturnsCorrectCountsAndAverages()
     {
-        var otherTag = await SeedTagAsync(OtherUserId, "rt_isolation_other");
-        await SeedEventsWithTagAsync(OtherUserId, otherTag, type: EventType.Negative, intensity: 8, count: 5,
-            baseDate: new DateTime(2026, 1, 2, 0, 0, 0, DateTimeKind.Utc));
+        using (var scope = Factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var baseDate = new DateTime(2027, 2, 1, 10, 0, 0, DateTimeKind.Utc);
+            db.Events.AddRange(
+                new Event { Id = Guid.NewGuid(), UserId = TestUserId, Timestamp = baseDate, Type = EventType.Positive, Intensity = 8, Title = "bal_pos1" },
+                new Event { Id = Guid.NewGuid(), UserId = TestUserId, Timestamp = baseDate.AddDays(1), Type = EventType.Positive, Intensity = 6, Title = "bal_pos2" },
+                new Event { Id = Guid.NewGuid(), UserId = TestUserId, Timestamp = baseDate.AddDays(2), Type = EventType.Negative, Intensity = 4, Title = "bal_neg1" });
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
 
-        var client = CreateTestAuthClient();
-        var response = await client.GetAsync("/api/insights/repeating-triggers?from=2026-01-01&to=2026-01-31");
-        var result = await response.Content.ReadFromJsonAsync<IReadOnlyList<RepeatingTriggerDto>>();
+        var response = await Client.GetAsync("/api/insights/balance?from=2027-02-01T00:00:00Z&to=2027-02-28T00:00:00Z",
+            TestContext.Current.CancellationToken);
+        var result = await response.Content.ReadFromJsonAsync<PosNegBalanceDto>(
+            TestContext.Current.CancellationToken);
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.DoesNotContain(result!, r => r.TagName == "rt_isolation_other");
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        result.Should().NotBeNull();
+        result!.PosCount.Should().Be(2);
+        result.NegCount.Should().Be(1);
+        result.AvgPosIntensity.Should().Be(7.0);
+        result.AvgNegIntensity.Should().Be(4.0);
     }
 
-    // ── Helpers ───────────────────────────────────────────────────────────────
+    #endregion
+
+    #region Trends
+
+    [Fact]
+    public async Task GetTrends_EventsAcrossTwoWeeks_ReturnsTwoGroupedPeriods()
+    {
+        using (var scope = Factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            // 2027-03-01 and 2027-03-08 are consecutive Mondays
+            db.Events.AddRange(
+                new Event { Id = Guid.NewGuid(), UserId = TestUserId, Timestamp = new DateTime(2027, 3, 1, 10, 0, 0, DateTimeKind.Utc), Type = EventType.Positive, Intensity = 8, Title = "trend_w1_pos" },
+                new Event { Id = Guid.NewGuid(), UserId = TestUserId, Timestamp = new DateTime(2027, 3, 2, 10, 0, 0, DateTimeKind.Utc), Type = EventType.Negative, Intensity = 4, Title = "trend_w1_neg" },
+                new Event { Id = Guid.NewGuid(), UserId = TestUserId, Timestamp = new DateTime(2027, 3, 8, 10, 0, 0, DateTimeKind.Utc), Type = EventType.Positive, Intensity = 6, Title = "trend_w2_pos" });
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+
+        var response = await Client.GetAsync("/api/insights/trends?from=2027-03-01T00:00:00Z&to=2027-03-14T00:00:00Z&period=Week",
+            TestContext.Current.CancellationToken);
+        var result = await response.Content.ReadFromJsonAsync<IReadOnlyList<TrendPeriodDto>>(
+            TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        result.Should().HaveCount(2);
+        result![0].PosCount.Should().Be(1);
+        result[0].NegCount.Should().Be(1);
+        result[1].PosCount.Should().Be(1);
+        result[1].NegCount.Should().Be(0);
+    }
+
+    #endregion
+
+    #region MostIntenseTags
+
+    [Fact]
+    public async Task GetMostIntenseTags_TaggedEventsWithDifferentIntensities_OrderedByAvgIntensity()
+    {
+        var highTag = await SeedTagAsync(TestUserId, "mit_high");
+        var lowTag = await SeedTagAsync(TestUserId, "mit_low");
+
+        using (var scope = Factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var baseDate = new DateTime(2027, 4, 1, 10, 0, 0, DateTimeKind.Utc);
+            for (var i = 0; i < 3; i++)
+            {
+                var evHigh = new Event { Id = Guid.NewGuid(), UserId = TestUserId, Timestamp = baseDate.AddDays(i), Type = EventType.Positive, Intensity = 9, Title = $"mit_high_{i}" };
+                db.Events.Add(evHigh);
+                db.EventTags.Add(new EventTag { EventId = evHigh.Id, TagId = highTag.Id });
+                var evLow = new Event { Id = Guid.NewGuid(), UserId = TestUserId, Timestamp = baseDate.AddDays(i + 3), Type = EventType.Positive, Intensity = 3, Title = $"mit_low_{i}" };
+                db.Events.Add(evLow);
+                db.EventTags.Add(new EventTag { EventId = evLow.Id, TagId = lowTag.Id });
+            }
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+
+        var response = await Client.GetAsync("/api/insights/most-intense-tags?from=2027-04-01T00:00:00Z&to=2027-04-30T00:00:00Z",
+            TestContext.Current.CancellationToken);
+        var result = await response.Content.ReadFromJsonAsync<MostIntenseTagsDto>(
+            TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        result.Should().NotBeNull();
+        result!.TopPosTags.Should().NotBeEmpty();
+        result.TopPosTags[0].TagName.Should().Be("mit_high");
+        result.TopPosTags[0].AvgIntensity.Should().Be(9.0);
+    }
+
+    #endregion
+
+    #region WeekdayStats
+
+    [Fact]
+    public async Task GetWeekdayStats_NoEvents_Returns7Days()
+    {
+        var response = await Client.GetAsync("/api/insights/weekday-stats?from=2027-05-01T00:00:00Z&to=2027-05-31T00:00:00Z",
+            TestContext.Current.CancellationToken);
+        var result = await response.Content.ReadFromJsonAsync<IReadOnlyList<WeekdayStatDto>>(
+            TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        result.Should().HaveCount(7);
+    }
+
+    [Fact]
+    public async Task GetWeekdayStats_EventsOnMonday_CountsCorrectly()
+    {
+        using (var scope = Factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            // 2027-05-03 is Monday; 10:00 UTC = 13:00 Vilnius (EEST) → still Monday
+            db.Events.AddRange(
+                new Event { Id = Guid.NewGuid(), UserId = TestUserId, Timestamp = new DateTime(2027, 5, 3, 10, 0, 0, DateTimeKind.Utc), Type = EventType.Positive, Intensity = 8, Title = "wd_mon_pos" },
+                new Event { Id = Guid.NewGuid(), UserId = TestUserId, Timestamp = new DateTime(2027, 5, 3, 14, 0, 0, DateTimeKind.Utc), Type = EventType.Negative, Intensity = 4, Title = "wd_mon_neg" });
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+
+        var response = await Client.GetAsync("/api/insights/weekday-stats?from=2027-05-01T00:00:00Z&to=2027-05-31T00:00:00Z",
+            TestContext.Current.CancellationToken);
+        var result = await response.Content.ReadFromJsonAsync<IReadOnlyList<WeekdayStatDto>>(
+            TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var monday = result!.Single(d => d.Day == "Monday");
+        monday.PosCount.Should().Be(1);
+        monday.NegCount.Should().Be(1);
+        monday.AvgIntensity.Should().Be(6.0);
+    }
+
+    #endregion
+
+    #region UserIsolation
+
+    [Theory]
+    [InlineData("/api/insights/balance?from=2027-01-01T00:00:00Z&to=2027-01-31T00:00:00Z", "balance")]
+    [InlineData("/api/insights/trends?from=2027-01-01T00:00:00Z&to=2027-01-31T00:00:00Z", "list")]
+    [InlineData("/api/insights/most-intense-tags?from=2027-01-01T00:00:00Z&to=2027-01-31T00:00:00Z", "most-intense-tags")]
+    [InlineData("/api/insights/weekday-stats?from=2027-01-01T00:00:00Z&to=2027-01-31T00:00:00Z", "weekday-stats")]
+    [InlineData("/api/insights/repeating-triggers?from=2027-01-01T00:00:00Z&to=2027-01-31T00:00:00Z", "list")]
+    [InlineData("/api/insights/discounted-positives?from=2027-01-01T00:00:00Z&to=2027-01-31T00:00:00Z", "list")]
+    [InlineData("/api/insights/next-day-effects?from=2027-01-01T00:00:00Z&to=2027-01-31T00:00:00Z", "list")]
+    [InlineData("/api/insights/tag-combos?from=2027-01-01T00:00:00Z&to=2027-01-31T00:00:00Z", "list")]
+    [InlineData("/api/insights/tag-trend?from=2027-01-01T00:00:00Z&to=2027-01-31T00:00:00Z", "list")]
+    [InlineData("/api/insights/influenceability?from=2027-01-01T00:00:00Z&to=2027-01-31T00:00:00Z", "influenceability")]
+    public async Task InsightEndpoints_OtherUsersDataOnly_ReturnsCurrentUserEmptyResult(string url, string kind)
+    {
+        var tag = await SeedTagAsync(OtherUserId, "isolation_other_tag");
+        await SeedEventsWithTagAsync(OtherUserId, tag, EventType.Negative, 7, 5,
+            new DateTime(2027, 1, 1, 0, 0, 0, DateTimeKind.Utc));
+
+        var response = await Client.GetAsync(url, TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        await AssertOwnUserEmptyAsync(response, kind);
+    }
+
+    #endregion
+
+    #region Helpers
+
+    private static async Task AssertOwnUserEmptyAsync(HttpResponseMessage response, string kind)
+    {
+        using var doc = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync());
+        var root = doc.RootElement;
+
+        switch (kind)
+        {
+            case "list":
+                root.GetArrayLength().Should().Be(0);
+                break;
+            case "balance":
+                root.GetProperty("posCount").GetInt32().Should().Be(0);
+                root.GetProperty("negCount").GetInt32().Should().Be(0);
+                break;
+            case "most-intense-tags":
+                root.GetProperty("topPosTags").GetArrayLength().Should().Be(0);
+                root.GetProperty("topNegTags").GetArrayLength().Should().Be(0);
+                break;
+            case "weekday-stats":
+                root.GetArrayLength().Should().Be(7);
+                foreach (var day in root.EnumerateArray())
+                {
+                    day.GetProperty("posCount").GetInt32().Should().Be(0);
+                    day.GetProperty("negCount").GetInt32().Should().Be(0);
+                }
+                break;
+            case "influenceability":
+                root.GetProperty("canInfluenceCount").GetInt32().Should().Be(0);
+                root.GetProperty("cannotInfluenceCount").GetInt32().Should().Be(0);
+                break;
+        }
+    }
 
     private async Task<Tag> SeedTagAsync(Guid userId, string name)
     {
-        using var scope = _factory.Services.CreateScope();
+        using var scope = Factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
         var existing = db.Tags.FirstOrDefault(t => t.UserId == userId && t.Name == name);
         if (existing is not null) return existing;
 
-        var tag = new Tag { Id = Guid.NewGuid(), UserId = userId, Name = name, CreatedAt = DateTime.UtcNow };
+        var tag = new Tag { Id = Guid.NewGuid(), UserId = userId, Name = name, CreatedAt = DateTimeOffset.UtcNow };
         db.Tags.Add(tag);
 
-        // Ensure user exists in DB
         if (!db.Users.Any(u => u.Id == userId))
-            db.Users.Add(new User { Id = userId, Email = $"{userId}@test.com", PasswordHash = "x" });
+            db.Users.Add(new User { Id = userId, Email = $"{userId}@test.com", PasswordHash = "x", CreatedAt = DateTimeOffset.UtcNow });
 
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         return tag;
     }
 
     private async Task SeedEventsWithTagAsync(Guid userId, Tag tag, EventType type, int intensity, int count, DateTime baseDate)
     {
-        using var scope = _factory.Services.CreateScope();
+        using var scope = Factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
         for (var i = 0; i < count; i++)
@@ -527,13 +736,8 @@ public class InsightsControllerTests : IClassFixture<PostgresWebAppFactory>
             db.EventTags.Add(new EventTag { EventId = ev.Id, TagId = tag.Id });
         }
 
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
     }
 
-    private HttpClient CreateTestAuthClient()
-    {
-        var client = _factory.CreateClient();
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("TestScheme");
-        return client;
-    }
+    #endregion
 }
