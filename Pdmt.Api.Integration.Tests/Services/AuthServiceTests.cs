@@ -215,7 +215,7 @@ public class AuthServiceTests : ServiceTestBase
             IsRevoked = false,
             CreatedAt = DateTimeOffset.UtcNow
         });
-        await Db.SaveChangesAsync();
+        await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var act = () => _service.RefreshAsync("expired-token", "192.168.1.1");
 
@@ -234,7 +234,7 @@ public class AuthServiceTests : ServiceTestBase
             IsRevoked = true,
             CreatedAt = DateTimeOffset.UtcNow
         });
-        await Db.SaveChangesAsync();
+        await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var act = () => _service.RefreshAsync("revoked-token", "192.168.1.1");
 
@@ -268,7 +268,7 @@ public class AuthServiceTests : ServiceTestBase
             IsRevoked = false,
             CreatedAt = DateTimeOffset.UtcNow
         });
-        await Db.SaveChangesAsync();
+        await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         await _service.LogoutAsync(user.Id);
 

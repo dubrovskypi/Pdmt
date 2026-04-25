@@ -2,19 +2,20 @@ using FluentAssertions;
 using Pdmt.Api.Dto;
 using Pdmt.Api.Integration.Tests.Infrastructure;
 using System.Net;
-using System.Net.Http.Headers;
 using System.Net.Http.Json;
 
 namespace Pdmt.Api.Integration.Tests.Controllers;
 
 public class WebAuthControllerTests(PostgresWebAppFactory factory) : HttpTestBase(factory)
 {
+    private readonly HttpClient _anonClient = factory.CreateClient();
+
     #region Register
 
     [Fact]
     public async Task Register_ValidData_Returns201()
     {
-        var response = await Factory.CreateClient().PostAsJsonAsync("/api/auth/web/register",
+        var response = await _anonClient.PostAsJsonAsync("/api/auth/web/register",
             new UserDto { Email = UniqueEmail(), Password = "Password123!" },
             TestContext.Current.CancellationToken);
 
@@ -24,7 +25,7 @@ public class WebAuthControllerTests(PostgresWebAppFactory factory) : HttpTestBas
     [Fact]
     public async Task Register_ValidData_SetsHttpOnlyCookie()
     {
-        var response = await Factory.CreateClient().PostAsJsonAsync("/api/auth/web/register",
+        var response = await _anonClient.PostAsJsonAsync("/api/auth/web/register",
             new UserDto { Email = UniqueEmail(), Password = "Password123!" },
             TestContext.Current.CancellationToken);
         var setCookie = response.Headers.GetValues("Set-Cookie").FirstOrDefault(h => h.Contains("refreshToken="));
@@ -37,7 +38,7 @@ public class WebAuthControllerTests(PostgresWebAppFactory factory) : HttpTestBas
     [Fact]
     public async Task Register_ValidData_RefreshTokenNotInBody()
     {
-        var response = await Factory.CreateClient().PostAsJsonAsync("/api/auth/web/register",
+        var response = await _anonClient.PostAsJsonAsync("/api/auth/web/register",
             new UserDto { Email = UniqueEmail(), Password = "Password123!" },
             TestContext.Current.CancellationToken);
         var json = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
@@ -48,7 +49,7 @@ public class WebAuthControllerTests(PostgresWebAppFactory factory) : HttpTestBas
     [Fact]
     public async Task Register_EmptyEmail_Returns400()
     {
-        var response = await Factory.CreateClient().PostAsJsonAsync("/api/auth/web/register",
+        var response = await _anonClient.PostAsJsonAsync("/api/auth/web/register",
             new UserDto { Email = "", Password = "Password123!" },
             TestContext.Current.CancellationToken);
 
@@ -62,7 +63,7 @@ public class WebAuthControllerTests(PostgresWebAppFactory factory) : HttpTestBas
     [Fact]
     public async Task Login_ValidCredentials_Returns200()
     {
-        var response = await Factory.CreateClient().PostAsJsonAsync("/api/auth/web/login",
+        var response = await _anonClient.PostAsJsonAsync("/api/auth/web/login",
             new UserDto { Email = "test@pdmt.dev", Password = "Password123!" },
             TestContext.Current.CancellationToken);
 
@@ -72,7 +73,7 @@ public class WebAuthControllerTests(PostgresWebAppFactory factory) : HttpTestBas
     [Fact]
     public async Task Login_ValidCredentials_SetsHttpOnlyCookie()
     {
-        var response = await Factory.CreateClient().PostAsJsonAsync("/api/auth/web/login",
+        var response = await _anonClient.PostAsJsonAsync("/api/auth/web/login",
             new UserDto { Email = "test@pdmt.dev", Password = "Password123!" },
             TestContext.Current.CancellationToken);
         var setCookie = response.Headers.GetValues("Set-Cookie").FirstOrDefault(h => h.Contains("refreshToken="));
@@ -85,7 +86,7 @@ public class WebAuthControllerTests(PostgresWebAppFactory factory) : HttpTestBas
     [Fact]
     public async Task Login_ValidCredentials_RefreshTokenNotInBody()
     {
-        var response = await Factory.CreateClient().PostAsJsonAsync("/api/auth/web/login",
+        var response = await _anonClient.PostAsJsonAsync("/api/auth/web/login",
             new UserDto { Email = "test@pdmt.dev", Password = "Password123!" },
             TestContext.Current.CancellationToken);
         var json = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
@@ -96,7 +97,7 @@ public class WebAuthControllerTests(PostgresWebAppFactory factory) : HttpTestBas
     [Fact]
     public async Task Login_WrongPassword_Returns401()
     {
-        var response = await Factory.CreateClient().PostAsJsonAsync("/api/auth/web/login",
+        var response = await _anonClient.PostAsJsonAsync("/api/auth/web/login",
             new UserDto { Email = "test@pdmt.dev", Password = "wrongpassword" },
             TestContext.Current.CancellationToken);
 
@@ -110,12 +111,12 @@ public class WebAuthControllerTests(PostgresWebAppFactory factory) : HttpTestBas
     [Fact]
     public async Task Refresh_WithValidCookie_Returns200()
     {
-        var loginResponse = await Factory.CreateClient().PostAsJsonAsync("/api/auth/web/login",
+        var loginResponse = await _anonClient.PostAsJsonAsync("/api/auth/web/login",
             new UserDto { Email = "test@pdmt.dev", Password = "Password123!" },
             TestContext.Current.CancellationToken);
         var cookie = ExtractRefreshCookie(loginResponse);
 
-        var refreshClient = Factory.CreateClient();
+        var refreshClient = _anonClient;
         refreshClient.DefaultRequestHeaders.Add("Cookie", $"refreshToken={cookie}");
         var response = await refreshClient.PostAsync("/api/auth/web/refresh", null,
             TestContext.Current.CancellationToken);
@@ -128,12 +129,12 @@ public class WebAuthControllerTests(PostgresWebAppFactory factory) : HttpTestBas
     [Fact]
     public async Task Refresh_WithValidCookie_RotatesRefreshToken()
     {
-        var loginResponse = await Factory.CreateClient().PostAsJsonAsync("/api/auth/web/login",
+        var loginResponse = await _anonClient.PostAsJsonAsync("/api/auth/web/login",
             new UserDto { Email = "test@pdmt.dev", Password = "Password123!" },
             TestContext.Current.CancellationToken);
         var oldCookie = ExtractRefreshCookie(loginResponse);
 
-        var refreshClient = Factory.CreateClient();
+        var refreshClient = _anonClient;
         refreshClient.DefaultRequestHeaders.Add("Cookie", $"refreshToken={oldCookie}");
         var refreshResponse = await refreshClient.PostAsync("/api/auth/web/refresh", null,
             TestContext.Current.CancellationToken);
@@ -145,7 +146,7 @@ public class WebAuthControllerTests(PostgresWebAppFactory factory) : HttpTestBas
     [Fact]
     public async Task Refresh_WithoutCookie_Returns401()
     {
-        var response = await Factory.CreateClient().PostAsync("/api/auth/web/refresh", null,
+        var response = await _anonClient.PostAsync("/api/auth/web/refresh", null,
             TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);

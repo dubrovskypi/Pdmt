@@ -17,7 +17,7 @@ public class InsightsServiceTests : ServiceTestBase
     {
         await base.InitializeAsync();
         Db.Users.Add(new UserBuilder().WithId(OtherUserId).WithEmail("other@pdmt.dev").Build());
-        await Db.SaveChangesAsync();
+        await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection([new("App:DefaultTimeZone", "Europe/Vilnius")])
@@ -51,7 +51,7 @@ public class InsightsServiceTests : ServiceTestBase
         Db.Events.AddRange(evHigh, evLow);
         Db.EventTags.Add(new EventTag { EventId = evHigh.Id, TagId = tagHigh.Id });
         Db.EventTags.Add(new EventTag { EventId = evLow.Id, TagId = tagLow.Id });
-        await Db.SaveChangesAsync();
+        await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var result = await _service.GetMostIntenseTagsAsync(userId, now.AddDays(-1), now.AddDays(1));
 
@@ -69,7 +69,7 @@ public class InsightsServiceTests : ServiceTestBase
         var ev = new Event { Id = Guid.NewGuid(), UserId = OtherUserId, Timestamp = now, Type = EventType.Positive, Title = "E", Intensity = 9 };
         Db.Events.Add(ev);
         Db.EventTags.Add(new EventTag { EventId = ev.Id, TagId = tag.Id });
-        await Db.SaveChangesAsync();
+        await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var result = await _service.GetMostIntenseTagsAsync(TestUserId, now.AddDays(-1), now.AddDays(1));
 
@@ -93,7 +93,7 @@ public class InsightsServiceTests : ServiceTestBase
             Db.Events.Add(ev);
             Db.EventTags.Add(new EventTag { EventId = ev.Id, TagId = tag.Id });
         }
-        await Db.SaveChangesAsync();
+        await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var result = await _service.GetRepeatingTriggersAsync(userId, now, now.AddDays(3), minCount: 3);
 
@@ -114,7 +114,7 @@ public class InsightsServiceTests : ServiceTestBase
             Db.Events.Add(ev);
             Db.EventTags.Add(new EventTag { EventId = ev.Id, TagId = tag.Id });
         }
-        await Db.SaveChangesAsync();
+        await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var result = await _service.GetRepeatingTriggersAsync(userId, now, now.AddDays(3), minCount: 3);
 
@@ -141,7 +141,7 @@ public class InsightsServiceTests : ServiceTestBase
             Db.Events.Add(ev);
             Db.EventTags.Add(new EventTag { EventId = ev.Id, TagId = tag.Id });
         }
-        await Db.SaveChangesAsync();
+        await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var result = await _service.GetRepeatingTriggersAsync(userId, now, now.AddDays(3), minCount: 3);
 
@@ -164,7 +164,7 @@ public class InsightsServiceTests : ServiceTestBase
             Db.EventTags.Add(new EventTag { EventId = ev1.Id, TagId = tag1.Id });
             Db.EventTags.Add(new EventTag { EventId = ev2.Id, TagId = tag2.Id });
         }
-        await Db.SaveChangesAsync();
+        await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var result = await _service.GetRepeatingTriggersAsync(userId, now, now.AddDays(3), minCount: 3);
 
@@ -200,7 +200,7 @@ public class InsightsServiceTests : ServiceTestBase
         var outsideEv = new Event { Id = Guid.NewGuid(), UserId = userId, Timestamp = end.AddDays(1), Type = EventType.Negative, Title = "Outside", Intensity = 5 };
         Db.Events.Add(outsideEv);
         Db.EventTags.Add(new EventTag { EventId = outsideEv.Id, TagId = tag.Id });
-        await Db.SaveChangesAsync();
+        await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var result = await _service.GetRepeatingTriggersAsync(userId, start, end, minCount: 3);
 
@@ -223,7 +223,7 @@ public class InsightsServiceTests : ServiceTestBase
             Db.EventTags.Add(new EventTag { EventId = ev1.Id, TagId = tag1.Id });
             Db.EventTags.Add(new EventTag { EventId = ev2.Id, TagId = tag2.Id });
         }
-        await Db.SaveChangesAsync();
+        await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var result = await _service.GetRepeatingTriggersAsync(TestUserId, now, now.AddDays(7), minCount: 3);
 
@@ -257,7 +257,7 @@ public class InsightsServiceTests : ServiceTestBase
             new Event { Id = Guid.NewGuid(), UserId = userId, Timestamp = now, Type = EventType.Positive, Title = "P1", Intensity = 8 },
             new Event { Id = Guid.NewGuid(), UserId = userId, Timestamp = now.AddHours(1), Type = EventType.Positive, Title = "P2", Intensity = 6 },
             new Event { Id = Guid.NewGuid(), UserId = userId, Timestamp = now.AddHours(2), Type = EventType.Negative, Title = "N1", Intensity = 4 });
-        await Db.SaveChangesAsync();
+        await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var result = await _service.GetBalanceAsync(userId, now.AddDays(-1), now.AddDays(1));
 
@@ -273,7 +273,7 @@ public class InsightsServiceTests : ServiceTestBase
         var userId = TestUserId;
         var now = DateTimeOffset.UtcNow;
         Db.Events.Add(new Event { Id = Guid.NewGuid(), UserId = userId, Timestamp = now, Type = EventType.Positive, Title = "P1", Intensity = 7 });
-        await Db.SaveChangesAsync();
+        await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var result = await _service.GetBalanceAsync(userId, now.AddDays(-1), now.AddDays(1));
 
@@ -299,7 +299,7 @@ public class InsightsServiceTests : ServiceTestBase
             Db.Events.Add(ev);
             Db.EventTags.Add(new EventTag { EventId = ev.Id, TagId = tag.Id });
         }
-        await Db.SaveChangesAsync();
+        await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var result = await _service.GetDiscountedPositivesAsync(userId, now, now.AddDays(1));
 
@@ -320,7 +320,7 @@ public class InsightsServiceTests : ServiceTestBase
             Db.Events.Add(ev);
             Db.EventTags.Add(new EventTag { EventId = ev.Id, TagId = tag.Id });
         }
-        await Db.SaveChangesAsync();
+        await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var result = await _service.GetDiscountedPositivesAsync(userId, now, now.AddDays(1));
 
@@ -340,7 +340,7 @@ public class InsightsServiceTests : ServiceTestBase
             Db.Events.Add(ev);
             Db.EventTags.Add(new EventTag { EventId = ev.Id, TagId = tag.Id });
         }
-        await Db.SaveChangesAsync();
+        await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var result = await _service.GetDiscountedPositivesAsync(userId, now, now.AddDays(1));
 
@@ -367,7 +367,7 @@ public class InsightsServiceTests : ServiceTestBase
             Db.Events.Add(ev);
             Db.EventTags.Add(new EventTag { EventId = ev.Id, TagId = tag.Id });
         }
-        await Db.SaveChangesAsync();
+        await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var result = await _service.GetDiscountedPositivesAsync(userId, now, now.AddDays(7));
 
@@ -404,7 +404,7 @@ public class InsightsServiceTests : ServiceTestBase
         // Add events on following days so day score exists
         for (int i = 1; i < 4; i++)
             Db.Events.Add(new Event { Id = Guid.NewGuid(), UserId = userId, Timestamp = new DateTimeOffset(dayStart.AddDays(i), TimeSpan.Zero), Type = EventType.Positive, Title = $"Follow{i}", Intensity = 4 });
-        await Db.SaveChangesAsync();
+        await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var result = await _service.GetNextDayEffectsAsync(userId, new DateTimeOffset(dayStart, TimeSpan.Zero), new DateTimeOffset(dayStart.AddDays(5), TimeSpan.Zero));
 
@@ -425,7 +425,7 @@ public class InsightsServiceTests : ServiceTestBase
             Db.Events.Add(ev);
             Db.EventTags.Add(new EventTag { EventId = ev.Id, TagId = tag.Id });
         }
-        await Db.SaveChangesAsync();
+        await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var result = await _service.GetNextDayEffectsAsync(userId, new DateTimeOffset(dayStart, TimeSpan.Zero), new DateTimeOffset(dayStart.AddDays(5), TimeSpan.Zero));
 
@@ -459,7 +459,7 @@ public class InsightsServiceTests : ServiceTestBase
             Db.Events.Add(new Event { Id = Guid.NewGuid(), UserId = userId, Timestamp = new DateTimeOffset(dayStart.AddDays(i), TimeSpan.Zero), Type = EventType.Positive, Title = $"FollowPos{i}", Intensity = 8 });
         for (int i = 4; i < 7; i++)
             Db.Events.Add(new Event { Id = Guid.NewGuid(), UserId = userId, Timestamp = new DateTimeOffset(dayStart.AddDays(i), TimeSpan.Zero), Type = EventType.Negative, Title = $"FollowNeg{i}", Intensity = 2 });
-        await Db.SaveChangesAsync();
+        await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var result = await _service.GetNextDayEffectsAsync(userId, new DateTimeOffset(dayStart, TimeSpan.Zero), new DateTimeOffset(dayStart.AddDays(8), TimeSpan.Zero));
 
@@ -488,7 +488,7 @@ public class InsightsServiceTests : ServiceTestBase
             Db.EventTags.Add(new EventTag { EventId = ev1.Id, TagId = tag1.Id });
             Db.EventTags.Add(new EventTag { EventId = ev2.Id, TagId = tag2.Id });
         }
-        await Db.SaveChangesAsync();
+        await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var result = await _service.GetTagCombosAsync(userId, new DateTimeOffset(dayStart, TimeSpan.Zero), new DateTimeOffset(dayStart.AddDays(4), TimeSpan.Zero));
 
@@ -513,7 +513,7 @@ public class InsightsServiceTests : ServiceTestBase
             Db.EventTags.Add(new EventTag { EventId = ev1.Id, TagId = tag1.Id });
             Db.EventTags.Add(new EventTag { EventId = ev2.Id, TagId = tag2.Id });
         }
-        await Db.SaveChangesAsync();
+        await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var result = await _service.GetTagCombosAsync(userId, new DateTimeOffset(dayStart, TimeSpan.Zero), new DateTimeOffset(dayStart.AddDays(3), TimeSpan.Zero));
 
@@ -537,7 +537,7 @@ public class InsightsServiceTests : ServiceTestBase
             Db.EventTags.Add(new EventTag { EventId = ev1.Id, TagId = tagZ.Id });
             Db.EventTags.Add(new EventTag { EventId = ev2.Id, TagId = tagA.Id });
         }
-        await Db.SaveChangesAsync();
+        await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var result = await _service.GetTagCombosAsync(userId, new DateTimeOffset(dayStart, TimeSpan.Zero), new DateTimeOffset(dayStart.AddDays(4), TimeSpan.Zero));
 
@@ -574,7 +574,7 @@ public class InsightsServiceTests : ServiceTestBase
         Db.Events.AddRange(ev1, ev2);
         Db.EventTags.Add(new EventTag { EventId = ev1.Id, TagId = tag.Id });
         Db.EventTags.Add(new EventTag { EventId = ev2.Id, TagId = tag.Id });
-        await Db.SaveChangesAsync();
+        await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var result = await _service.GetTagTrendAsync(userId, monday1, monday2.AddDays(6), Granularity.Week);
 
@@ -595,7 +595,7 @@ public class InsightsServiceTests : ServiceTestBase
         Db.Events.AddRange(ev1, ev2);
         Db.EventTags.Add(new EventTag { EventId = ev1.Id, TagId = tag.Id });
         Db.EventTags.Add(new EventTag { EventId = ev2.Id, TagId = tag.Id });
-        await Db.SaveChangesAsync();
+        await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var result = await _service.GetTagTrendAsync(userId, jan, feb.AddDays(15), Granularity.Month);
 
@@ -618,7 +618,7 @@ public class InsightsServiceTests : ServiceTestBase
         Db.EventTags.Add(new EventTag { EventId = ev1.Id, TagId = tag.Id });
         Db.EventTags.Add(new EventTag { EventId = ev2.Id, TagId = tag.Id });
         // ev3 is not tagged
-        await Db.SaveChangesAsync();
+        await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var result = await _service.GetTagTrendAsync(userId, monday, monday.AddDays(7), Granularity.Week);
 
@@ -640,7 +640,7 @@ public class InsightsServiceTests : ServiceTestBase
         Db.Events.AddRange(
             new Event { Id = Guid.NewGuid(), UserId = userId, Timestamp = monday1, Type = EventType.Positive, Title = "E1", Intensity = 5 },
             new Event { Id = Guid.NewGuid(), UserId = userId, Timestamp = monday2, Type = EventType.Positive, Title = "E2", Intensity = 5 });
-        await Db.SaveChangesAsync();
+        await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var result = await _service.GetTrendsAsync(userId, monday1, monday2.AddDays(6), Granularity.Week);
 
@@ -656,7 +656,7 @@ public class InsightsServiceTests : ServiceTestBase
         Db.Events.AddRange(
             new Event { Id = Guid.NewGuid(), UserId = userId, Timestamp = jan, Type = EventType.Positive, Title = "E1", Intensity = 5 },
             new Event { Id = Guid.NewGuid(), UserId = userId, Timestamp = feb, Type = EventType.Positive, Title = "E2", Intensity = 5 });
-        await Db.SaveChangesAsync();
+        await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var result = await _service.GetTrendsAsync(userId, jan, feb.AddDays(15), Granularity.Month);
 
@@ -674,7 +674,7 @@ public class InsightsServiceTests : ServiceTestBase
         Db.Events.AddRange(
             new Event { Id = Guid.NewGuid(), UserId = userId, Timestamp = start.AddDays(5), Type = EventType.Positive, Title = "E1", Intensity = 5 },
             new Event { Id = Guid.NewGuid(), UserId = userId, Timestamp = new DateTimeOffset(2024, 2, 1, 0, 0, 0, TimeSpan.Zero), Type = EventType.Positive, Title = "E2", Intensity = 5 });
-        await Db.SaveChangesAsync();
+        await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var result = await _service.GetTrendsAsync(userId, start, end, Granularity.Week);
 
@@ -703,7 +703,7 @@ public class InsightsServiceTests : ServiceTestBase
             Db.Events.Add(new Event { Id = Guid.NewGuid(), UserId = userId, Timestamp = now.AddHours(i), Type = EventType.Positive, Title = $"P{i}", Intensity = 8 });
         for (int i = 0; i < 2; i++)
             Db.Events.Add(new Event { Id = Guid.NewGuid(), UserId = userId, Timestamp = now.AddDays(1).AddHours(i), Type = EventType.Negative, Title = $"N{i}", Intensity = 5, CanInfluence = true });
-        await Db.SaveChangesAsync();
+        await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var result = await _service.GetInfluenceabilitySplitAsync(userId, now, now.AddDays(2));
 
@@ -721,7 +721,7 @@ public class InsightsServiceTests : ServiceTestBase
         // 2 not influenceable (intensity 4 each)
         for (int i = 0; i < 2; i++)
             Db.Events.Add(new Event { Id = Guid.NewGuid(), UserId = userId, Timestamp = now.AddHours(10 + i), Type = EventType.Negative, Title = $"NotInf{i}", Intensity = 4, CanInfluence = false });
-        await Db.SaveChangesAsync();
+        await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var result = await _service.GetInfluenceabilitySplitAsync(userId, now, now.AddDays(1));
 
@@ -738,7 +738,7 @@ public class InsightsServiceTests : ServiceTestBase
         var now = DateTimeOffset.UtcNow;
         for (int i = 0; i < 3; i++)
             Db.Events.Add(new Event { Id = Guid.NewGuid(), UserId = userId, Timestamp = now.AddHours(i), Type = EventType.Negative, Title = $"N{i}", Intensity = 6, CanInfluence = true });
-        await Db.SaveChangesAsync();
+        await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var result = await _service.GetInfluenceabilitySplitAsync(userId, now, now.AddDays(1));
 
@@ -773,7 +773,7 @@ public class InsightsServiceTests : ServiceTestBase
         var wednesday = new DateTimeOffset(2024, 4, 3, 12, 0, 0, TimeSpan.Zero);
         Db.Events.Add(new Event { Id = Guid.NewGuid(), UserId = userId, Timestamp = monday, Type = EventType.Positive, Title = "Mon", Intensity = 5 });
         Db.Events.Add(new Event { Id = Guid.NewGuid(), UserId = userId, Timestamp = wednesday, Type = EventType.Negative, Title = "Wed", Intensity = 3 });
-        await Db.SaveChangesAsync();
+        await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var result = await _service.GetWeekdayStatsAsync(userId, monday, wednesday.AddDays(4));
 

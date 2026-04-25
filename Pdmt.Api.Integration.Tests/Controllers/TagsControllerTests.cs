@@ -11,14 +11,12 @@ namespace Pdmt.Api.Integration.Tests.Controllers;
 
 public class TagsControllerTests(PostgresWebAppFactory factory) : HttpTestBase(factory)
 {
-    private readonly HttpClient _anonClient = factory.CreateClient();
-
     #region GetTags
 
     [Fact]
     public async Task GetTags_Unauthenticated_Returns401()
     {
-        var response = await _anonClient.GetAsync("/api/tags", TestContext.Current.CancellationToken);
+        var response = await factory.CreateClient().GetAsync("/api/tags", TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }

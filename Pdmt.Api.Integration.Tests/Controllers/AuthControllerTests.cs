@@ -142,9 +142,9 @@ public class AuthControllerTests(PostgresWebAppFactory factory) : HttpTestBase(f
         using (var scope = Factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            var token = await db.RefreshTokens.SingleAsync(t => t.Token == tokenHash);
+            var token = await db.RefreshTokens.SingleAsync(t => t.Token == tokenHash, TestContext.Current.CancellationToken);
             token.ExpiresAt = DateTimeOffset.UtcNow.AddDays(-1);
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         var response = await _anonClient.PostAsJsonAsync("/api/auth/refresh",

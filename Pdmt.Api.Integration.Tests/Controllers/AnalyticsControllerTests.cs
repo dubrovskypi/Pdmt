@@ -12,7 +12,6 @@ namespace Pdmt.Api.Integration.Tests.Controllers;
 public class AnalyticsControllerTests(PostgresWebAppFactory factory) : HttpTestBase(factory)
 {
     private static readonly Guid OtherUserId = Guid.NewGuid();
-    private readonly HttpClient _anonClient = factory.CreateClient();
 
     #region Auth
 
@@ -23,7 +22,7 @@ public class AnalyticsControllerTests(PostgresWebAppFactory factory) : HttpTestB
     [InlineData("/api/analytics/calendar/month?month=2025-01")]
     public async Task AnalyticsEndpoints_Anonymous_Returns401(string url)
     {
-        var response = await _anonClient.GetAsync(url, TestContext.Current.CancellationToken);
+        var response = await factory.CreateClient().GetAsync(url, TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
