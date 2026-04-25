@@ -316,7 +316,7 @@ public class EventServiceTests : ServiceTestBase
     [Fact]
     public async Task CreateEventAsync_EmptyUserId_ThrowsArgumentException()
     {
-        var act = () => _service.CreateEventAsync(Guid.Empty, TestHelpers.MakeCreateDto());
+        var act = () => _service.CreateEventAsync(Guid.Empty, MakeCreateDto());
 
         await act.Should().ThrowAsync<ArgumentException>();
     }
@@ -334,7 +334,7 @@ public class EventServiceTests : ServiceTestBase
     {
         var userId = TestAuthHandler.TestUserId;
         var ts = new DateTimeOffset(2024, 4, 10, 9, 0, 0, TimeSpan.Zero);
-        var dto = TestHelpers.MakeCreateDto("Promotion", intensity: 8, timestamp: ts, canInfluence: true);
+        var dto = MakeCreateDto("Promotion", intensity: 8, timestamp: ts, canInfluence: true);
 
         var result = await _service.CreateEventAsync(userId, dto);
 
@@ -349,7 +349,7 @@ public class EventServiceTests : ServiceTestBase
     [Fact]
     public async Task CreateEventAsync_ValidDto_GeneratesNonEmptyId()
     {
-        var result = await _service.CreateEventAsync(TestAuthHandler.TestUserId, TestHelpers.MakeCreateDto());
+        var result = await _service.CreateEventAsync(TestAuthHandler.TestUserId, MakeCreateDto());
 
         result.Id.Should().NotBeEmpty();
     }
@@ -358,7 +358,7 @@ public class EventServiceTests : ServiceTestBase
     public async Task CreateEventAsync_WithNewTagNames_CreatesAndLinksTags()
     {
         var userId = TestAuthHandler.TestUserId;
-        var dto = TestHelpers.MakeCreateDto(tagNames: ["Work", "Health"]);
+        var dto = MakeCreateDto(tagNames: ["Work", "Health"]);
 
         var result = await _service.CreateEventAsync(userId, dto);
 
@@ -376,7 +376,7 @@ public class EventServiceTests : ServiceTestBase
         Db.Tags.Add(existingTag);
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var result = await _service.CreateEventAsync(userId, TestHelpers.MakeCreateDto(tagNames: ["Work"]));
+        var result = await _service.CreateEventAsync(userId, MakeCreateDto(tagNames: ["Work"]));
 
         result.Tags.Should().ContainSingle();
         result.Tags[0].Id.Should().Be(existingTag.Id);
@@ -386,7 +386,7 @@ public class EventServiceTests : ServiceTestBase
     [Fact]
     public async Task CreateEventAsync_EmptyTagNames_NoTagsCreated()
     {
-        var result = await _service.CreateEventAsync(TestAuthHandler.TestUserId, TestHelpers.MakeCreateDto(tagNames: []));
+        var result = await _service.CreateEventAsync(TestAuthHandler.TestUserId, MakeCreateDto(tagNames: []));
 
         result.Tags.Should().BeEmpty();
         (await Db.Tags.CountAsync(TestContext.Current.CancellationToken)).Should().Be(0);
@@ -399,7 +399,7 @@ public class EventServiceTests : ServiceTestBase
         Db.Tags.Add(otherTag);
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var result = await _service.CreateEventAsync(TestAuthHandler.TestUserId, TestHelpers.MakeCreateDto(tagNames: ["Work"]));
+        var result = await _service.CreateEventAsync(TestAuthHandler.TestUserId, MakeCreateDto(tagNames: ["Work"]));
 
         result.Tags.Should().ContainSingle();
         result.Tags[0].Id.Should().NotBe(otherTag.Id);
@@ -409,7 +409,7 @@ public class EventServiceTests : ServiceTestBase
     [Fact]
     public async Task CreateEventAsync_TagNamesWithWhitespace_AreTrimmed()
     {
-        var result = await _service.CreateEventAsync(TestAuthHandler.TestUserId, TestHelpers.MakeCreateDto(tagNames: ["  Work  "]));
+        var result = await _service.CreateEventAsync(TestAuthHandler.TestUserId, MakeCreateDto(tagNames: ["  Work  "]));
 
         result.Tags.Should().ContainSingle();
         result.Tags[0].Name.Should().Be("Work");
@@ -419,7 +419,7 @@ public class EventServiceTests : ServiceTestBase
     public async Task CreateEventAsync_DuplicateTagNames_CreatesOnlyOneTag()
     {
         var userId = TestAuthHandler.TestUserId;
-        var result = await _service.CreateEventAsync(userId, TestHelpers.MakeCreateDto(tagNames: ["Work", "Work"]));
+        var result = await _service.CreateEventAsync(userId, MakeCreateDto(tagNames: ["Work", "Work"]));
 
         result.Tags.Should().ContainSingle();
         (await Db.Tags.CountAsync(t => t.UserId == userId, TestContext.Current.CancellationToken)).Should().Be(1);
@@ -428,7 +428,7 @@ public class EventServiceTests : ServiceTestBase
     [Fact]
     public async Task CreateEventAsync_IntensityZero_SavesSuccessfully()
     {
-        var result = await _service.CreateEventAsync(TestAuthHandler.TestUserId, TestHelpers.MakeCreateDto(intensity: 0));
+        var result = await _service.CreateEventAsync(TestAuthHandler.TestUserId, MakeCreateDto(intensity: 0));
 
         result.Intensity.Should().Be(0);
     }
@@ -436,7 +436,7 @@ public class EventServiceTests : ServiceTestBase
     [Fact]
     public async Task CreateEventAsync_IntensityTen_SavesSuccessfully()
     {
-        var result = await _service.CreateEventAsync(TestAuthHandler.TestUserId, TestHelpers.MakeCreateDto(intensity: 10));
+        var result = await _service.CreateEventAsync(TestAuthHandler.TestUserId, MakeCreateDto(intensity: 10));
 
         result.Intensity.Should().Be(10);
     }
@@ -637,4 +637,20 @@ public class EventServiceTests : ServiceTestBase
     }
 
     #endregion
+
+    private static CreateEventDto MakeCreateDto(
+    string title = "Test",
+    DtoEventType type = DtoEventType.Positive,
+    int intensity = 5,
+    DateTimeOffset? timestamp = null,
+    List<string>? tagNames = null,
+    bool canInfluence = false) => new()
+    {
+        Timestamp = timestamp ?? DateTimeOffset.UtcNow,
+        Type = type,
+        Title = title,
+        Intensity = intensity,
+        TagNames = tagNames ?? [],
+        CanInfluence = canInfluence
+    };
 }
