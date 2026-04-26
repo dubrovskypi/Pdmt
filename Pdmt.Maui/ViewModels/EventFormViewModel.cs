@@ -112,7 +112,7 @@ public abstract partial class EventFormViewModel : ObservableObject
         var accent  = IsPositive ? Color.FromArgb("#22c55e") : Color.FromArgb("#ef4444");
         var inactive = Color.FromArgb("#EEEEEE");
 
-        IntensitySegments = Enumerable.Range(0, 11)
+        IntensitySegments = Enumerable.Range(1, 10)
             .Select(i => new IntensitySegment(
                 i,
                 i <= Intensity ? accent : inactive,

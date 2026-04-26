@@ -300,7 +300,31 @@
 
                 <!-- Event time (only on Edit screen) -->
                 <VerticalStackLayout Spacing="4">
-                    <Label Text="EVENT TIME" Style="{StaticResource SectionLabel}" />
+                    <Grid ColumnDefinitions="*,Auto">
+                        <Label Grid.Column="0" Text="EVENT TIME" Style="{StaticResource SectionLabel}" />
+                        <Border
+                            Grid.Column="1"
+                            Padding="8,4"
+                            BackgroundColor="Transparent"
+                            StrokeThickness="0">
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding ToggleTimestampLockCommand}" />
+                            </Border.GestureRecognizers>
+                            <Label
+                                FontSize="12"
+                                TextColor="#006a60"
+                                VerticalOptions="Center">
+                                <Label.Triggers>
+                                    <DataTrigger TargetType="Label" Binding="{Binding IsTimestampLocked}" Value="True">
+                                        <Setter Property="Text" Value="🔒 Edit" />
+                                    </DataTrigger>
+                                    <DataTrigger TargetType="Label" Binding="{Binding IsTimestampLocked}" Value="False">
+                                        <Setter Property="Text" Value="🔓 Lock" />
+                                    </DataTrigger>
+                                </Label.Triggers>
+                            </Label>
+                        </Border>
+                    </Grid>
                     <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
                         <Border
                             Grid.Column="0"
@@ -309,9 +333,15 @@
                             Stroke="{StaticResource Border}"
                             StrokeThickness="1.5"
                             StrokeShape="RoundRectangle 10">
+                            <Border.Triggers>
+                                <DataTrigger TargetType="Border" Binding="{Binding IsTimestampLocked}" Value="True">
+                                    <Setter Property="Opacity" Value="0.45" />
+                                </DataTrigger>
+                            </Border.Triggers>
                             <DatePicker
                                 Date="{Binding EventDate}"
-                                Format="dd MMM yyyy" />
+                                Format="dd MMM yyyy"
+                                IsEnabled="{Binding IsTimestampLocked, Converter={StaticResource InvertBool}}" />
                         </Border>
                         <Border
                             Grid.Column="1"
@@ -320,9 +350,15 @@
                             Stroke="{StaticResource Border}"
                             StrokeThickness="1.5"
                             StrokeShape="RoundRectangle 10">
+                            <Border.Triggers>
+                                <DataTrigger TargetType="Border" Binding="{Binding IsTimestampLocked}" Value="True">
+                                    <Setter Property="Opacity" Value="0.45" />
+                                </DataTrigger>
+                            </Border.Triggers>
                             <TimePicker
                                 Time="{Binding EventTime}"
-                                Format="HH:mm" />
+                                Format="HH:mm"
+                                IsEnabled="{Binding IsTimestampLocked, Converter={StaticResource InvertBool}}" />
                         </Border>
                     </Grid>
                 </VerticalStackLayout>

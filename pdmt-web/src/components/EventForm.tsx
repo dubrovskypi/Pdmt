@@ -48,6 +48,7 @@ export function EventForm({ initialValues, allTags, onSuccess, onCancel }: Event
   const [description, setDescription] = useState(initialValues?.description ?? "");
   const [canInfluence, setCanInfluence] = useState(initialValues?.canInfluence ?? false);
   const [tagNames, setTagNames] = useState<string[]>(initialValues?.tags.map((t) => t.name) ?? []);
+  const [timestampLocked, setTimestampLocked] = useState(isEdit);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -140,12 +141,25 @@ export function EventForm({ initialValues, allTags, onSuccess, onCancel }: Event
 
       {/* Timestamp */}
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="timestamp">Время</Label>
+        <div className="flex items-center justify-between">
+          <Label htmlFor="timestamp">Время</Label>
+          {isEdit && (
+            <button
+              type="button"
+              onClick={() => setTimestampLocked((v) => !v)}
+              className="text-xs text-slate-400 hover:text-slate-600 transition-colors"
+            >
+              {timestampLocked ? "🔒 Изменить" : "🔓 Заблокировать"}
+            </button>
+          )}
+        </div>
         <Input
           id="timestamp"
           type="datetime-local"
           value={timestamp}
           onChange={(e) => setTimestamp(e.target.value)}
+          disabled={timestampLocked}
+          className={timestampLocked ? "opacity-50 cursor-not-allowed" : ""}
         />
       </div>
 

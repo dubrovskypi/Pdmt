@@ -9,6 +9,7 @@ public partial class EditEventViewModel(EventService eventService, TagService ta
     : EventFormViewModel(tagService), IQueryAttributable
 {
     private Guid _id;
+    private DateTimeOffset _originalTimestamp;
 
     [ObservableProperty]
     private string? _context;
@@ -19,8 +20,14 @@ public partial class EditEventViewModel(EventService eventService, TagService ta
     [ObservableProperty]
     private TimeSpan _eventTime = DateTime.Now.TimeOfDay;
 
+    [ObservableProperty]
+    private bool _isTimestampLocked = true;
+
     private DateTimeOffset EventTimestamp =>
-        new(DateTime.SpecifyKind(EventDate.Date + EventTime, DateTimeKind.Utc));
+        new DateTimeOffset(DateTime.SpecifyKind(EventDate.Date + EventTime, DateTimeKind.Local)).ToUniversalTime();
+
+    [RelayCommand]
+    private void ToggleTimestampLock() => IsTimestampLocked = !IsTimestampLocked;
 
     public void ApplyQueryAttributes(IDictionary<string, object> query)
     {
@@ -52,6 +59,8 @@ public partial class EditEventViewModel(EventService eventService, TagService ta
             Context = ev.Context;
             CanInfluence = ev.CanInfluence;
 
+            _originalTimestamp = ev.Timestamp;
+            IsTimestampLocked = true;
             var local = ev.Timestamp.LocalDateTime;
             EventDate = local.Date;
             EventTime = local.TimeOfDay;
@@ -82,7 +91,7 @@ public partial class EditEventViewModel(EventService eventService, TagService ta
         {
             await eventService.UpdateEventAsync(_id, new UpdateEventDto
             {
-                Timestamp = EventTimestamp,
+                Timestamp = IsTimestampLocked ? _originalTimestamp : EventTimestamp,
                 Type = IsPositive ? EventType.Positive : EventType.Negative,
                 Intensity = Intensity,
                 Title = Title.Trim(),
