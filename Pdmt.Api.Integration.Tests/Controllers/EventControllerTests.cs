@@ -1,5 +1,8 @@
 using FluentAssertions;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
+using Pdmt.Api.Data;
+using Pdmt.Api.Domain;
 using Pdmt.Api.Dto;
 using Pdmt.Api.Integration.Tests.Infrastructure;
 using System.IdentityModel.Tokens.Jwt;
@@ -13,6 +16,7 @@ namespace Pdmt.Api.Integration.Tests.Controllers;
 
 public class EventsControllerTests(PostgresWebAppFactory factory) : HttpTestBase(factory)
 {
+    private static readonly Guid OtherUserId = Guid.Parse("00000000-0000-0000-0000-000000000099");
     #region GetEvents
 
     [Fact]
@@ -50,16 +54,26 @@ public class EventsControllerTests(PostgresWebAppFactory factory) : HttpTestBase
     [Fact]
     public async Task GetEvents_OtherUsersEventsExist_NotIncluded()
     {
+        using (var scope = Factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            db.Users.Add(new User { Id = OtherUserId, Email = "other@events-test.com", PasswordHash = "x", CreatedAt = DateTimeOffset.UtcNow });
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+
         await Client.PostAsJsonAsync("/api/events", MakeDto("User A Secret Event", DtoEventType.Positive, 5), TestContext.Current.CancellationToken);
+
+        var otherClient = CreateJwtClient(GenerateJwtToken(OtherUserId));
+        await otherClient.PostAsJsonAsync("/api/events", MakeDto("User B Event", DtoEventType.Positive, 5), TestContext.Current.CancellationToken);
+
         var eventsA = await (await Client.GetAsync("/api/events", TestContext.Current.CancellationToken))
             .Content.ReadFromJsonAsync<IEnumerable<EventResponseDto>>(TestContext.Current.CancellationToken);
-        eventsA.Should().Contain(e => e.Title == "User A Secret Event");
-
-        var otherClient = CreateJwtClient(GenerateJwtToken(Guid.NewGuid()));
         var eventsB = await (await otherClient.GetAsync("/api/events", TestContext.Current.CancellationToken))
             .Content.ReadFromJsonAsync<IEnumerable<EventResponseDto>>(TestContext.Current.CancellationToken);
 
         eventsB.Should().NotContain(e => e.Title == "User A Secret Event");
+        eventsB.Should().Contain(e => e.Title == "User B Event");
+        eventsA.Should().NotContain(e => e.Title == "User B Event");
     }
 
     [Fact]
