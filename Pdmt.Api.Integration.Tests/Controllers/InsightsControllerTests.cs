@@ -1,4 +1,5 @@
 using FluentAssertions;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Pdmt.Api.Data;
 using Pdmt.Api.Domain;
@@ -703,13 +704,13 @@ public class InsightsControllerTests(PostgresWebAppFactory factory) : HttpTestBa
         using var scope = Factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-        var existing = db.Tags.FirstOrDefault(t => t.UserId == userId && t.Name == name);
+        var existing = await db.Tags.FirstOrDefaultAsync(t => t.UserId == userId && t.Name == name);
         if (existing is not null) return existing;
 
         var tag = new Tag { Id = Guid.NewGuid(), UserId = userId, Name = name, CreatedAt = DateTimeOffset.UtcNow };
         db.Tags.Add(tag);
 
-        if (!db.Users.Any(u => u.Id == userId))
+        if (!await db.Users.AnyAsync(u => u.Id == userId))
             db.Users.Add(new User { Id = userId, Email = $"{userId}@test.com", PasswordHash = "x", CreatedAt = DateTimeOffset.UtcNow });
 
         await db.SaveChangesAsync(TestContext.Current.CancellationToken);
