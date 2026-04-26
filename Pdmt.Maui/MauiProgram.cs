@@ -34,6 +34,19 @@ public static class MauiProgram
                     handler.PlatformView.SetBackgroundResource(Resource.Drawable.entry_background));
                 Microsoft.Maui.Handlers.TimePickerHandler.Mapper.AppendToMapping("Background", (handler, _) =>
                     handler.PlatformView.SetBackgroundResource(Resource.Drawable.entry_background));
+                Microsoft.Maui.Handlers.SwitchHandler.Mapper.AppendToMapping("SwitchColors", (handler, _) =>
+                {
+                    if (handler.PlatformView is not AndroidX.AppCompat.Widget.SwitchCompat sw) return;
+                    var states = new int[][]
+                    {
+                        [Android.Resource.Attribute.StateChecked],
+                        [-Android.Resource.Attribute.StateChecked]
+                    };
+                    sw.ThumbTintList = new Android.Content.Res.ColorStateList(states,
+                        [Android.Graphics.Color.ParseColor("#006a60"), Android.Graphics.Color.White]);
+                    sw.TrackTintList = new Android.Content.Res.ColorStateList(states,
+                        [Android.Graphics.Color.ParseColor("#22c55e"), Android.Graphics.Color.ParseColor("#BBBBBB")]);
+                });
 #endif
             });
 

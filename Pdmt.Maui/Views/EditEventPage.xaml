@@ -15,7 +15,11 @@
         <conv:InvertBoolConverter x:Key="InvertBool" />
     </ContentPage.Resources>
 
-    <Grid RowDefinitions="Auto,Auto,*">
+    <ContentPage.ToolbarItems>
+        <ToolbarItem Text="Save" Command="{Binding SaveCommand}" />
+    </ContentPage.ToolbarItems>
+
+    <Grid RowDefinitions="Auto,*">
 
         <!-- ══════════════════════════════════════════════════════════════ -->
         <!-- ROW 0 — Critical fields (never scroll, always above keyboard) -->
@@ -96,24 +100,21 @@
                 </Grid>
                 <FlexLayout
                     BindableLayout.ItemsSource="{Binding IntensitySegments}"
-                    Direction="Row"
-                    JustifyContent="SpaceBetween">
+                    Direction="Row">
                     <BindableLayout.ItemTemplate>
                         <DataTemplate x:DataType="models:IntensitySegment">
-                            <Border
-                                WidthRequest="28"
-                                HeightRequest="36"
-                                BackgroundColor="{Binding BackgroundColor}"
-                                Opacity="{Binding Opacity}"
-                                StrokeThickness="0"
-                                StrokeShape="RoundRectangle 6"
-                                Margin="1,0">
-                                <Border.GestureRecognizers>
+                            <Grid HeightRequest="36" Padding="1,0" FlexLayout.Grow="1">
+                                <Grid.GestureRecognizers>
                                     <TapGestureRecognizer
                                         Command="{Binding Source={RelativeSource AncestorType={x:Type vm:EditEventViewModel}}, Path=SetIntensityCommand}"
                                         CommandParameter="{Binding Index}" />
-                                </Border.GestureRecognizers>
-                            </Border>
+                                </Grid.GestureRecognizers>
+                                <Border
+                                    BackgroundColor="{Binding BackgroundColor}"
+                                    Opacity="{Binding Opacity}"
+                                    StrokeThickness="0"
+                                    StrokeShape="RoundRectangle 6" />
+                            </Grid>
                         </DataTemplate>
                     </BindableLayout.ItemTemplate>
                 </FlexLayout>
@@ -222,23 +223,10 @@
 
         </VerticalStackLayout>
 
-        <!-- ═══════════════════════════════════════════════════════ -->
-        <!-- ROW 1 — Save button (fixed, always visible above keyboard) -->
-        <!-- ═══════════════════════════════════════════════════════ -->
-        <Button
-            Grid.Row="1"
-            Margin="16,12"
-            Text="Save changes"
-            Style="{StaticResource SaveButton}"
-            Command="{Binding SaveCommand}"
-            IsEnabled="{Binding CanSave}"
-            BackgroundColor="{Binding SaveButtonBg}"
-            TextColor="{Binding SaveButtonTextColor}" />
-
         <!-- ════════════════════════════════════════════════════════════ -->
-        <!-- ROW 2 — Optional section (scrollable, shrinks with keyboard) -->
+        <!-- ROW 1 — Optional section (scrollable) -->
         <!-- ════════════════════════════════════════════════════════════ -->
-        <ScrollView Grid.Row="2">
+        <ScrollView Grid.Row="1">
             <VerticalStackLayout Padding="16,4,16,32" Spacing="12">
 
                 <!-- Divider + label -->
@@ -293,7 +281,7 @@
                     <Switch
                         Grid.Column="0"
                         IsToggled="{Binding CanInfluence}"
-                        OnColor="#006a60"
+                        OnColor="{StaticResource PositiveBar}"
                         VerticalOptions="Center" />
                     <Label Grid.Column="1" Text="I can influence" FontSize="13" VerticalOptions="Center"/>
                 </Grid>
