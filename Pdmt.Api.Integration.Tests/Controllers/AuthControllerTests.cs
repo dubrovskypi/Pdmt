@@ -21,7 +21,7 @@ public class AuthControllerTests(PostgresWebAppFactory factory) : HttpTestBase(f
     public async Task Register_ValidData_Returns201()
     {
         var response = await _anonClient.PostAsJsonAsync("/api/auth/register",
-            new UserDto { Email = UniqueEmail(), Password = "Password123!" },
+            new UserDto { Email = UniqueEmail(), Password = TestUserHelper.DefaultPassword },
             TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.Created);
@@ -32,11 +32,11 @@ public class AuthControllerTests(PostgresWebAppFactory factory) : HttpTestBase(f
     {
         var email = UniqueEmail();
         await _anonClient.PostAsJsonAsync("/api/auth/register",
-            new UserDto { Email = email, Password = "Password123!" },
+            new UserDto { Email = email, Password = TestUserHelper.DefaultPassword },
             TestContext.Current.CancellationToken);
 
         var response = await _anonClient.PostAsJsonAsync("/api/auth/register",
-            new UserDto { Email = email, Password = "Password123!" },
+            new UserDto { Email = email, Password = TestUserHelper.DefaultPassword },
             TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -51,11 +51,11 @@ public class AuthControllerTests(PostgresWebAppFactory factory) : HttpTestBase(f
     {
         var email = UniqueEmail();
         await _anonClient.PostAsJsonAsync("/api/auth/register",
-            new UserDto { Email = email, Password = "Password123!" },
+            new UserDto { Email = email, Password = TestUserHelper.DefaultPassword },
             TestContext.Current.CancellationToken);
 
         var response = await _anonClient.PostAsJsonAsync("/api/auth/login",
-            new UserDto { Email = email, Password = "Password123!" },
+            new UserDto { Email = email, Password = TestUserHelper.DefaultPassword },
             TestContext.Current.CancellationToken);
         var body = await response.Content.ReadFromJsonAsync<AuthResultDto>(TestContext.Current.CancellationToken);
 
@@ -69,7 +69,7 @@ public class AuthControllerTests(PostgresWebAppFactory factory) : HttpTestBase(f
     {
         var email = UniqueEmail();
         await _anonClient.PostAsJsonAsync("/api/auth/register",
-            new UserDto { Email = email, Password = "Password123!" },
+            new UserDto { Email = email, Password = TestUserHelper.DefaultPassword },
             TestContext.Current.CancellationToken);
 
         var response = await _anonClient.PostAsJsonAsync("/api/auth/login",
@@ -83,7 +83,7 @@ public class AuthControllerTests(PostgresWebAppFactory factory) : HttpTestBase(f
     public async Task Login_UnknownEmail_Returns401()
     {
         var response = await _anonClient.PostAsJsonAsync("/api/auth/login",
-            new UserDto { Email = "nonexistent@pdmt-auth-test.com", Password = "Password123!" },
+            new UserDto { Email = "nonexistent@pdmt-auth-test.com", Password = TestUserHelper.DefaultPassword },
             TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
@@ -97,7 +97,7 @@ public class AuthControllerTests(PostgresWebAppFactory factory) : HttpTestBase(f
     public async Task Refresh_ValidToken_Returns200WithNewTokens()
     {
         var registerResponse = await _anonClient.PostAsJsonAsync("/api/auth/register",
-            new UserDto { Email = UniqueEmail(), Password = "Password123!" },
+            new UserDto { Email = UniqueEmail(), Password = TestUserHelper.DefaultPassword },
             TestContext.Current.CancellationToken);
         var registered = await registerResponse.Content.ReadFromJsonAsync<AuthResultDto>(TestContext.Current.CancellationToken);
 
@@ -115,7 +115,7 @@ public class AuthControllerTests(PostgresWebAppFactory factory) : HttpTestBase(f
     public async Task Refresh_AlreadyUsedToken_Returns401()
     {
         var registerResponse = await _anonClient.PostAsJsonAsync("/api/auth/register",
-            new UserDto { Email = UniqueEmail(), Password = "Password123!" },
+            new UserDto { Email = UniqueEmail(), Password = TestUserHelper.DefaultPassword },
             TestContext.Current.CancellationToken);
         var registered = await registerResponse.Content.ReadFromJsonAsync<AuthResultDto>(TestContext.Current.CancellationToken);
 
@@ -134,7 +134,7 @@ public class AuthControllerTests(PostgresWebAppFactory factory) : HttpTestBase(f
     public async Task Refresh_ExpiredToken_Returns401()
     {
         var registerResponse = await _anonClient.PostAsJsonAsync("/api/auth/register",
-            new UserDto { Email = UniqueEmail(), Password = "Password123!" },
+            new UserDto { Email = UniqueEmail(), Password = TestUserHelper.DefaultPassword },
             TestContext.Current.CancellationToken);
         var registered = await registerResponse.Content.ReadFromJsonAsync<AuthResultDto>(TestContext.Current.CancellationToken);
 
