@@ -10,7 +10,7 @@ using System.Text;
 
 namespace Pdmt.Api.Integration.Tests.Services;
 
-public class AuthServiceTests : ServiceTestBase
+public class AuthServiceTests(PostgresContainerFixture fixture) : ServiceTestBase(fixture)
 {
     private AuthService _service = null!;
 

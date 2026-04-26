@@ -8,7 +8,7 @@ using Pdmt.Api.Services;
 
 namespace Pdmt.Api.Integration.Tests.Services;
 
-public class AnalyticsServiceTests : ServiceTestBase
+public class AnalyticsServiceTests(PostgresContainerFixture fixture) : ServiceTestBase(fixture)
 {
     private static readonly Guid OtherUserId = Guid.Parse("00000000-0000-0000-0000-000000000002");
     private AnalyticsService _service = null!;

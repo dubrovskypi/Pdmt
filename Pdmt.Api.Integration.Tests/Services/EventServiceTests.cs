@@ -8,7 +8,7 @@ using Pdmt.Api.Services;
 
 namespace Pdmt.Api.Integration.Tests.Services;
 
-public class EventServiceTests : ServiceTestBase
+public class EventServiceTests(PostgresContainerFixture fixture) : ServiceTestBase(fixture)
 {
     private static readonly Guid OtherUserId = Guid.Parse("00000000-0000-0000-0000-000000000002");
     private EventService _service = null!;
