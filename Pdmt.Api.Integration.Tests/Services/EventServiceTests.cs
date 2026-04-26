@@ -638,6 +638,65 @@ public class EventServiceTests : ServiceTestBase
 
     #endregion
 
+    #region DateTimeOffset round-trip
+
+    [Fact]
+    public async Task CreateEventAsync_TimestampWithPositiveOffset_UtcPointPreservedByNpgsql()
+    {
+        // +03:00 — a typical client (browser/MAUI) may send this offset
+        var originalOffset = new DateTimeOffset(2024, 6, 10, 12, 0, 0, TimeSpan.FromHours(3)); // 09:00 UTC
+        var dto = MakeCreateDto(timestamp: originalOffset.ToUniversalTime()); // Npgsql requires UTC
+
+        var result = await _service.CreateEventAsync(TestUserId, dto);
+
+        result.Timestamp.UtcDateTime.Should().Be(originalOffset.UtcDateTime);
+        result.Timestamp.Offset.Should().Be(TimeSpan.Zero); // Npgsql normalizes timestamptz → UTC+0
+    }
+
+    [Fact]
+    public async Task UpdateEventAsync_TimestampWithPositiveOffset_UtcPointPreservedByNpgsql()
+    {
+        var ev = new EventBuilder().WithUserId(TestUserId).Build();
+        Db.Events.Add(ev);
+        await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var originalOffset = new DateTimeOffset(2024, 8, 15, 18, 0, 0, TimeSpan.FromHours(3)); // 15:00 UTC
+        var dto = new UpdateEventDto
+        {
+            Timestamp = originalOffset.ToUniversalTime(),
+            Type = DtoEventType.Positive,
+            Title = "Updated",
+            Intensity = 7
+        };
+
+        await _service.UpdateEventAsync(TestUserId, ev.Id, dto);
+        var updated = await _service.GetByIdAsync(TestUserId, ev.Id);
+
+        updated.Should().NotBeNull();
+        updated!.Timestamp.UtcDateTime.Should().Be(originalOffset.UtcDateTime);
+        updated.Timestamp.Offset.Should().Be(TimeSpan.Zero);
+    }
+
+    [Fact]
+    public async Task GetByIdAsync_TimestampSeededWithPositiveOffset_ReturnedNormalizedToUtc()
+    {
+        var originalOffset = new DateTimeOffset(2024, 3, 15, 14, 0, 0, TimeSpan.FromHours(3)); // 11:00 UTC
+        var ev = new EventBuilder()
+            .WithUserId(TestUserId)
+            .WithTimestamp(originalOffset.ToUniversalTime()) // Npgsql requires UTC when writing
+            .Build();
+        Db.Events.Add(ev);
+        await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var result = await _service.GetByIdAsync(TestUserId, ev.Id);
+
+        result.Should().NotBeNull();
+        result!.Timestamp.UtcDateTime.Should().Be(originalOffset.UtcDateTime);
+        result.Timestamp.Offset.Should().Be(TimeSpan.Zero); // timestamptz is returned as UTC+0
+    }
+
+    #endregion
+
     private static CreateEventDto MakeCreateDto(
     string title = "Test",
     DtoEventType type = DtoEventType.Positive,

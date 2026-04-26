@@ -795,4 +795,204 @@ public class InsightsServiceTests : ServiceTestBase
     }
 
     #endregion
+
+    #region Timezone boundary (Europe/Vilnius)
+
+    [Fact]
+    public async Task GetWeekdayStatsAsync_EventAt22UtcSunday_CountedAsMonday()
+    {
+        // 2024-01-07T22:00:00Z = 2024-01-08T00:00:00+02:00 (Monday, EET)
+        var ts = new DateTimeOffset(2024, 1, 7, 22, 0, 0, TimeSpan.Zero);
+        Db.Events.Add(new EventBuilder().WithUserId(TestUserId).WithTimestamp(ts).WithType(EventType.Positive).Build());
+        await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var result = await _service.GetWeekdayStatsAsync(TestUserId, ts.AddDays(-1), ts.AddDays(1));
+
+        result.First(d => d.Day == "Monday").PosCount.Should().Be(1);
+        result.First(d => d.Day == "Sunday").PosCount.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task GetWeekdayStatsAsync_EventAt21h59UtcSunday_CountedAsSunday()
+    {
+        // 2024-01-07T21:59:00Z = 2024-01-07T23:59:00+02:00 (Sunday, EET)
+        var ts = new DateTimeOffset(2024, 1, 7, 21, 59, 0, TimeSpan.Zero);
+        Db.Events.Add(new EventBuilder().WithUserId(TestUserId).WithTimestamp(ts).WithType(EventType.Positive).Build());
+        await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var result = await _service.GetWeekdayStatsAsync(TestUserId, ts.AddDays(-1), ts.AddDays(1));
+
+        result.First(d => d.Day == "Sunday").PosCount.Should().Be(1);
+        result.First(d => d.Day == "Monday").PosCount.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task GetTrendsAsync_Week_EventsAtWeekBoundaryMidnight_GroupedInDifferentWeeks()
+    {
+        // 21:59 UTC → Su 23:59+02:00 → week Jan 1 (Mo); 22:00 UTC → Mo 00:00+02:00 → week Jan 8 (Mo)
+        var inFirstWeek  = new DateTimeOffset(2024, 1, 7, 21, 59, 0, TimeSpan.Zero);
+        var inSecondWeek = new DateTimeOffset(2024, 1, 7, 22,  0, 0, TimeSpan.Zero);
+        Db.Events.AddRange(
+            new EventBuilder().WithUserId(TestUserId).WithTimestamp(inFirstWeek).Build(),
+            new EventBuilder().WithUserId(TestUserId).WithTimestamp(inSecondWeek).Build());
+        await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var result = await _service.GetTrendsAsync(TestUserId,
+            inFirstWeek.AddDays(-1), inSecondWeek.AddDays(1), Granularity.Week);
+
+        result.Should().HaveCount(2);
+        result[0].PeriodStart.Should().Be(new DateOnly(2024, 1, 1)); // week of Jan 1 (Mon)
+        result[1].PeriodStart.Should().Be(new DateOnly(2024, 1, 8)); // week of Jan 8 (Mon)
+    }
+
+    [Fact]
+    public async Task GetTrendsAsync_Month_EventsAtMonthBoundaryMidnight_GroupedInDifferentMonths()
+    {
+        // Jan 31 21:59 UTC = Jan 31 23:59+02:00 → January; Jan 31 22:00 UTC = Feb 1 00:00+02:00 → February
+        var inJanuary  = new DateTimeOffset(2024, 1, 31, 21, 59, 0, TimeSpan.Zero);
+        var inFebruary = new DateTimeOffset(2024, 1, 31, 22,  0, 0, TimeSpan.Zero);
+        Db.Events.AddRange(
+            new EventBuilder().WithUserId(TestUserId).WithTimestamp(inJanuary).Build(),
+            new EventBuilder().WithUserId(TestUserId).WithTimestamp(inFebruary).Build());
+        await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var result = await _service.GetTrendsAsync(TestUserId,
+            inJanuary.AddDays(-1), inFebruary.AddDays(1), Granularity.Month);
+
+        result.Should().HaveCount(2);
+        result[0].PeriodStart.Month.Should().Be(1); // Jan
+        result[1].PeriodStart.Month.Should().Be(2); // Feb
+    }
+
+    [Fact]
+    public async Task GetTagCombosAsync_TagsOnOppositeSidesOfLocalMidnight_NotCountedAsSameDay()
+    {
+        var tagA = new Tag { Id = Guid.NewGuid(), Name = "TagA", UserId = TestUserId, CreatedAt = DateTimeOffset.UtcNow };
+        var tagB = new Tag { Id = Guid.NewGuid(), Name = "TagB", UserId = TestUserId, CreatedAt = DateTimeOffset.UtcNow };
+        Db.Tags.AddRange(tagA, tagB);
+        for (var i = 0; i < 3; i++)
+        {
+            // TagA: 21:59 UTC = 23:59+02:00 (day i); TagB: 22:00 UTC = 00:00+02:00 (day i+1)
+            var beforeMidnight = new DateTimeOffset(2024, 1, 7 + i, 21, 59, 0, TimeSpan.Zero);
+            var afterMidnight  = new DateTimeOffset(2024, 1, 7 + i, 22,  0, 0, TimeSpan.Zero);
+            var evA = new EventBuilder().WithUserId(TestUserId).WithTimestamp(beforeMidnight).WithType(EventType.Negative).Build();
+            var evB = new EventBuilder().WithUserId(TestUserId).WithTimestamp(afterMidnight).WithType(EventType.Negative).Build();
+            Db.Events.AddRange(evA, evB);
+            Db.EventTags.Add(new EventTag { EventId = evA.Id, TagId = tagA.Id });
+            Db.EventTags.Add(new EventTag { EventId = evB.Id, TagId = tagB.Id });
+        }
+        await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var result = await _service.GetTagCombosAsync(TestUserId,
+            new DateTimeOffset(2024, 1, 6, 0, 0, 0, TimeSpan.Zero),
+            new DateTimeOffset(2024, 1, 12, 0, 0, 0, TimeSpan.Zero));
+
+        result.Should().BeEmpty(); // tags never coincide on the same local day
+    }
+
+    [Fact]
+    public async Task GetTagCombosAsync_TagsBothAfterLocalMidnight_CountedAsSameDay()
+    {
+        var tagA = new Tag { Id = Guid.NewGuid(), Name = "TagA", UserId = TestUserId, CreatedAt = DateTimeOffset.UtcNow };
+        var tagB = new Tag { Id = Guid.NewGuid(), Name = "TagB", UserId = TestUserId, CreatedAt = DateTimeOffset.UtcNow };
+        Db.Tags.AddRange(tagA, tagB);
+        for (var i = 0; i < 3; i++)
+        {
+            // Both in the new local day: 22:00 UTC = 00:00+02:00, 22:30 UTC = 00:30+02:00
+            var justAfterMidnight = new DateTimeOffset(2024, 1, 7 + i, 22,  0, 0, TimeSpan.Zero);
+            var slightlyLater     = new DateTimeOffset(2024, 1, 7 + i, 22, 30, 0, TimeSpan.Zero);
+            var evA = new EventBuilder().WithUserId(TestUserId).WithTimestamp(justAfterMidnight).WithType(EventType.Negative).Build();
+            var evB = new EventBuilder().WithUserId(TestUserId).WithTimestamp(slightlyLater).WithType(EventType.Negative).Build();
+            Db.Events.AddRange(evA, evB);
+            Db.EventTags.Add(new EventTag { EventId = evA.Id, TagId = tagA.Id });
+            Db.EventTags.Add(new EventTag { EventId = evB.Id, TagId = tagB.Id });
+        }
+        await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var result = await _service.GetTagCombosAsync(TestUserId,
+            new DateTimeOffset(2024, 1, 6, 0, 0, 0, TimeSpan.Zero),
+            new DateTimeOffset(2024, 1, 12, 0, 0, 0, TimeSpan.Zero));
+
+        result.Should().ContainSingle();
+        result[0].CoOccurrences.Should().Be(3);
+    }
+
+    [Fact]
+    public async Task GetTagTrendAsync_Week_EventAtWeekBoundaryMidnight_GroupedInCorrectWeek()
+    {
+        var tag = new Tag { Id = Guid.NewGuid(), Name = "Work", UserId = TestUserId, CreatedAt = DateTimeOffset.UtcNow };
+        Db.Tags.Add(tag);
+        // 21:59 UTC Sun = 23:59+02:00 → week of Jan 1; 22:00 UTC Sun = 00:00+02:00 → week of Jan 8
+        var inFirstWeek  = new DateTimeOffset(2024, 1, 7, 21, 59, 0, TimeSpan.Zero);
+        var inSecondWeek = new DateTimeOffset(2024, 1, 7, 22,  0, 0, TimeSpan.Zero);
+        var ev1 = new EventBuilder().WithUserId(TestUserId).WithTimestamp(inFirstWeek).Build();
+        var ev2 = new EventBuilder().WithUserId(TestUserId).WithTimestamp(inSecondWeek).Build();
+        Db.Events.AddRange(ev1, ev2);
+        Db.EventTags.AddRange(
+            new EventTag { EventId = ev1.Id, TagId = tag.Id },
+            new EventTag { EventId = ev2.Id, TagId = tag.Id });
+        await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var result = await _service.GetTagTrendAsync(TestUserId,
+            inFirstWeek.AddDays(-1), inSecondWeek.AddDays(1), Granularity.Week);
+
+        result.Should().ContainSingle();
+        result[0].Points.Should().HaveCount(2);
+        result[0].Points[0].PeriodStart.Should().Be(new DateOnly(2024, 1, 1)); // week of Jan 1
+        result[0].Points[1].PeriodStart.Should().Be(new DateOnly(2024, 1, 8)); // week of Jan 8
+    }
+
+    [Fact]
+    public async Task GetTagTrendAsync_Month_EventAtMonthBoundaryMidnight_GroupedInCorrectMonth()
+    {
+        var tag = new Tag { Id = Guid.NewGuid(), Name = "Work", UserId = TestUserId, CreatedAt = DateTimeOffset.UtcNow };
+        Db.Tags.Add(tag);
+        // Jan 31 21:59 UTC = Jan 31 23:59+02:00 → January; Jan 31 22:00 UTC = Feb 1 00:00+02:00 → February
+        var inJanuary  = new DateTimeOffset(2024, 1, 31, 21, 59, 0, TimeSpan.Zero);
+        var inFebruary = new DateTimeOffset(2024, 1, 31, 22,  0, 0, TimeSpan.Zero);
+        var ev1 = new EventBuilder().WithUserId(TestUserId).WithTimestamp(inJanuary).Build();
+        var ev2 = new EventBuilder().WithUserId(TestUserId).WithTimestamp(inFebruary).Build();
+        Db.Events.AddRange(ev1, ev2);
+        Db.EventTags.AddRange(
+            new EventTag { EventId = ev1.Id, TagId = tag.Id },
+            new EventTag { EventId = ev2.Id, TagId = tag.Id });
+        await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var result = await _service.GetTagTrendAsync(TestUserId,
+            inJanuary.AddDays(-1), inFebruary.AddDays(1), Granularity.Month);
+
+        result.Should().ContainSingle();
+        result[0].Points.Should().HaveCount(2);
+        result[0].Points[0].PeriodStart.Month.Should().Be(1); // January
+        result[0].Points[1].PeriodStart.Month.Should().Be(2); // February
+    }
+
+    [Fact]
+    public async Task GetNextDayEffectsAsync_TagEventAtLocalMidnight_AssignedToNewLocalDay()
+    {
+        // Tag events at 22:00 UTC = 00:00+02:00 → local dates Jan 8, 9, 10
+        // Follow-up events at 22:30 UTC = 00:30+02:00 next local day → local dates Jan 9, 10, 11
+        var tagA = new Tag { Id = Guid.NewGuid(), Name = "TagA", UserId = TestUserId, CreatedAt = DateTimeOffset.UtcNow };
+        Db.Tags.Add(tagA);
+        for (var i = 0; i < 3; i++)
+        {
+            var tagTs      = new DateTimeOffset(2024, 1, 7 + i, 22,  0, 0, TimeSpan.Zero); // local Jan 8+i
+            var followUpTs = new DateTimeOffset(2024, 1, 8 + i, 22, 30, 0, TimeSpan.Zero); // local Jan 9+i
+            var tagEvent = new EventBuilder().WithUserId(TestUserId).WithTimestamp(tagTs).WithType(EventType.Positive).WithIntensity(5).Build();
+            Db.Events.Add(tagEvent);
+            Db.EventTags.Add(new EventTag { EventId = tagEvent.Id, TagId = tagA.Id });
+            Db.Events.Add(new EventBuilder().WithUserId(TestUserId).WithTimestamp(followUpTs).WithType(EventType.Positive).WithIntensity(7).Build());
+        }
+        await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var result = await _service.GetNextDayEffectsAsync(TestUserId,
+            new DateTimeOffset(2024, 1, 7, 0, 0, 0, TimeSpan.Zero),
+            new DateTimeOffset(2024, 1, 11, 0, 0, 0, TimeSpan.Zero));
+
+        result.Should().ContainSingle();
+        result[0].TagName.Should().Be("TagA");
+        result[0].NextDayAvgScore.Should().BeGreaterThan(0);
+    }
+
+    #endregion
 }
