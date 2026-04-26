@@ -32,6 +32,10 @@ if (string.IsNullOrWhiteSpace(jwtSecret))
         "Dev: dotnet user-secrets set \"Jwt:Secret\" \"<value>\"  " +
         "Prod: set env var Jwt__Secret");
 
+var signingCredentials = new SigningCredentials(
+    new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret)),
+    SecurityAlgorithms.HmacSha256);
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -92,10 +96,10 @@ if (string.IsNullOrWhiteSpace(redisCs))
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(pgCs));
 
+var jwt = builder.Configuration.GetSection("Jwt");
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
-        var jwt = builder.Configuration.GetSection("Jwt");
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
@@ -104,9 +108,10 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateIssuerSigningKey = true,
             ValidIssuer = jwt["Issuer"],
             ValidAudience = jwt["Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt["Secret"]!))
+            IssuerSigningKey = signingCredentials.Key
         };
     });
+builder.Services.AddSingleton(signingCredentials);
 builder.Services.AddAuthorization();
 builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
 {
@@ -162,7 +167,7 @@ using (var scope = app.Services.CreateScope())
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     if (db.Database.IsRelational())
     {
-        db.Database.Migrate();
+        await db.Database.MigrateAsync();
     }
 }
 
@@ -189,6 +194,6 @@ app.UseAuthorization();
 app.MapControllers();
 app.MapHealthChecks("/health");
 
-app.Run();
+await app.RunAsync();
 
 public partial class Program { }

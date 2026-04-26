@@ -8,177 +8,165 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace Pdmt.Api.Services
+namespace Pdmt.Api.Services;
+
+public class AuthService(AppDbContext db, IConfiguration config, IRateLimitService rateLimit, SigningCredentials signingCreds) : IAuthService
 {
-    public class AuthService : IAuthService
+    private readonly SigningCredentials _signingCredentials = signingCreds;
+
+    public async Task<AuthResultDto> RegisterAsync(UserDto dto, string ip)
     {
-        private readonly AppDbContext _db;
-        private readonly IConfiguration _config;
-        private readonly IRateLimitService _rateLimit;
+        await rateLimit.CheckAsync("Auth.Register", ip);
 
-        public AuthService(AppDbContext db, IConfiguration config, IRateLimitService rateLimit)
+        var normalizedEmail = dto.Email.Trim().ToLower();
+        var exists = await db.Users.AnyAsync(u => u.Email == normalizedEmail);
+        if (exists)
+            throw new InvalidOperationException("User already exists");
+        var user = new User
         {
-            _db = db;
-            _config = config;
-            _rateLimit = rateLimit;
-        }
+            Id = Guid.NewGuid(),
+            Email = normalizedEmail,
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
+            CreatedAt = DateTimeOffset.UtcNow
+        };
+        db.Users.Add(user);
+        await db.SaveChangesAsync();
 
-        public async Task<AuthResultDto> RegisterAsync(UserDto dto, string ip)
+        var (refreshTokenEntity, rawRefreshToken) = CreateRefreshToken(user);
+
+        db.RefreshTokens.Add(refreshTokenEntity);
+        await db.SaveChangesAsync();
+
+        var accessToken = GenerateAccessToken(user);
+        return new AuthResultDto
         {
-            await _rateLimit.CheckAsync("Auth.Register", ip);
+            AccessToken = accessToken.Token,
+            AccessTokenExpiresAt = accessToken.ExpiresAt,
+            RefreshToken = rawRefreshToken
+        };
+    }
 
-            var normalizedEmail = dto.Email.Trim().ToLower();
-            var exists = await _db.Users.AnyAsync(u => u.Email == normalizedEmail);
-            if (exists)
-                throw new InvalidOperationException("User already exists");
-            var user = new User
+    public async Task<AuthResultDto> LoginAsync(UserDto dto, string ip)
+    {
+        await rateLimit.CheckAsync("Auth.Login", ip);
+
+        var normalizedEmail = dto.Email.Trim().ToLower();
+        var user = await db.Users.
+            Include(u => u.RefreshTokens).
+            FirstOrDefaultAsync(u => u.Email == normalizedEmail);
+        if (user == null || !BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash))
+        {
+            db.FailedLoginAttempts.Add(new FailedLoginAttempt
             {
-                Id = Guid.NewGuid(),
                 Email = normalizedEmail,
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
-                CreatedAt = DateTimeOffset.UtcNow
-            };
-            _db.Users.Add(user);
-            await _db.SaveChangesAsync();
-
-            var (refreshTokenEntity, rawRefreshToken) = CreateRefreshToken(user);
-
-            _db.RefreshTokens.Add(refreshTokenEntity);
-            await _db.SaveChangesAsync();
-
-            var accessToken = GenerateAccessToken(user);
-            return new AuthResultDto
-            {
-                AccessToken = accessToken.Token,
-                AccessTokenExpiresAt = accessToken.ExpiresAt,
-                RefreshToken = rawRefreshToken
-            };
+                IpAddress = ip,
+                OccurredAtUtc = DateTimeOffset.UtcNow,
+                Reason = "Invalid credentials"
+            });
+            await db.SaveChangesAsync();
+            throw new UnauthorizedAccessException("Invalid credentials");
         }
 
-        public async Task<AuthResultDto> LoginAsync(UserDto dto, string ip)
+        // revoke old tokens
+        foreach (var rt in user.RefreshTokens)
+            rt.IsRevoked = true;
+
+        var (refreshTokenEntity, rawRefreshToken) = CreateRefreshToken(user);
+
+        db.RefreshTokens.Add(refreshTokenEntity);
+        await db.SaveChangesAsync();
+
+        var accessToken = GenerateAccessToken(user);
+        return new AuthResultDto
         {
-            await _rateLimit.CheckAsync("Auth.Login", ip);
+            AccessToken = accessToken.Token,
+            AccessTokenExpiresAt = accessToken.ExpiresAt,
+            RefreshToken = rawRefreshToken
+        };
+    }
 
-            var normalizedEmail = dto.Email.Trim().ToLower();
-            var user = await _db.Users.
-                Include(u => u.RefreshTokens).
-                FirstOrDefaultAsync(u => u.Email == normalizedEmail);
-            if (user == null || !BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash))
-            {
-                _db.FailedLoginAttempts.Add(new FailedLoginAttempt
-                {
-                    Email = normalizedEmail,
-                    IpAddress = ip,
-                    OccurredAtUtc = DateTimeOffset.UtcNow,
-                    Reason = "Invalid credentials"
-                });
-                await _db.SaveChangesAsync();
-                throw new UnauthorizedAccessException("Invalid credentials");
-            }
+    public async Task<AuthResultDto> RefreshAsync(string refreshToken, string ip)
+    {
+        await rateLimit.CheckAsync("Auth.Refresh", ip);
 
-            // revoke old tokens
-            foreach (var rt in user.RefreshTokens)
-                rt.IsRevoked = true;
+        var hashedRefreshToken = HashToken(refreshToken);
+        var token = await db.RefreshTokens
+            .Include(rt => rt.User)
+            .FirstOrDefaultAsync(rt =>
+                rt.Token == hashedRefreshToken &&
+                !rt.IsRevoked &&
+                rt.ExpiresAt > DateTimeOffset.UtcNow) ?? throw new UnauthorizedAccessException("Invalid refresh token");
+        token.IsRevoked = true;
 
-            var (refreshTokenEntity, rawRefreshToken) = CreateRefreshToken(user);
+        var (newRefreshTokenEntity, rawRefreshToken) = CreateRefreshToken(token.User);
+        db.RefreshTokens.Add(newRefreshTokenEntity);
+        await db.SaveChangesAsync();
 
-            _db.RefreshTokens.Add(refreshTokenEntity);
-            await _db.SaveChangesAsync();
-
-            var accessToken = GenerateAccessToken(user);
-            return new AuthResultDto
-            {
-                AccessToken = accessToken.Token,
-                AccessTokenExpiresAt = accessToken.ExpiresAt,
-                RefreshToken = rawRefreshToken
-            };
-        }
-
-        public async Task<AuthResultDto> RefreshAsync(string refreshToken, string ip)
+        var accessToken = GenerateAccessToken(token.User);
+        return new AuthResultDto
         {
-            await _rateLimit.CheckAsync("Auth.Refresh", ip);
+            AccessToken = accessToken.Token,
+            AccessTokenExpiresAt = accessToken.ExpiresAt,
+            RefreshToken = rawRefreshToken
+        };
+    }
 
-            var hashedRefreshToken = HashToken(refreshToken);
-            var token = await _db.RefreshTokens
-                .Include(rt => rt.User)
-                .FirstOrDefaultAsync(rt =>
-                    rt.Token == hashedRefreshToken &&
-                    !rt.IsRevoked &&
-                    rt.ExpiresAt > DateTimeOffset.UtcNow) ?? throw new UnauthorizedAccessException("Invalid refresh token");
+    public async Task LogoutAsync(Guid userId)
+    {
+        var tokens = await db.RefreshTokens
+            .Where(rt => rt.UserId == userId && !rt.IsRevoked)
+            .ToListAsync();
+
+        foreach (var token in tokens)
             token.IsRevoked = true;
 
-            var (newRefreshTokenEntity, rawRefreshToken) = CreateRefreshToken(token.User);
-            _db.RefreshTokens.Add(newRefreshTokenEntity);
-            await _db.SaveChangesAsync();
+        await db.SaveChangesAsync();
+    }
 
-            var accessToken = GenerateAccessToken(token.User);
-            return new AuthResultDto
-            {
-                AccessToken = accessToken.Token,
-                AccessTokenExpiresAt = accessToken.ExpiresAt,
-                RefreshToken = rawRefreshToken
-            };
-        }
-
-        public async Task LogoutAsync(Guid userId)
+    private AccessToken GenerateAccessToken(User user)
+    {
+        var jwt = config.GetSection("Jwt");
+        var expiresOffset = DateTimeOffset.UtcNow.AddMinutes(int.Parse(jwt["TokenLifetimeMinutes"]!));
+        var expires = expiresOffset.UtcDateTime;
+        var claims = new[]
         {
-            var tokens = await _db.RefreshTokens
-                .Where(rt => rt.UserId == userId && !rt.IsRevoked)
-                .ToListAsync();
+        new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+        new Claim(JwtRegisteredClaimNames.Email, user.Email)
+        };
+        var token = new JwtSecurityToken(
+            issuer: jwt["Issuer"],
+            audience: jwt["Audience"],
+            claims: claims,
+            expires: expires,
+            signingCredentials: _signingCredentials);
+        return new AccessToken(new JwtSecurityTokenHandler().WriteToken(token), expiresOffset);
+    }
 
-            foreach (var token in tokens)
-                token.IsRevoked = true;
-
-            await _db.SaveChangesAsync();
-        }
-
-        private AccessToken GenerateAccessToken(User user)
+    private (RefreshToken entity, string rawToken) CreateRefreshToken(User user)
+    {
+        var days = int.Parse(config["Jwt:RefreshTokenLifetimeDays"]!);
+        var rawToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
+        var entity = new RefreshToken
         {
-            var jwt = _config.GetSection("Jwt");
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt["Secret"]!));
-            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-            var expiresOffset = DateTimeOffset.UtcNow.AddMinutes(int.Parse(jwt["TokenLifetimeMinutes"]!));
-            var expires = expiresOffset.UtcDateTime;
-            var claims = new[]
-            {
-            new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-            new Claim(JwtRegisteredClaimNames.Email, user.Email)
-            };
-            var token = new JwtSecurityToken(
-                issuer: jwt["Issuer"],
-                audience: jwt["Audience"],
-                claims: claims,
-                expires: expires,
-                signingCredentials: creds);
-            return new AccessToken(new JwtSecurityTokenHandler().WriteToken(token), expiresOffset);
-        }
+            Id = Guid.NewGuid(),
+            UserId = user.Id,
+            Token = HashToken(rawToken),
+            CreatedAt = DateTimeOffset.UtcNow,
+            ExpiresAt = DateTimeOffset.UtcNow.AddDays(days)
+        };
+        return (entity, rawToken);
+    }
 
-        private (RefreshToken entity, string rawToken) CreateRefreshToken(User user)
-        {
-            var days = int.Parse(_config["Jwt:RefreshTokenLifetimeDays"]!);
-            var rawToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
-            var entity = new RefreshToken
-            {
-                Id = Guid.NewGuid(),
-                UserId = user.Id,
-                Token = HashToken(rawToken),
-                CreatedAt = DateTimeOffset.UtcNow,
-                ExpiresAt = DateTimeOffset.UtcNow.AddDays(days)
-            };
-            return (entity, rawToken);
-        }
+    private static string HashToken(string token)
+    {
+        using var sha = SHA256.Create();
+        var bytes = sha.ComputeHash(Encoding.UTF8.GetBytes(token));
+        return Convert.ToBase64String(bytes);
+    }
 
-        private static string HashToken(string token)
-        {
-            using var sha = SHA256.Create();
-            var bytes = sha.ComputeHash(Encoding.UTF8.GetBytes(token));
-            return Convert.ToBase64String(bytes);
-        }
-
-        private class AccessToken(string token, DateTimeOffset expiresAt)
-        {
-            public string Token { get; set; } = token;
-            public DateTimeOffset ExpiresAt { get; set; } = expiresAt;
-        }
+    private class AccessToken(string token, DateTimeOffset expiresAt)
+    {
+        public string Token { get; set; } = token;
+        public DateTimeOffset ExpiresAt { get; set; } = expiresAt;
     }
 }

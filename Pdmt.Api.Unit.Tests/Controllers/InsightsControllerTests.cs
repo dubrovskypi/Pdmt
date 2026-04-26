@@ -48,12 +48,13 @@ public class InsightsControllerTests
     }
 
     [Fact]
-    public async Task GetMostIntenseTags_FromAfterTo_Returns400()
+    public async Task GetMostIntenseTags_FromAfterTo_ThrowsInvalidOperation()
     {
-        var result = await _sut.GetMostIntenseTags(To, From);
+        _insightsService.Setup(s => s.GetMostIntenseTagsAsync(_userId, To, From))
+            .ThrowsAsync(new InvalidOperationException("'from' must be earlier than 'to'."));
 
-        result.Result.Should().BeOfType<BadRequestObjectResult>();
-        _insightsService.Verify(s => s.GetMostIntenseTagsAsync(It.IsAny<Guid>(), It.IsAny<DateTimeOffset>(), It.IsAny<DateTimeOffset>()), Times.Never);
+        await _sut.Invoking(c => c.GetMostIntenseTags(To, From))
+            .Should().ThrowAsync<InvalidOperationException>();
     }
 
     // ── GetRepeatingTriggers ──────────────────────────────────────────────
@@ -71,12 +72,13 @@ public class InsightsControllerTests
     }
 
     [Fact]
-    public async Task GetRepeatingTriggers_FromAfterTo_Returns400()
+    public async Task GetRepeatingTriggers_FromAfterTo_ThrowsInvalidOperation()
     {
-        var result = await _sut.GetRepeatingTriggers(To, From);
+        _insightsService.Setup(s => s.GetRepeatingTriggersAsync(_userId, To, From, It.IsAny<int>()))
+            .ThrowsAsync(new InvalidOperationException("'from' must be earlier than 'to'."));
 
-        result.Result.Should().BeOfType<BadRequestObjectResult>();
-        _insightsService.Verify(s => s.GetRepeatingTriggersAsync(It.IsAny<Guid>(), It.IsAny<DateTimeOffset>(), It.IsAny<DateTimeOffset>(), It.IsAny<int>()), Times.Never);
+        await _sut.Invoking(c => c.GetRepeatingTriggers(To, From))
+            .Should().ThrowAsync<InvalidOperationException>();
     }
 
     // ── GetBalance ────────────────────────────────────────────────────────
@@ -94,12 +96,13 @@ public class InsightsControllerTests
     }
 
     [Fact]
-    public async Task GetBalance_FromAfterTo_Returns400()
+    public async Task GetBalance_FromAfterTo_ThrowsInvalidOperation()
     {
-        var result = await _sut.GetBalance(To, From);
+        _insightsService.Setup(s => s.GetBalanceAsync(_userId, To, From))
+            .ThrowsAsync(new InvalidOperationException("'from' must be earlier than 'to'."));
 
-        result.Result.Should().BeOfType<BadRequestObjectResult>();
-        _insightsService.Verify(s => s.GetBalanceAsync(It.IsAny<Guid>(), It.IsAny<DateTimeOffset>(), It.IsAny<DateTimeOffset>()), Times.Never);
+        await _sut.Invoking(c => c.GetBalance(To, From))
+            .Should().ThrowAsync<InvalidOperationException>();
     }
 
     // ── GetTrends ─────────────────────────────────────────────────────────
@@ -117,12 +120,13 @@ public class InsightsControllerTests
     }
 
     [Fact]
-    public async Task GetTrends_FromAfterTo_Returns400()
+    public async Task GetTrends_FromAfterTo_ThrowsInvalidOperation()
     {
-        var result = await _sut.GetTrends(To, From);
+        _insightsService.Setup(s => s.GetTrendsAsync(_userId, To, From, It.IsAny<Granularity>()))
+            .ThrowsAsync(new InvalidOperationException("'from' must be earlier than 'to'."));
 
-        result.Result.Should().BeOfType<BadRequestObjectResult>();
-        _insightsService.Verify(s => s.GetTrendsAsync(It.IsAny<Guid>(), It.IsAny<DateTimeOffset>(), It.IsAny<DateTimeOffset>(), It.IsAny<Granularity>()), Times.Never);
+        await _sut.Invoking(c => c.GetTrends(To, From))
+            .Should().ThrowAsync<InvalidOperationException>();
     }
 
     // ── GetDiscountedPositives ────────────────────────────────────────────
@@ -140,12 +144,13 @@ public class InsightsControllerTests
     }
 
     [Fact]
-    public async Task GetDiscountedPositives_FromAfterTo_Returns400()
+    public async Task GetDiscountedPositives_FromAfterTo_ThrowsInvalidOperation()
     {
-        var result = await _sut.GetDiscountedPositives(To, From);
+        _insightsService.Setup(s => s.GetDiscountedPositivesAsync(_userId, To, From))
+            .ThrowsAsync(new InvalidOperationException("'from' must be earlier than 'to'."));
 
-        result.Result.Should().BeOfType<BadRequestObjectResult>();
-        _insightsService.Verify(s => s.GetDiscountedPositivesAsync(It.IsAny<Guid>(), It.IsAny<DateTimeOffset>(), It.IsAny<DateTimeOffset>()), Times.Never);
+        await _sut.Invoking(c => c.GetDiscountedPositives(To, From))
+            .Should().ThrowAsync<InvalidOperationException>();
     }
 
     // ── GetWeekdayStats ───────────────────────────────────────────────────
@@ -163,12 +168,13 @@ public class InsightsControllerTests
     }
 
     [Fact]
-    public async Task GetWeekdayStats_FromAfterTo_Returns400()
+    public async Task GetWeekdayStats_FromAfterTo_ThrowsInvalidOperation()
     {
-        var result = await _sut.GetWeekdayStats(To, From);
+        _insightsService.Setup(s => s.GetWeekdayStatsAsync(_userId, To, From))
+            .ThrowsAsync(new InvalidOperationException("'from' must be earlier than 'to'."));
 
-        result.Result.Should().BeOfType<BadRequestObjectResult>();
-        _insightsService.Verify(s => s.GetWeekdayStatsAsync(It.IsAny<Guid>(), It.IsAny<DateTimeOffset>(), It.IsAny<DateTimeOffset>()), Times.Never);
+        await _sut.Invoking(c => c.GetWeekdayStats(To, From))
+            .Should().ThrowAsync<InvalidOperationException>();
     }
 
     // ── GetNextDayEffects ─────────────────────────────────────────────────
@@ -186,12 +192,13 @@ public class InsightsControllerTests
     }
 
     [Fact]
-    public async Task GetNextDayEffects_FromAfterTo_Returns400()
+    public async Task GetNextDayEffects_FromAfterTo_ThrowsInvalidOperation()
     {
-        var result = await _sut.GetNextDayEffects(To, From);
+        _insightsService.Setup(s => s.GetNextDayEffectsAsync(_userId, To, From))
+            .ThrowsAsync(new InvalidOperationException("'from' must be earlier than 'to'."));
 
-        result.Result.Should().BeOfType<BadRequestObjectResult>();
-        _insightsService.Verify(s => s.GetNextDayEffectsAsync(It.IsAny<Guid>(), It.IsAny<DateTimeOffset>(), It.IsAny<DateTimeOffset>()), Times.Never);
+        await _sut.Invoking(c => c.GetNextDayEffects(To, From))
+            .Should().ThrowAsync<InvalidOperationException>();
     }
 
     // ── GetTagCombos ──────────────────────────────────────────────────────
@@ -209,12 +216,13 @@ public class InsightsControllerTests
     }
 
     [Fact]
-    public async Task GetTagCombos_FromAfterTo_Returns400()
+    public async Task GetTagCombos_FromAfterTo_ThrowsInvalidOperation()
     {
-        var result = await _sut.GetTagCombos(To, From);
+        _insightsService.Setup(s => s.GetTagCombosAsync(_userId, To, From))
+            .ThrowsAsync(new InvalidOperationException("'from' must be earlier than 'to'."));
 
-        result.Result.Should().BeOfType<BadRequestObjectResult>();
-        _insightsService.Verify(s => s.GetTagCombosAsync(It.IsAny<Guid>(), It.IsAny<DateTimeOffset>(), It.IsAny<DateTimeOffset>()), Times.Never);
+        await _sut.Invoking(c => c.GetTagCombos(To, From))
+            .Should().ThrowAsync<InvalidOperationException>();
     }
 
     // ── GetTagTrend ───────────────────────────────────────────────────────
@@ -232,12 +240,13 @@ public class InsightsControllerTests
     }
 
     [Fact]
-    public async Task GetTagTrend_FromAfterTo_Returns400()
+    public async Task GetTagTrend_FromAfterTo_ThrowsInvalidOperation()
     {
-        var result = await _sut.GetTagTrend(To, From);
+        _insightsService.Setup(s => s.GetTagTrendAsync(_userId, To, From, It.IsAny<Granularity>()))
+            .ThrowsAsync(new InvalidOperationException("'from' must be earlier than 'to'."));
 
-        result.Result.Should().BeOfType<BadRequestObjectResult>();
-        _insightsService.Verify(s => s.GetTagTrendAsync(It.IsAny<Guid>(), It.IsAny<DateTimeOffset>(), It.IsAny<DateTimeOffset>(), It.IsAny<Granularity>()), Times.Never);
+        await _sut.Invoking(c => c.GetTagTrend(To, From))
+            .Should().ThrowAsync<InvalidOperationException>();
     }
 
     // ── GetInfluenceabilitySplit ──────────────────────────────────────────
@@ -255,11 +264,12 @@ public class InsightsControllerTests
     }
 
     [Fact]
-    public async Task GetInfluenceabilitySplit_FromAfterTo_Returns400()
+    public async Task GetInfluenceabilitySplit_FromAfterTo_ThrowsInvalidOperation()
     {
-        var result = await _sut.GetInfluenceabilitySplit(To, From);
+        _insightsService.Setup(s => s.GetInfluenceabilitySplitAsync(_userId, To, From))
+            .ThrowsAsync(new InvalidOperationException("'from' must be earlier than 'to'."));
 
-        result.Result.Should().BeOfType<BadRequestObjectResult>();
-        _insightsService.Verify(s => s.GetInfluenceabilitySplitAsync(It.IsAny<Guid>(), It.IsAny<DateTimeOffset>(), It.IsAny<DateTimeOffset>()), Times.Never);
+        await _sut.Invoking(c => c.GetInfluenceabilitySplit(To, From))
+            .Should().ThrowAsync<InvalidOperationException>();
     }
 }

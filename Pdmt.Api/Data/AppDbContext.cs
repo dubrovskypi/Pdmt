@@ -5,85 +5,85 @@ namespace Pdmt.Api.Data;
 
 public class AppDbContext(DbContextOptions options) : DbContext(options)
 {
-    protected override void OnModelCreating(ModelBuilder builder)
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        base.OnModelCreating(builder);
+        base.OnModelCreating(modelBuilder);
 
-        builder.Entity<User>()
+        modelBuilder.Entity<User>()
             .Property(u => u.Email)
             .HasMaxLength(128)
             .IsRequired();
-        builder.Entity<User>()
+        modelBuilder.Entity<User>()
             .HasIndex(u => u.Email)
             .IsUnique();
 
-        builder.Entity<RefreshToken>()
+        modelBuilder.Entity<RefreshToken>()
             .HasOne(e => e.User)
             .WithMany(u => u.RefreshTokens)
             .HasForeignKey(e => e.UserId)
             .OnDelete(DeleteBehavior.Cascade);
-        builder.Entity<RefreshToken>()
+        modelBuilder.Entity<RefreshToken>()
             .HasIndex(u => u.Token)
             .IsUnique();
-        builder.Entity<RefreshToken>()
+        modelBuilder.Entity<RefreshToken>()
             .HasIndex(rt => new { rt.UserId, rt.IsRevoked });
 
-        builder.Entity<Event>()
+        modelBuilder.Entity<Event>()
             .HasOne(e => e.User)
             .WithMany(u => u.Events)
             .HasForeignKey(e => e.UserId)
             .OnDelete(DeleteBehavior.Cascade);
-        builder.Entity<Event>()
+        modelBuilder.Entity<Event>()
             .HasIndex(u => u.UserId);
-        builder.Entity<Event>()
+        modelBuilder.Entity<Event>()
             .HasIndex(u => u.Timestamp);
-        builder.Entity<Event>()
+        modelBuilder.Entity<Event>()
             .HasIndex(d => new { d.UserId, d.Timestamp });
 
-        builder.Entity<Summary>()
+        modelBuilder.Entity<Summary>()
             .HasOne(d => d.User)
             .WithMany(u => u.Summaries)
             .HasForeignKey(d => d.UserId)
             .OnDelete(DeleteBehavior.Cascade);
-        builder.Entity<Summary>()
+        modelBuilder.Entity<Summary>()
             .HasIndex(d => new { d.UserId, d.Date })
             .IsUnique();
 
-        builder.Entity<FailedLoginAttempt>()
+        modelBuilder.Entity<FailedLoginAttempt>()
             .Property(f => f.Email)
             .HasMaxLength(128)
             .IsRequired();
-        builder.Entity<FailedLoginAttempt>()
+        modelBuilder.Entity<FailedLoginAttempt>()
             .HasIndex(f => f.Email);
-        builder.Entity<FailedLoginAttempt>()
+        modelBuilder.Entity<FailedLoginAttempt>()
             .HasIndex(f => f.OccurredAtUtc);
 
-        builder.Entity<Tag>()
+        modelBuilder.Entity<Tag>()
             .Property(t => t.Name)
             .HasMaxLength(100)
             .IsRequired();
-        builder.Entity<Tag>()
+        modelBuilder.Entity<Tag>()
             .HasOne(t => t.User)
             .WithMany(u => u.Tags)
             .HasForeignKey(t => t.UserId)
             .OnDelete(DeleteBehavior.Cascade);
-        builder.Entity<Tag>()
+        modelBuilder.Entity<Tag>()
             .HasIndex(t => new { t.UserId, t.Name })
             .IsUnique();
 
-        builder.Entity<EventTag>()
+        modelBuilder.Entity<EventTag>()
             .HasKey(et => new { et.EventId, et.TagId });
-        builder.Entity<EventTag>()
+        modelBuilder.Entity<EventTag>()
             .HasOne(et => et.Event)
             .WithMany(e => e.EventTags)
             .HasForeignKey(et => et.EventId)
             .OnDelete(DeleteBehavior.Cascade);
-        builder.Entity<EventTag>()
+        modelBuilder.Entity<EventTag>()
             .HasOne(et => et.Tag)
             .WithMany(t => t.EventTags)
             .HasForeignKey(et => et.TagId)
             .OnDelete(DeleteBehavior.Cascade);
-        builder.Entity<EventTag>()
+        modelBuilder.Entity<EventTag>()
             .HasIndex(et => et.TagId);
     }
     public DbSet<User> Users { get; set; } = null!;

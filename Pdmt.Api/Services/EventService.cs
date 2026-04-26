@@ -89,26 +89,26 @@ public class EventService(AppDbContext db) : IEventService
         return MapToResponseDto(entity);
     }
 
-    public async Task<bool> UpdateEventAsync(Guid userId, Guid eventId, UpdateEventDto newEvent)
+    public async Task<bool> UpdateEventAsync(Guid userId, Guid id, UpdateEventDto ev)
     {
         if (userId == Guid.Empty)
             throw new ArgumentException("User ID cannot be empty.", nameof(userId));
 
         var existing = await db.Events
             .Include(e => e.EventTags)
-            .FirstOrDefaultAsync(e => e.Id == eventId && e.UserId == userId);
+            .FirstOrDefaultAsync(e => e.Id == id && e.UserId == userId);
 
         if (existing is null) return false;
 
-        existing.Timestamp = newEvent.Timestamp;
-        existing.Type = (EventType)newEvent.Type;
-        existing.Intensity = newEvent.Intensity;
-        existing.Title = newEvent.Title;
-        existing.Description = newEvent.Description;
-        existing.Context = newEvent.Context;
-        existing.CanInfluence = newEvent.CanInfluence;
+        existing.Timestamp = ev.Timestamp;
+        existing.Type = (EventType)ev.Type;
+        existing.Intensity = ev.Intensity;
+        existing.Title = ev.Title;
+        existing.Description = ev.Description;
+        existing.Context = ev.Context;
+        existing.CanInfluence = ev.CanInfluence;
 
-        var resolvedTags = await ResolveTagsAsync(userId, newEvent.TagNames);
+        var resolvedTags = await ResolveTagsAsync(userId, ev.TagNames);
         var newTagIds = resolvedTags.Select(t => t.Id).ToHashSet();
         var oldTagIds = existing.EventTags.Select(et => et.TagId).ToHashSet();
 

@@ -1,24 +1,29 @@
 using FluentAssertions;
 using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
 using Moq;
 using Pdmt.Api.Dto;
 using Pdmt.Api.Infrastructure.Exceptions;
 using Pdmt.Api.Services;
+using System.Text;
 
 namespace Pdmt.Api.Unit.Tests.Services;
 
 public class AuthServiceUnitTests
 {
+    private static readonly SigningCredentials TestSigningCredentials = new(
+        new SymmetricSecurityKey(Encoding.UTF8.GetBytes("test-super-secret-key-min-32-chars!!")),
+        SecurityAlgorithms.HmacSha256);
+
     private readonly Mock<IRateLimitService> _rateLimitMock = new();
 
     private AuthService CreateSut() =>
-        new(null!, BuildConfig(), _rateLimitMock.Object);
+        new(null!, BuildConfig(), _rateLimitMock.Object, TestSigningCredentials);
 
     private static IConfiguration BuildConfig() =>
         new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["Jwt:Secret"] = "test-super-secret-key-min-32-chars!!",
                 ["Jwt:Issuer"] = "pdmt-test",
                 ["Jwt:Audience"] = "pdmt-test",
                 ["Jwt:TokenLifetimeMinutes"] = "60",

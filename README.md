@@ -31,7 +31,8 @@ Pdmt helps you understand yourself better by:
 | Project | Stack | Purpose |
 |---------|-------|---------|
 | **Pdmt.Api** | ASP.NET Core 8 | REST API backend |
-| **Pdmt.Api.Tests** | xUnit + Moq | 180+ unit & integration tests |
+| **Pdmt.Api.Integration.Tests** | xUnit + testcontainers | HTTP & service integration tests |
+| **Pdmt.Api.Unit.Tests** | xUnit + Moq | Pure unit tests (no DB) |
 | **pdmt-web** | React 19 + TypeScript | Production web client |
 | **Pdmt.Client** | Blazor WASM | Test/reference UI |
 | **Pdmt.Maui** | .NET MAUI | Android mobile app |
@@ -64,11 +65,14 @@ Visit:
 ### Testing
 
 ```bash
-# Run all tests (180+)
-dotnet test Pdmt.Api.Tests/Pdmt.Api.Tests.csproj
+# Run integration tests (requires Docker for PostgreSQL testcontainer)
+dotnet test Pdmt.Api.Integration.Tests/Pdmt.Api.Integration.Tests.csproj
+
+# Run unit tests (no Docker needed)
+dotnet test Pdmt.Api.Unit.Tests/Pdmt.Api.Unit.Tests.csproj
 
 # Run specific test class
-dotnet test Pdmt.Api.Tests/Pdmt.Api.Tests.csproj --filter "FullyQualifiedName~AuthServiceTests"
+dotnet test Pdmt.Api.Integration.Tests/Pdmt.Api.Integration.Tests.csproj --filter "FullyQualifiedName~AuthServiceTests"
 ```
 
 ## API Endpoints
@@ -118,10 +122,9 @@ All under `/api/insights/`:
 - Fully async/await throughout
 
 ### Testing Coverage
-- **Unit tests**: Services + rate limiting logic
-- **Integration tests**: Full HTTP request cycles
-- **In-memory database** isolation for fast test runs
-- **180+ total tests** — all passing
+- **Unit tests** (`Pdmt.Api.Unit.Tests`): rate limiting, insights computation, middleware — no DB
+- **Integration tests** (`Pdmt.Api.Integration.Tests`): full HTTP request cycles + service tests against real PostgreSQL (testcontainers)
+- **400+ total test cases** — all passing
 
 ## Development
 
@@ -168,7 +171,7 @@ Indexes on `Events(UserId, Timestamp)` and `Events(UserId, Type)` for fast filte
 
 1. Create a feature branch from `master`
 2. Write tests for new logic
-3. Run `dotnet test` — ensure 100% pass
+3. Run `dotnet test Pdmt.Api.Integration.Tests/Pdmt.Api.Integration.Tests.csproj` and `dotnet test Pdmt.Api.Unit.Tests/Pdmt.Api.Unit.Tests.csproj` — ensure 100% pass
 4. Commit with conventional commits: `feat:`, `fix:`, `test:`, etc.
 5. Submit PR to `master`
 

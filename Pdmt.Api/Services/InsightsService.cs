@@ -12,8 +12,15 @@ public class InsightsService(AppDbContext db, IConfiguration config) : IInsights
     private TimeZoneInfo GetTz() =>
         TimeZoneInfo.FindSystemTimeZoneById(config["App:DefaultTimeZone"]!);
 
+    private static void ValidateDateRange(DateTimeOffset from, DateTimeOffset to)
+    {
+        if (from > to)
+            throw new InvalidOperationException("'from' must be earlier than 'to'.");
+    }
+
     public async Task<MostIntenseTagsDto> GetMostIntenseTagsAsync(Guid userId, DateTimeOffset from, DateTimeOffset to)
     {
+        ValidateDateRange(from, to);
         var events = await db.Events
             .AsNoTracking()
             .Include(e => e.EventTags).ThenInclude(et => et.Tag)
@@ -47,6 +54,7 @@ public class InsightsService(AppDbContext db, IConfiguration config) : IInsights
 
     public async Task<IReadOnlyList<RepeatingTriggerDto>> GetRepeatingTriggersAsync(Guid userId, DateTimeOffset from, DateTimeOffset to, int minCount = 3)
     {
+        ValidateDateRange(from, to);
         var events = await db.Events
             .AsNoTracking()
             .Include(e => e.EventTags).ThenInclude(et => et.Tag)
@@ -70,6 +78,7 @@ public class InsightsService(AppDbContext db, IConfiguration config) : IInsights
 
     public async Task<PosNegBalanceDto> GetBalanceAsync(Guid userId, DateTimeOffset from, DateTimeOffset to)
     {
+        ValidateDateRange(from, to);
         var events = await db.Events
             .AsNoTracking()
             .Where(e => e.UserId == userId && e.Timestamp >= from && e.Timestamp < to.AddDays(1))
@@ -92,6 +101,7 @@ public class InsightsService(AppDbContext db, IConfiguration config) : IInsights
 
     public async Task<IReadOnlyList<TrendPeriodDto>> GetTrendsAsync(Guid userId, DateTimeOffset from, DateTimeOffset to, Granularity period)
     {
+        ValidateDateRange(from, to);
         var events = await db.Events
             .AsNoTracking()
             .Where(e => e.UserId == userId && e.Timestamp >= from && e.Timestamp < to.AddDays(1))
@@ -119,6 +129,7 @@ public class InsightsService(AppDbContext db, IConfiguration config) : IInsights
 
     public async Task<IReadOnlyList<DiscountedPositiveDto>> GetDiscountedPositivesAsync(Guid userId, DateTimeOffset from, DateTimeOffset to)
     {
+        ValidateDateRange(from, to);
         var events = await db.Events
             .AsNoTracking()
             .Include(e => e.EventTags).ThenInclude(et => et.Tag)
@@ -142,6 +153,7 @@ public class InsightsService(AppDbContext db, IConfiguration config) : IInsights
 
     public async Task<IReadOnlyList<WeekdayStatDto>> GetWeekdayStatsAsync(Guid userId, DateTimeOffset from, DateTimeOffset to)
     {
+        ValidateDateRange(from, to);
         var events = await db.Events
             .AsNoTracking()
             .Where(e => e.UserId == userId && e.Timestamp >= from && e.Timestamp < to.AddDays(1))
@@ -170,6 +182,7 @@ public class InsightsService(AppDbContext db, IConfiguration config) : IInsights
 
     public async Task<IReadOnlyList<NextDayEffectDto>> GetNextDayEffectsAsync(Guid userId, DateTimeOffset from, DateTimeOffset to)
     {
+        ValidateDateRange(from, to);
         // Запрашиваем на 2 дня шире — чтобы вычислить dayScore следующего дня после последнего дня периода
         var events = await db.Events
             .AsNoTracking()
@@ -216,6 +229,7 @@ public class InsightsService(AppDbContext db, IConfiguration config) : IInsights
 
     public async Task<IReadOnlyList<TagComboDto>> GetTagCombosAsync(Guid userId, DateTimeOffset from, DateTimeOffset to)
     {
+        ValidateDateRange(from, to);
         var events = await db.Events
             .AsNoTracking()
             .Include(e => e.EventTags).ThenInclude(et => et.Tag)
@@ -289,6 +303,7 @@ public class InsightsService(AppDbContext db, IConfiguration config) : IInsights
 
     public async Task<IReadOnlyList<TagTrendSeriesDto>> GetTagTrendAsync(Guid userId, DateTimeOffset from, DateTimeOffset to, Granularity period)
     {
+        ValidateDateRange(from, to);
         var events = await db.Events
             .AsNoTracking()
             .Include(e => e.EventTags).ThenInclude(et => et.Tag)
@@ -329,6 +344,7 @@ public class InsightsService(AppDbContext db, IConfiguration config) : IInsights
 
     public async Task<InfluenceabilitySplitDto> GetInfluenceabilitySplitAsync(Guid userId, DateTimeOffset from, DateTimeOffset to)
     {
+        ValidateDateRange(from, to);
         var events = await db.Events
             .AsNoTracking()
             .Where(e => e.UserId == userId && e.Timestamp >= from && e.Timestamp < to.AddDays(1))

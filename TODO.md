@@ -2,7 +2,7 @@
 
 - [ ] **MAUI: перевод на EN** — UI сейчас частично на русском
 - [ ] **Web: перевод на EN** — UI сейчас частично на русском
-- [ ] **API: InsightsController** - вынести валидацию from > to из контроллера в сервис через InvalidOperationException
+- [x] **API: InsightsController** - вынести валидацию from > to из контроллера в сервис через InvalidOperationException
 - [ ] **Web: Hooks** - useEventList или убрать кастомный хук, или унифицировать по всему проекту
 - [ ] **Web: Нет loading skeleton / Suspense** - текст "Загрузка..." вместо skeleton-ов, layout shift при каждом переходе
 - [ ] **Web: Дата-логика без библиотеки** - ручные вычисления дат хрупки при DST-переходах и таймзонах

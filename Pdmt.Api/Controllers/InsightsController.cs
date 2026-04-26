@@ -19,9 +19,6 @@ public class InsightsController(IInsightsService insightsService) : ControllerBa
         [FromQuery] DateTimeOffset from,
         [FromQuery] DateTimeOffset to)
     {
-        if (from > to)
-            return BadRequest("'from' must be earlier than 'to'.");
-
         var userId = User.GetUserId();
         return Ok(await insightsService.GetMostIntenseTagsAsync(userId, from, to));
     }
@@ -34,9 +31,6 @@ public class InsightsController(IInsightsService insightsService) : ControllerBa
         [FromQuery] DateTimeOffset to,
         [FromQuery] int minCount = 3)
     {
-        if (from > to)
-            return BadRequest("'from' must be earlier than 'to'.");
-
         var userId = User.GetUserId();
         return Ok(await insightsService.GetRepeatingTriggersAsync(userId, from, to, minCount));
     }
@@ -48,9 +42,6 @@ public class InsightsController(IInsightsService insightsService) : ControllerBa
         [FromQuery] DateTimeOffset from,
         [FromQuery] DateTimeOffset to)
     {
-        if (from > to)
-            return BadRequest("'from' must be earlier than 'to'.");
-
         var userId = User.GetUserId();
         return Ok(await insightsService.GetBalanceAsync(userId, from, to));
     }
@@ -63,9 +54,6 @@ public class InsightsController(IInsightsService insightsService) : ControllerBa
     [FromQuery] DateTimeOffset to,
     [FromQuery] Granularity period = Granularity.Week)
     {
-        if (from > to)
-            return BadRequest("'from' must be earlier than 'to'.");
-
         var userId = User.GetUserId();
         return Ok(await insightsService.GetTrendsAsync(userId, from, to, period));
     }
@@ -77,9 +65,6 @@ public class InsightsController(IInsightsService insightsService) : ControllerBa
         [FromQuery] DateTimeOffset from,
         [FromQuery] DateTimeOffset to)
     {
-        if (from > to)
-            return BadRequest("'from' must be earlier than 'to'.");
-
         var userId = User.GetUserId();
         return Ok(await insightsService.GetDiscountedPositivesAsync(userId, from, to));
     }
@@ -91,9 +76,6 @@ public class InsightsController(IInsightsService insightsService) : ControllerBa
         [FromQuery] DateTimeOffset from,
         [FromQuery] DateTimeOffset to)
     {
-        if (from > to)
-            return BadRequest("'from' must be earlier than 'to'.");
-
         var userId = User.GetUserId();
         return Ok(await insightsService.GetWeekdayStatsAsync(userId, from, to));
     }
@@ -105,9 +87,6 @@ public class InsightsController(IInsightsService insightsService) : ControllerBa
         [FromQuery] DateTimeOffset from,
         [FromQuery] DateTimeOffset to)
     {
-        if (from > to)
-            return BadRequest("'from' must be earlier than 'to'.");
-
         var userId = User.GetUserId();
         return Ok(await insightsService.GetNextDayEffectsAsync(userId, from, to));
     }
@@ -119,9 +98,6 @@ public class InsightsController(IInsightsService insightsService) : ControllerBa
         [FromQuery] DateTimeOffset from,
         [FromQuery] DateTimeOffset to)
     {
-        if (from > to)
-            return BadRequest("'from' must be earlier than 'to'.");
-
         var userId = User.GetUserId();
         return Ok(await insightsService.GetTagCombosAsync(userId, from, to));
     }
@@ -134,9 +110,6 @@ public class InsightsController(IInsightsService insightsService) : ControllerBa
         [FromQuery] DateTimeOffset to,
         [FromQuery] Granularity period = Granularity.Week)
     {
-        if (from > to)
-            return BadRequest("'from' must be earlier than 'to'.");
-
         var userId = User.GetUserId();
         return Ok(await insightsService.GetTagTrendAsync(userId, from, to, period));
     }
@@ -148,9 +121,6 @@ public class InsightsController(IInsightsService insightsService) : ControllerBa
         [FromQuery] DateTimeOffset from,
         [FromQuery] DateTimeOffset to)
     {
-        if (from > to)
-            return BadRequest("'from' must be earlier than 'to'.");
-
         var userId = User.GetUserId();
         return Ok(await insightsService.GetInfluenceabilitySplitAsync(userId, from, to));
     }

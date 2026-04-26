@@ -14,11 +14,14 @@ dotnet run --project Pdmt.Api
 # Run Blazor WASM client
 dotnet run --project Pdmt.Client
  
-# Run all tests
-dotnet test Pdmt.Api.Tests/Pdmt.Api.Tests.csproj
- 
+# Run integration tests (requires Docker for PostgreSQL testcontainer)
+dotnet test Pdmt.Api.Integration.Tests/Pdmt.Api.Integration.Tests.csproj
+
+# Run unit tests (no Docker needed)
+dotnet test Pdmt.Api.Unit.Tests/Pdmt.Api.Unit.Tests.csproj
+
 # Run a single test by name
-dotnet test Pdmt.Api.Tests/Pdmt.Api.Tests.csproj --filter "FullyQualifiedName~TestMethodName"
+dotnet test Pdmt.Api.Integration.Tests/Pdmt.Api.Integration.Tests.csproj --filter "FullyQualifiedName~TestMethodName"
  
 # Start dev infrastructure (PostgreSQL + Redis + Seq)
 docker compose up -d
@@ -68,7 +71,8 @@ npm run build  # Output: dist/ directory; requires VITE_PDMT_API_BASE_URL env va
 ### Projects
  
 - **Pdmt.Api** — ASP.NET Core 8 REST API (backend)
-- **Pdmt.Api.Tests** — xUnit tests using `Microsoft.AspNetCore.Mvc.Testing` with an in-memory EF database
+- **Pdmt.Api.Integration.Tests** — xUnit HTTP and service integration tests using real PostgreSQL (testcontainers)
+- **Pdmt.Api.Unit.Tests** — pure unit tests: rate limiting, insights computation, middleware (no DB)
 - **Pdmt.Client** — Blazor WebAssembly frontend with MudBlazor UI (test UI, not production)
 - **Pdmt.Maui** — .NET MAUI Android client
 - **pdmt-web** — React 19 + TypeScript + Vite SPA (production web frontend); located at `pdmt-web/` in solution root, not part of `.slnx`
@@ -129,10 +133,14 @@ Composite pattern: tries **Redis** first, falls back to **in-memory** if Redis i
 - API base URL configured via `appsettings.json` → `PdmtApi.BaseUrl`
  
 ### Testing
- 
-`CustomWebAppFactory` overrides the production DB with an in-memory EF database.
-`TestAuthHandler` provides a fake JWT scheme (`TestScheme`) so tests can authenticate without real tokens.
-Integration tests in `EventControllerTests.cs` cover auth enforcement, CRUD, filtering, and user data isolation.
+
+**Integration tests** (`Pdmt.Api.Integration.Tests`):
+- `PostgresWebAppFactory` — real PostgreSQL testcontainer; `HttpTestBase` implements `IClassFixture<PostgresWebAppFactory>`, cleans DB and sets auth via `TestAuthHandler` (`SchemeName = "TestScheme"`).
+- `ServiceTestBase` — creates a **separate** PostgreSQL testcontainer per test class; no shared fixture.
+- Seed extra users in controller tests via `Factory.Services.CreateScope()` → `GetRequiredService<AppDbContext>()`.
+- Builder pattern: `UserBuilder`, `EventBuilder`, `TagBuilder` in `Infrastructure/Builders/`.
+
+**Unit tests** (`Pdmt.Api.Unit.Tests`): no DB, no testcontainers — covers rate limiting services, insights computation logic, middleware behaviour.
  
 ## Testing Conventions
  
