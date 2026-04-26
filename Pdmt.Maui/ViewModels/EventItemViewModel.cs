@@ -6,6 +6,7 @@ public class EventItemViewModel(EventResponseDto dto)
 {
     public Guid Id => dto.Id;
     public DateTimeOffset Timestamp => dto.Timestamp;
+    public DateTimeOffset LocalTimestamp => dto.Timestamp.ToLocalTime();
     public EventType Type => dto.Type;
     public int Intensity => dto.Intensity;
     public string Title => dto.Title;

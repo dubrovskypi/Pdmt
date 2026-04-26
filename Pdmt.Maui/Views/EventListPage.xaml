@@ -192,7 +192,7 @@
                                         </FlexLayout>
                                         <Label
                                             Grid.Column="1"
-                                            Text="{Binding Timestamp, StringFormat='{0:dd.MM HH:mm}'}"
+                                            Text="{Binding LocalTimestamp, StringFormat='{0:dd.MM HH:mm}'}"
                                             Style="{StaticResource MutedLabel}"
                                             FontSize="11"
                                             VerticalOptions="End" />

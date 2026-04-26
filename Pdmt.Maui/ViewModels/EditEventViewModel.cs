@@ -1,4 +1,3 @@
-using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Pdmt.Maui.Models;
@@ -7,41 +6,28 @@ using Pdmt.Maui.Services;
 namespace Pdmt.Maui.ViewModels;
 
 public partial class EditEventViewModel(EventService eventService, TagService tagService)
-    : ObservableObject, IQueryAttributable
+    : EventFormViewModel(tagService), IQueryAttributable
 {
     private Guid _id;
-    private List<string> _allTagNames = [];
-
-    [ObservableProperty]
-    private string _title = "";
-
-    [ObservableProperty]
-    private bool _isPositive = true;
-
-    [ObservableProperty]
-    private double _intensity = 5;
-
-    [ObservableProperty]
-    private string? _description;
+    private DateTimeOffset _originalTimestamp;
 
     [ObservableProperty]
     private string? _context;
 
     [ObservableProperty]
-    private bool _canInfluence;
+    private DateTime _eventDate = DateTime.Today;
 
     [ObservableProperty]
-    private string _tagInput = "";
+    private TimeSpan _eventTime = DateTime.Now.TimeOfDay;
 
     [ObservableProperty]
-    private bool _isBusy;
+    private bool _isTimestampLocked = true;
 
-    [ObservableProperty]
-    private string? _errorMessage;
+    private DateTimeOffset EventTimestamp =>
+        new DateTimeOffset(DateTime.SpecifyKind(EventDate.Date + EventTime, DateTimeKind.Local)).ToUniversalTime();
 
-    public ObservableCollection<string> SelectedTags { get; } = [];
-    public ObservableCollection<string> TagSuggestions { get; } = [];
-    public bool HasSuggestions => TagSuggestions.Count > 0;
+    [RelayCommand]
+    private void ToggleTimestampLock() => IsTimestampLocked = !IsTimestampLocked;
 
     public void ApplyQueryAttributes(IDictionary<string, object> query)
     {
@@ -54,10 +40,10 @@ public partial class EditEventViewModel(EventService eventService, TagService ta
     {
         IsBusy = true;
         ErrorMessage = null;
+
         try
         {
-            var tags = await tagService.GetTagsAsync();
-            _allTagNames = tags.Select(t => t.Name).ToList();
+            await LoadTagsInternalAsync();
 
             var ev = await eventService.GetEventAsync(_id);
             if (ev is null)
@@ -73,6 +59,12 @@ public partial class EditEventViewModel(EventService eventService, TagService ta
             Context = ev.Context;
             CanInfluence = ev.CanInfluence;
 
+            _originalTimestamp = ev.Timestamp;
+            IsTimestampLocked = true;
+            var local = ev.Timestamp.LocalDateTime;
+            EventDate = local.Date;
+            EventTime = local.TimeOfDay;
+
             SelectedTags.Clear();
             foreach (var tag in ev.Tags)
                 SelectedTags.Add(tag.Name);
@@ -87,58 +79,10 @@ public partial class EditEventViewModel(EventService eventService, TagService ta
         }
     }
 
-    partial void OnTagInputChanged(string value)
-    {
-        TagSuggestions.Clear();
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            OnPropertyChanged(nameof(HasSuggestions));
-            return;
-        }
-
-        var matches = _allTagNames
-            .Where(n => n.Contains(value, StringComparison.OrdinalIgnoreCase)
-                        && !SelectedTags.Contains(n))
-            .Take(6);
-
-        foreach (var match in matches)
-            TagSuggestions.Add(match);
-
-        OnPropertyChanged(nameof(HasSuggestions));
-    }
-
-    [RelayCommand]
-    private void SelectSuggestion(string name)
-    {
-        if (!SelectedTags.Contains(name))
-            SelectedTags.Add(name);
-        TagInput = "";
-        TagSuggestions.Clear();
-        OnPropertyChanged(nameof(HasSuggestions));
-    }
-
-    [RelayCommand]
-    private void CommitTagInput()
-    {
-        var name = TagInput.Trim();
-        if (!string.IsNullOrWhiteSpace(name) && !SelectedTags.Contains(name))
-            SelectedTags.Add(name);
-        TagInput = "";
-        TagSuggestions.Clear();
-        OnPropertyChanged(nameof(HasSuggestions));
-    }
-
-    [RelayCommand]
-    private void RemoveTag(string name) => SelectedTags.Remove(name);
-
     [RelayCommand]
     private async Task SaveAsync()
     {
-        if (string.IsNullOrWhiteSpace(Title))
-        {
-            ErrorMessage = "Title is required";
-            return;
-        }
+        if (!CanSave) return;
 
         IsBusy = true;
         ErrorMessage = null;
@@ -147,9 +91,9 @@ public partial class EditEventViewModel(EventService eventService, TagService ta
         {
             await eventService.UpdateEventAsync(_id, new UpdateEventDto
             {
-                Timestamp = DateTimeOffset.UtcNow,
+                Timestamp = IsTimestampLocked ? _originalTimestamp : EventTimestamp,
                 Type = IsPositive ? EventType.Positive : EventType.Negative,
-                Intensity = (int)Intensity,
+                Intensity = Intensity,
                 Title = Title.Trim(),
                 Description = string.IsNullOrWhiteSpace(Description) ? null : Description.Trim(),
                 Context = string.IsNullOrWhiteSpace(Context) ? null : Context.Trim(),
@@ -168,7 +112,4 @@ public partial class EditEventViewModel(EventService eventService, TagService ta
             IsBusy = false;
         }
     }
-
-    [RelayCommand]
-    private static async Task CancelAsync() => await Shell.Current.GoToAsync("..");
 }
