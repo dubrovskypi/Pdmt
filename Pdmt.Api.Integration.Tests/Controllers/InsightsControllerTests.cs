@@ -696,6 +696,8 @@ public class InsightsControllerTests(PostgresWebAppFactory factory) : HttpTestBa
                 root.GetProperty("canInfluenceCount").GetInt32().Should().Be(0);
                 root.GetProperty("cannotInfluenceCount").GetInt32().Should().Be(0);
                 break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(kind), kind, "Unknown assertion kind");
         }
     }
 
