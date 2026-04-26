@@ -10,7 +10,7 @@ using System.Text;
 
 namespace Pdmt.Api.Integration.Tests.Services;
 
-public class AuthServiceTests : ServiceTestBase
+public class AuthServiceTests(PostgresContainerFixture fixture) : ServiceTestBase(fixture)
 {
     private AuthService _service = null!;
 
@@ -263,7 +263,7 @@ public class AuthServiceTests : ServiceTestBase
         {
             Id = Guid.NewGuid(),
             UserId = user.Id,
-            Token = "second-token",
+            Token = Convert.ToBase64String(SHA256.HashData(Encoding.UTF8.GetBytes("second-token"))),
             ExpiresAt = DateTimeOffset.UtcNow.AddDays(7),
             IsRevoked = false,
             CreatedAt = DateTimeOffset.UtcNow

@@ -78,7 +78,7 @@ public class AnalyticsControllerTests(PostgresWebAppFactory factory) : HttpTestB
         using (var scope = Factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            var week = new DateTime(2025, 3, 3, 0, 0, 0, DateTimeKind.Utc); // Monday
+            var week = new DateTimeOffset(2025, 3, 3, 0, 0, 0, TimeSpan.Zero); // Monday
             db.Events.AddRange(
                 new Event { Id = Guid.NewGuid(), UserId = TestUserId, Timestamp = week, Type = EventType.Positive, Title = "an_p1", Intensity = 7 },
                 new Event { Id = Guid.NewGuid(), UserId = TestUserId, Timestamp = week.AddDays(1), Type = EventType.Positive, Title = "an_p2", Intensity = 8 },
@@ -104,7 +104,7 @@ public class AnalyticsControllerTests(PostgresWebAppFactory factory) : HttpTestB
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             db.Users.Add(new User { Id = OtherUserId, Email = $"{OtherUserId}@test.com", PasswordHash = "x", CreatedAt = DateTimeOffset.UtcNow });
-            var week = new DateTime(2025, 4, 7, 0, 0, 0, DateTimeKind.Utc);
+            var week = new DateTimeOffset(2025, 4, 7, 0, 0, 0, TimeSpan.Zero);
             db.Events.Add(new Event { Id = Guid.NewGuid(), UserId = OtherUserId, Timestamp = week, Type = EventType.Positive, Title = "an_other_p1", Intensity = 9 });
             await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
@@ -144,7 +144,7 @@ public class AnalyticsControllerTests(PostgresWebAppFactory factory) : HttpTestB
             tag = new Tag { Id = Guid.NewGuid(), UserId = TestUserId, Name = "an_corr_tag", CreatedAt = DateTimeOffset.UtcNow };
             db.Tags.Add(tag);
 
-            var baseDate = new DateTime(2025, 5, 1, 0, 0, 0, DateTimeKind.Utc);
+            var baseDate = new DateTimeOffset(2025, 5, 1, 0, 0, 0, TimeSpan.Zero);
             var evWithTag = new Event { Id = Guid.NewGuid(), UserId = TestUserId, Timestamp = baseDate, Type = EventType.Positive, Title = "an_corr_with", Intensity = 9 };
             var evWithoutTag = new Event { Id = Guid.NewGuid(), UserId = TestUserId, Timestamp = baseDate.AddDays(1), Type = EventType.Positive, Title = "an_corr_without", Intensity = 4 };
             db.Events.AddRange(evWithTag, evWithoutTag);

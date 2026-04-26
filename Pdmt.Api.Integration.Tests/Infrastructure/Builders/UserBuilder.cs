@@ -6,7 +6,7 @@ public sealed class UserBuilder
 {
     private Guid _id = Guid.NewGuid();
     private string _email = "user@pdmt.dev";
-    private string _password = "Password123!";
+    private string _password = TestUserHelper.DefaultPassword;
 
     public UserBuilder WithId(Guid id) { _id = id; return this; }
     public UserBuilder WithEmail(string email) { _email = email; return this; }
