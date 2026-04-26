@@ -375,6 +375,9 @@ FodyWeavers.xsd
 /.claude/settings.local.json
 /.claude/worktrees/
 
+# Design System by Claude
+/Pdmt Design System/*
+
 # Environment variables
 .env*
 !.env*example

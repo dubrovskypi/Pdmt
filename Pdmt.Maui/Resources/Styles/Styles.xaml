@@ -123,4 +123,30 @@
         <Setter Property="TextColor" Value="{StaticResource Negative}" />
     </Style>
 
+    <Style x:Key="SaveButton" TargetType="Button">
+        <Setter Property="HeightRequest" Value="52" />
+        <Setter Property="CornerRadius" Value="12" />
+        <Setter Property="FontSize" Value="15" />
+        <Setter Property="FontAttributes" Value="Bold" />
+        <Setter Property="Padding" Value="0" />
+        <!-- Override MAUI default disabled-opacity so explicit BackgroundColor binding shows correctly -->
+        <Setter Property="VisualStateManager.VisualStateGroups">
+            <Setter.Value>
+                <VisualStateGroupList>
+                    <VisualStateGroup Name="CommonStates">
+                        <VisualState Name="Normal" />
+                        <VisualState Name="Disabled" />
+                    </VisualStateGroup>
+                </VisualStateGroupList>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="SectionLabel" TargetType="Label">
+        <Setter Property="FontSize" Value="11" />
+        <Setter Property="FontAttributes" Value="Bold" />
+        <Setter Property="CharacterSpacing" Value="1" />
+        <Setter Property="TextColor" Value="{StaticResource Muted}" />
+    </Style>
+
 </ResourceDictionary>

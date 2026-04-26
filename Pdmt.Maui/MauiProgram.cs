@@ -32,6 +32,8 @@ public static class MauiProgram
                     handler.PlatformView.SetBackgroundResource(Resource.Drawable.entry_background));
                 Microsoft.Maui.Handlers.DatePickerHandler.Mapper.AppendToMapping("Background", (handler, _) =>
                     handler.PlatformView.SetBackgroundResource(Resource.Drawable.entry_background));
+                Microsoft.Maui.Handlers.TimePickerHandler.Mapper.AppendToMapping("Background", (handler, _) =>
+                    handler.PlatformView.SetBackgroundResource(Resource.Drawable.entry_background));
 #endif
             });
 
