@@ -1,6 +1,7 @@
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
 using Pdmt.Api.Domain;
 using Pdmt.Api.Dto;
 using Pdmt.Api.Integration.Tests.Infrastructure;
@@ -20,15 +21,16 @@ public class AuthServiceTests(PostgresContainerFixture fixture) : ServiceTestBas
 
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection([
-                new("Jwt:Secret", PostgresWebAppFactory.TestJwtSecret),
                 new("Jwt:Issuer", PostgresWebAppFactory.TestJwtIssuer),
                 new("Jwt:Audience", PostgresWebAppFactory.TestJwtAudience),
                 new("Jwt:TokenLifetimeMinutes", "60"),
                 new("Jwt:RefreshTokenLifetimeDays", "1")
             ])
             .Build();
-
-        _service = new AuthService(Db, config, new NoOpRateLimitService());
+        SigningCredentials testSigningCreds = new(
+            new SymmetricSecurityKey(Encoding.UTF8.GetBytes(PostgresWebAppFactory.TestJwtSecret)),
+            SecurityAlgorithms.HmacSha256);
+        _service = new AuthService(Db, config, new NoOpRateLimitService(), testSigningCreds);
     }
 
     private static string HashToken(string token)
