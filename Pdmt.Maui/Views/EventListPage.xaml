@@ -7,13 +7,52 @@
     xmlns:vm="clr-namespace:Pdmt.Maui.ViewModels"
     xmlns:models="clr-namespace:Pdmt.Maui.Models"
     x:DataType="vm:EventListViewModel"
-    Title="Events"
-    BackgroundColor="{StaticResource Secondary}">
+    BackgroundColor="{StaticResource Background}">
 
     <ContentPage.Resources>
         <conv:NotNullToBoolConverter x:Key="NotNullToBool" />
         <conv:InvertBoolConverter x:Key="InvertBool" />
     </ContentPage.Resources>
+
+    <Shell.TitleView>
+        <Grid ColumnDefinitions="Auto,*,Auto" Padding="8,0">
+            <Image
+                Grid.Column="0"
+                Source="logo.svg"
+                HeightRequest="24"
+                WidthRequest="24"
+                VerticalOptions="Center"
+                Margin="0,0,8,0" />
+            <Label
+                Grid.Column="1"
+                Text="Events"
+                FontSize="18"
+                FontAttributes="Bold"
+                TextColor="{StaticResource OnSurface}"
+                VerticalOptions="Center" />
+            <!-- Filter toggle button + active badge -->
+            <Grid Grid.Column="2" VerticalOptions="Center">
+                <Button
+                    Text="⊟"
+                    FontSize="18"
+                    BackgroundColor="Transparent"
+                    TextColor="{StaticResource OnSurface}"
+                    BorderWidth="0"
+                    Padding="8,4"
+                    MinimumWidthRequest="0"
+                    MinimumHeightRequest="0"
+                    Command="{Binding ToggleFilterPanelCommand}" />
+                <Ellipse
+                    WidthRequest="8"
+                    HeightRequest="8"
+                    Fill="{StaticResource Negative}"
+                    HorizontalOptions="End"
+                    VerticalOptions="Start"
+                    Margin="0,4,4,0"
+                    IsVisible="{Binding HasActiveFilters}" />
+            </Grid>
+        </Grid>
+    </Shell.TitleView>
 
     <Grid RowDefinitions="Auto,Auto,*">
 
@@ -23,55 +62,149 @@
             Style="{StaticResource ErrorLabel}"
             Text="{Binding ErrorMessage}"
             IsVisible="{Binding ErrorMessage, Converter={StaticResource NotNullToBool}}"
-            Padding="16,8"
-            BackgroundColor="#FFEBEE" />
+            Padding="16,8" />
 
-        <!-- Filters -->
-        <Border Grid.Row="1" Margin="12,8,12,4" Padding="12">
-            <VerticalStackLayout Spacing="8">
+        <!-- Filter panel -->
+        <Border
+            Grid.Row="1"
+            Style="{StaticResource CardSurface}"
+            Margin="12,8,12,4"
+            IsVisible="{Binding IsFilterPanelVisible}">
+            <VerticalStackLayout Spacing="10">
+
+                <!-- Type chips: All / Positive / Negative -->
+                <HorizontalStackLayout Spacing="6">
+                    <!-- All chip -->
+                    <Border
+                        StrokeShape="RoundRectangle 100"
+                        StrokeThickness="1.5"
+                        Padding="14,6">
+                        <Border.Triggers>
+                            <DataTrigger TargetType="Border" Binding="{Binding IsAllTypeSelected}" Value="True">
+                                <Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
+                                <Setter Property="Stroke" Value="{StaticResource Primary}" />
+                            </DataTrigger>
+                            <DataTrigger TargetType="Border" Binding="{Binding IsAllTypeSelected}" Value="False">
+                                <Setter Property="BackgroundColor" Value="{StaticResource SurfaceVariant}" />
+                                <Setter Property="Stroke" Value="{StaticResource Border}" />
+                            </DataTrigger>
+                        </Border.Triggers>
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer
+                                Command="{Binding SelectTypeFilterCommand}"
+                                CommandParameter="{Binding EventTypeFilters[0]}" />
+                        </Border.GestureRecognizers>
+                        <Label FontSize="13" FontAttributes="Bold">
+                            <Label.Triggers>
+                                <DataTrigger TargetType="Label" Binding="{Binding IsAllTypeSelected}" Value="True">
+                                    <Setter Property="Text" Value="All" />
+                                    <Setter Property="TextColor" Value="{StaticResource OnPrimary}" />
+                                </DataTrigger>
+                                <DataTrigger TargetType="Label" Binding="{Binding IsAllTypeSelected}" Value="False">
+                                    <Setter Property="Text" Value="All" />
+                                    <Setter Property="TextColor" Value="{StaticResource OnSurfaceVariant}" />
+                                </DataTrigger>
+                            </Label.Triggers>
+                        </Label>
+                    </Border>
+                    <!-- Positive chip -->
+                    <Border
+                        StrokeShape="RoundRectangle 100"
+                        StrokeThickness="1.5"
+                        Padding="14,6">
+                        <Border.Triggers>
+                            <DataTrigger TargetType="Border" Binding="{Binding IsPositiveTypeSelected}" Value="True">
+                                <Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
+                                <Setter Property="Stroke" Value="{StaticResource Primary}" />
+                            </DataTrigger>
+                            <DataTrigger TargetType="Border" Binding="{Binding IsPositiveTypeSelected}" Value="False">
+                                <Setter Property="BackgroundColor" Value="{StaticResource SurfaceVariant}" />
+                                <Setter Property="Stroke" Value="{StaticResource Border}" />
+                            </DataTrigger>
+                        </Border.Triggers>
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer
+                                Command="{Binding SelectTypeFilterCommand}"
+                                CommandParameter="{Binding EventTypeFilters[1]}" />
+                        </Border.GestureRecognizers>
+                        <Label FontSize="13" FontAttributes="Bold">
+                            <Label.Triggers>
+                                <DataTrigger TargetType="Label" Binding="{Binding IsPositiveTypeSelected}" Value="True">
+                                    <Setter Property="Text" Value="+ Positive" />
+                                    <Setter Property="TextColor" Value="{StaticResource OnPrimary}" />
+                                </DataTrigger>
+                                <DataTrigger TargetType="Label" Binding="{Binding IsPositiveTypeSelected}" Value="False">
+                                    <Setter Property="Text" Value="+ Positive" />
+                                    <Setter Property="TextColor" Value="{StaticResource OnSurfaceVariant}" />
+                                </DataTrigger>
+                            </Label.Triggers>
+                        </Label>
+                    </Border>
+                    <!-- Negative chip -->
+                    <Border
+                        StrokeShape="RoundRectangle 100"
+                        StrokeThickness="1.5"
+                        Padding="14,6">
+                        <Border.Triggers>
+                            <DataTrigger TargetType="Border" Binding="{Binding IsNegativeTypeSelected}" Value="True">
+                                <Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
+                                <Setter Property="Stroke" Value="{StaticResource Primary}" />
+                            </DataTrigger>
+                            <DataTrigger TargetType="Border" Binding="{Binding IsNegativeTypeSelected}" Value="False">
+                                <Setter Property="BackgroundColor" Value="{StaticResource SurfaceVariant}" />
+                                <Setter Property="Stroke" Value="{StaticResource Border}" />
+                            </DataTrigger>
+                        </Border.Triggers>
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer
+                                Command="{Binding SelectTypeFilterCommand}"
+                                CommandParameter="{Binding EventTypeFilters[2]}" />
+                        </Border.GestureRecognizers>
+                        <Label FontSize="13" FontAttributes="Bold">
+                            <Label.Triggers>
+                                <DataTrigger TargetType="Label" Binding="{Binding IsNegativeTypeSelected}" Value="True">
+                                    <Setter Property="Text" Value="− Negative" />
+                                    <Setter Property="TextColor" Value="{StaticResource OnPrimary}" />
+                                </DataTrigger>
+                                <DataTrigger TargetType="Label" Binding="{Binding IsNegativeTypeSelected}" Value="False">
+                                    <Setter Property="Text" Value="− Negative" />
+                                    <Setter Property="TextColor" Value="{StaticResource OnSurfaceVariant}" />
+                                </DataTrigger>
+                            </Label.Triggers>
+                        </Label>
+                    </Border>
+                </HorizontalStackLayout>
+
+                <!-- From / To date range -->
                 <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
                     <VerticalStackLayout Grid.Column="0" Spacing="2">
-                        <Label Style="{StaticResource MutedLabel}" Text="From" />
+                        <Label Text="From" FontSize="11" TextColor="{StaticResource Muted}" />
                         <DatePicker Date="{Binding FilterFrom, Mode=TwoWay}" Format="dd.MM.yy" />
                     </VerticalStackLayout>
                     <VerticalStackLayout Grid.Column="1" Spacing="2">
-                        <Label Style="{StaticResource MutedLabel}" Text="To" />
+                        <Label Text="To" FontSize="11" TextColor="{StaticResource Muted}" />
                         <DatePicker Date="{Binding FilterTo, Mode=TwoWay}" Format="dd.MM.yy" />
                     </VerticalStackLayout>
                 </Grid>
 
-                <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
-                    <VerticalStackLayout Grid.Column="0" Spacing="2">
-                        <Label Style="{StaticResource MutedLabel}" Text="Type" />
-                        <Picker
-                            ItemsSource="{Binding EventTypeFilters}"
-                            SelectedItem="{Binding SelectedTypeFilter}"
-                            ItemDisplayBinding="{Binding Label}"
-                            Title="All types" />
-                    </VerticalStackLayout>
-                    <VerticalStackLayout Grid.Column="1" Spacing="2">
-                        <Label Style="{StaticResource MutedLabel}" Text="Tag" />
-                        <Picker
-                            ItemsSource="{Binding TagFilters}"
-                            SelectedItem="{Binding SelectedTagFilter}"
-                            ItemDisplayBinding="{Binding Name}"
-                            Title="All tags" />
-                    </VerticalStackLayout>
-                </Grid>
+                <!-- Tag filter picker -->
+                <VerticalStackLayout Spacing="2">
+                    <Label Text="Tag" FontSize="11" TextColor="{StaticResource Muted}" />
+                    <Picker
+                        ItemsSource="{Binding TagFilters}"
+                        SelectedItem="{Binding SelectedTagFilter}"
+                        ItemDisplayBinding="{Binding Name}"
+                        Title="All tags" />
+                </VerticalStackLayout>
 
-                <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
-                    <Button
-                        Grid.Column="0"
-                        Text="Apply"
-                        Command="{Binding ApplyFiltersCommand}"
-                        Padding="8,8" />
-                    <Button
-                        Grid.Column="1"
-                        Text="Reset"
-                        Style="{StaticResource SecondaryButton}"
-                        Command="{Binding ResetFiltersCommand}"
-                        Padding="8,8" />
-                </Grid>
+                <!-- Reset link -->
+                <Button
+                    Text="Reset filters"
+                    Style="{StaticResource LinkButton}"
+                    Command="{Binding ResetFiltersCommand}"
+                    IsVisible="{Binding HasActiveFilters}"
+                    HorizontalOptions="Start" />
+
             </VerticalStackLayout>
         </Border>
 
@@ -82,7 +215,7 @@
             IsRefreshing="{Binding IsRefreshing}"
             RefreshColor="{StaticResource Primary}">
 
-            <CollectionView ItemsSource="{Binding Events}" Margin="12,0,12,12">
+            <CollectionView ItemsSource="{Binding Events}" Margin="12,4,12,0">
                 <CollectionView.EmptyView>
                     <Label
                         Style="{StaticResource MutedLabel}"
@@ -95,13 +228,15 @@
                 <CollectionView.ItemTemplate>
                     <DataTemplate x:DataType="vm:EventItemViewModel">
                         <Border
-                            Margin="6,2"
+                            Margin="0,0,0,8"
                             Padding="0"
-                            BackgroundColor="{Binding CardBackgroundColor}"
-                            Stroke="{Binding CardBorderColor}">
-                            <Grid ColumnDefinitions="5,*">
+                            BackgroundColor="{StaticResource Card}"
+                            Stroke="{StaticResource Border}"
+                            StrokeThickness="1"
+                            StrokeShape="RoundRectangle 10">
+                            <Grid ColumnDefinitions="3,*">
 
-                                <!-- Left type indicator bar -->
+                                <!-- 3px colored left bar -->
                                 <BoxView
                                     Grid.Column="0"
                                     BackgroundColor="{Binding TypeColor}" />
@@ -109,17 +244,17 @@
                                 <!-- Card content -->
                                 <Grid
                                     Grid.Column="1"
-                                    Padding="10,8,8,8"
+                                    Padding="12"
                                     RowDefinitions="Auto,Auto,Auto,Auto"
-                                    RowSpacing="3">
+                                    RowSpacing="4">
 
                                     <!-- Row 0: Title + action buttons -->
                                     <Grid Grid.Row="0" ColumnDefinitions="*,Auto">
                                         <Label
                                             Grid.Column="0"
                                             Text="{Binding Title}"
-                                            FontAttributes="Bold"
                                             FontSize="14"
+                                            FontAttributes="Bold"
                                             LineBreakMode="TailTruncation"
                                             VerticalOptions="Center" />
                                         <HorizontalStackLayout
@@ -139,7 +274,7 @@
                                         </HorizontalStackLayout>
                                     </Grid>
 
-                                    <!-- Row 1: Intensity · context · могу повлиять -->
+                                    <!-- Row 1: Intensity · context · can influence -->
                                     <HorizontalStackLayout Grid.Row="1" Spacing="4">
                                         <Label
                                             Text="{Binding Intensity, StringFormat='{0}/10'}"
@@ -156,7 +291,7 @@
                                             Style="{StaticResource MutedLabel}" />
                                     </HorizontalStackLayout>
 
-                                    <!-- Row 2: Description (optional, 2 lines max) -->
+                                    <!-- Row 2: Description -->
                                     <Label
                                         Grid.Row="2"
                                         Text="{Binding Description}"
@@ -176,25 +311,24 @@
                                             <BindableLayout.ItemTemplate>
                                                 <DataTemplate x:DataType="models:TagResponseDto">
                                                     <Border
-                                                        BackgroundColor="#EEEEEE"
-                                                        Stroke="#E0E0E0"
+                                                        BackgroundColor="{StaticResource SurfaceVariant}"
+                                                        Stroke="{StaticResource Border}"
                                                         StrokeThickness="1"
                                                         StrokeShape="RoundRectangle 10"
                                                         Padding="6,2"
                                                         Margin="0,0,4,2">
                                                         <Label
+                                                            Style="{StaticResource Badge11}"
                                                             Text="{Binding Name}"
-                                                            FontSize="11"
-                                                            TextColor="#757575" />
+                                                            TextColor="{StaticResource OnSurfaceVariant}" />
                                                     </Border>
                                                 </DataTemplate>
                                             </BindableLayout.ItemTemplate>
                                         </FlexLayout>
                                         <Label
                                             Grid.Column="1"
+                                            Style="{StaticResource Timestamp10}"
                                             Text="{Binding LocalTimestamp, StringFormat='{0:dd.MM HH:mm}'}"
-                                            Style="{StaticResource MutedLabel}"
-                                            FontSize="11"
                                             VerticalOptions="End" />
                                     </Grid>
 
@@ -203,6 +337,12 @@
                         </Border>
                     </DataTemplate>
                 </CollectionView.ItemTemplate>
+
+                <!-- Extra bottom padding so FAB doesn't cover last card -->
+                <CollectionView.Footer>
+                    <BoxView HeightRequest="80" Color="Transparent" />
+                </CollectionView.Footer>
+
             </CollectionView>
         </RefreshView>
 
@@ -215,16 +355,40 @@
             VerticalOptions="Center"
             HorizontalOptions="Center" />
 
-        <!-- FAB -->
-        <Button
+        <!-- Extended FAB: centered at bottom -->
+        <Border
             Grid.Row="0"
             Grid.RowSpan="3"
-            Text="+"
-            Command="{Binding NavigateToAddCommand}"
-            Style="{StaticResource FabButton}"
+            StrokeShape="RoundRectangle 14"
+            BackgroundColor="{StaticResource Primary}"
+            HeightRequest="48"
+            Stroke="Transparent"
+            StrokeThickness="0"
+            Padding="18,0"
+            HorizontalOptions="Center"
             VerticalOptions="End"
-            HorizontalOptions="End"
-            Margin="0,0,16,16" />
+            Margin="0,0,0,16">
+            <Border.Shadow>
+                <Shadow Brush="Black" Opacity="0.18" Radius="12" Offset="0,4" />
+            </Border.Shadow>
+            <Border.GestureRecognizers>
+                <TapGestureRecognizer Command="{Binding NavigateToAddCommand}" />
+            </Border.GestureRecognizers>
+            <HorizontalStackLayout Spacing="6" VerticalOptions="Center">
+                <Label
+                    Text="+"
+                    FontSize="20"
+                    FontAttributes="Bold"
+                    TextColor="{StaticResource OnPrimary}"
+                    VerticalOptions="Center" />
+                <Label
+                    Text="New event"
+                    FontSize="14"
+                    FontAttributes="Bold"
+                    TextColor="{StaticResource OnPrimary}"
+                    VerticalOptions="Center" />
+            </HorizontalStackLayout>
+        </Border>
 
     </Grid>
 </ContentPage>
