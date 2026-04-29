@@ -149,4 +149,92 @@
         <Setter Property="TextColor" Value="{StaticResource Muted}" />
     </Style>
 
+    <!-- ── Stage 2: Typography ──────────────────────────────────── -->
+
+    <Style x:Key="H1AppBar" TargetType="Label">
+        <Setter Property="FontSize" Value="18" />
+        <Setter Property="FontAttributes" Value="Bold" />
+        <Setter Property="TextColor" Value="{StaticResource OnSurface}" />
+    </Style>
+
+    <Style x:Key="Body14" TargetType="Label">
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="TextColor" Value="{StaticResource OnSurface}" />
+    </Style>
+
+    <Style x:Key="Body15" TargetType="Label">
+        <Setter Property="FontSize" Value="15" />
+        <Setter Property="TextColor" Value="{StaticResource OnSurface}" />
+    </Style>
+
+    <Style x:Key="Meta12" TargetType="Label">
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="FontAttributes" Value="Bold" />
+        <Setter Property="TextColor" Value="{StaticResource Muted}" />
+    </Style>
+
+    <Style x:Key="Timestamp10" TargetType="Label">
+        <Setter Property="FontSize" Value="10" />
+        <Setter Property="TextColor" Value="{StaticResource Muted}" />
+    </Style>
+
+    <Style x:Key="Badge11" TargetType="Label">
+        <Setter Property="FontSize" Value="11" />
+        <Setter Property="FontAttributes" Value="Bold" />
+        <Setter Property="TextColor" Value="{StaticResource OnSurfaceVariant}" />
+    </Style>
+
+    <!-- ── Stage 2: Surfaces ─────────────────────────────────────── -->
+
+    <Style x:Key="CardSurface" TargetType="Border">
+        <Setter Property="BackgroundColor" Value="{StaticResource Card}" />
+        <Setter Property="Stroke" Value="{StaticResource Border}" />
+        <Setter Property="StrokeThickness" Value="1" />
+        <Setter Property="StrokeShape" Value="RoundRectangle 10" />
+    </Style>
+
+    <Style x:Key="BottomSheetSurface" TargetType="Border">
+        <Setter Property="BackgroundColor" Value="{StaticResource Background}" />
+        <Setter Property="Stroke" Value="Transparent" />
+        <Setter Property="StrokeThickness" Value="0" />
+        <Setter Property="StrokeShape" Value="RoundRectangle 24,24,0,0" />
+        <Setter Property="Padding" Value="28,16,28,28" />
+    </Style>
+
+    <!-- ── Stage 2: Buttons ──────────────────────────────────────── -->
+
+    <Style x:Key="PrimaryFilledButton" TargetType="Button">
+        <Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
+        <Setter Property="TextColor" Value="{StaticResource OnPrimary}" />
+        <Setter Property="CornerRadius" Value="14" />
+        <Setter Property="HeightRequest" Value="48" />
+        <Setter Property="FontSize" Value="15" />
+        <Setter Property="FontAttributes" Value="Bold" />
+        <Setter Property="Padding" Value="0" />
+    </Style>
+
+    <Style x:Key="PillButton" TargetType="Button">
+        <Setter Property="BackgroundColor" Value="{StaticResource SurfaceVariant}" />
+        <Setter Property="TextColor" Value="{StaticResource OnSurface}" />
+        <Setter Property="CornerRadius" Value="100" />
+        <Setter Property="HeightRequest" Value="32" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="Padding" Value="14,0" />
+        <Setter Property="BorderWidth" Value="0" />
+    </Style>
+
+    <Style x:Key="IconCircleButton" TargetType="Button">
+        <Setter Property="BackgroundColor" Value="Transparent" />
+        <Setter Property="TextColor" Value="{StaticResource OnSurface}" />
+        <Setter Property="BorderColor" Value="{StaticResource Border}" />
+        <Setter Property="BorderWidth" Value="1" />
+        <Setter Property="CornerRadius" Value="16" />
+        <Setter Property="WidthRequest" Value="32" />
+        <Setter Property="HeightRequest" Value="32" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="MinimumWidthRequest" Value="0" />
+        <Setter Property="MinimumHeightRequest" Value="0" />
+        <Setter Property="FontSize" Value="15" />
+    </Style>
+
 </ResourceDictionary>
