@@ -4,19 +4,46 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">
 
-    <Color x:Key="Primary">#1565C0</Color>
-    <Color x:Key="PrimaryDark">#003c8f</Color>
-    <Color x:Key="Secondary">#F5F5F5</Color>
-    <Color x:Key="Positive">#2E7D32</Color>
-    <Color x:Key="Negative">#C62828</Color>
-    <Color x:Key="Surface">#FFFFFF</Color>
-    <Color x:Key="OnSurface">#212121</Color>
-    <Color x:Key="Muted">#757575</Color>
-    <Color x:Key="Border">#E0E0E0</Color>
+    <!-- ── Neutral surface ─────────────────────────────────── -->
+    <Color x:Key="Background">#f9f9f9</Color>
+    <Color x:Key="Surface">#f9f9f9</Color>
+    <Color x:Key="Card">#ffffff</Color>
+    <Color x:Key="SurfaceVariant">#eeeeee</Color>
+    <Color x:Key="Border">#e4e4e4</Color>
 
-    <!-- Event form tokens -->
-    <Color x:Key="PositiveBar">#22c55e</Color>
-    <Color x:Key="NegativeBar">#ef4444</Color>
+    <!-- ── Text ────────────────────────────────────────────── -->
+    <Color x:Key="OnSurface">#111111</Color>
+    <Color x:Key="OnSurfaceVariant">#444444</Color>
+    <Color x:Key="Muted">#888888</Color>
+
+    <!-- ── Brand primary ───────────────────────────────────── -->
+    <Color x:Key="Primary">#006a60</Color>
+    <Color x:Key="PrimaryDark">#004f47</Color>
+    <Color x:Key="PrimaryContainer">#cde8e1</Color>
+    <Color x:Key="OnPrimary">#ffffff</Color>
+
+    <!-- ── Legacy keys (kept for backward-compat with existing bindings) -->
+    <Color x:Key="Secondary">#eeeeee</Color>
+
+    <!-- ── Positive (green) ────────────────────────────────── -->
+    <Color x:Key="Positive">#16a34a</Color>
+    <Color x:Key="PositiveBg">#f0fdf4</Color>
+    <Color x:Key="PositiveBorder">#bbf7d0</Color>
+    <Color x:Key="PositiveText">#16a34a</Color>
+    <Color x:Key="PositiveBar">#4ade80</Color>
+
+    <!-- ── Negative (red) ─────────────────────────────────── -->
+    <Color x:Key="Negative">#dc2626</Color>
+    <Color x:Key="NegativeBg">#fff1f2</Color>
+    <Color x:Key="NegativeBorder">#fecdd3</Color>
+    <Color x:Key="NegativeText">#dc2626</Color>
+    <Color x:Key="NegativeBar">#f87171</Color>
+
+    <!-- ── Semantic ────────────────────────────────────────── -->
+    <Color x:Key="Error">#B00020</Color>
+    <Color x:Key="Amber">#f59e0b</Color>
+
+    <!-- ── Legacy event-form tokens (kept for backward-compat) -->
     <Color x:Key="SaveActiveColor">#006a60</Color>
 
 </ResourceDictionary>

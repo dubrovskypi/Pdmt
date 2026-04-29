@@ -17,10 +17,7 @@ public static class MauiProgram
         builder
             .UseMauiApp<App>()
             .UseMauiCommunityToolkit()
-            .ConfigureFonts(fonts =>
-            {
-                fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
-            })
+            .ConfigureFonts(fonts => { })
             .ConfigureMauiHandlers(handlers =>
             {
 #if ANDROID
