@@ -4,7 +4,7 @@ using Pdmt.Maui.Services;
 
 namespace Pdmt.Maui.ViewModels;
 
-public partial class LoginViewModel(AuthService authService, ITokenService tokenService) : ObservableObject
+public partial class RegisterViewModel(AuthService authService, ITokenService tokenService) : ObservableObject
 {
     [ObservableProperty]
     private string _email = "";
@@ -19,14 +19,20 @@ public partial class LoginViewModel(AuthService authService, ITokenService token
     private bool _isBusy;
 
     [RelayCommand]
-    private Task GoToRegisterAsync() => Shell.Current.GoToAsync("register");
+    private Task GoToLoginAsync() => Shell.Current.GoToAsync("..");
 
     [RelayCommand]
-    private async Task LoginAsync()
+    private async Task RegisterAsync()
     {
         if (string.IsNullOrWhiteSpace(Email) || string.IsNullOrWhiteSpace(Password))
         {
             ErrorMessage = "Enter email and password";
+            return;
+        }
+
+        if (Password.Length < 8)
+        {
+            ErrorMessage = "Password must be at least 8 characters";
             return;
         }
 
@@ -35,17 +41,22 @@ public partial class LoginViewModel(AuthService authService, ITokenService token
 
         try
         {
-            var result = await authService.LoginAsync(Email, Password);
+            var result = await authService.RegisterAsync(Email, Password);
             await tokenService.SetTokensAsync(result.AccessToken, result.RefreshToken);
             await Shell.Current.GoToAsync("//events");
         }
+        catch (HttpRequestException ex) when (
+            ex.Message.Contains("already exists", StringComparison.OrdinalIgnoreCase))
+        {
+            ErrorMessage = "Account with this email already exists";
+        }
         catch (HttpRequestException)
         {
-            ErrorMessage = "Invalid email or password";
+            ErrorMessage = "Network error. Please try again.";
         }
         catch
         {
-            ErrorMessage = "Network error. Please try again.";
+            ErrorMessage = "Something went wrong. Please try again.";
         }
         finally
         {

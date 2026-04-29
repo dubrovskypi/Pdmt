@@ -91,6 +91,7 @@ public static class MauiProgram
 
         // ViewModels
         builder.Services.AddTransient<LoginViewModel>();
+        builder.Services.AddTransient<RegisterViewModel>();
         builder.Services.AddTransient<NewEventViewModel>();
         builder.Services.AddTransient<EditEventViewModel>();
         builder.Services.AddTransient<EventListViewModel>();
@@ -100,6 +101,7 @@ public static class MauiProgram
 
         // Pages
         builder.Services.AddTransient<LoginPage>();
+        builder.Services.AddTransient<RegisterPage>();
         builder.Services.AddTransient<NewEventPage>();
         builder.Services.AddTransient<EditEventPage>();
         builder.Services.AddTransient<EventListPage>();
