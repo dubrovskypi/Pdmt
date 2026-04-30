@@ -31,10 +31,10 @@ public partial class CalendarDayViewModel : ObservableObject
     public double ScoreAbsolute => Math.Abs(_dto.DayScore);
     public string ScoreLabel => _dto.DayScore > 1 ? "pos" : _dto.DayScore < -1 ? "neg" : "even";
     public Color DotColor => _dto.DayScore > 1
-        ? Color.FromArgb("#22c55e")
+        ? (Color)Application.Current!.Resources["PositiveBar"]
         : _dto.DayScore < -1
-            ? Color.FromArgb("#ef4444")
-            : Color.FromArgb("#f59e0b");
+            ? (Color)Application.Current!.Resources["NegativeBar"]
+            : (Color)Application.Current!.Resources["Amber"];
 
     public IReadOnlyList<TagCountDto> TopPositiveTags => _dto.TopPositiveTags;
     public IReadOnlyList<TagCountDto> TopNegativeTags => _dto.TopNegativeTags;

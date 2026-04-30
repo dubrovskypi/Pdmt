@@ -7,12 +7,22 @@
     xmlns:models="clr-namespace:Pdmt.Maui.Models"
     xmlns:vm="clr-namespace:Pdmt.Maui.ViewModels"
     x:DataType="vm:WeeklyCalendarViewModel"
-    Title="Calendar"
-    BackgroundColor="{StaticResource Secondary}">
+    BackgroundColor="{StaticResource Background}">
 
     <ContentPage.Resources>
         <conv:NotNullToBoolConverter x:Key="NotNullToBool" />
     </ContentPage.Resources>
+
+    <Shell.TitleView>
+        <Grid Padding="8,0">
+            <Label
+                Text="Calendar"
+                FontSize="18"
+                FontAttributes="Bold"
+                TextColor="{StaticResource OnSurface}"
+                VerticalOptions="Center" />
+        </Grid>
+    </Shell.TitleView>
 
     <Grid RowDefinitions="Auto,Auto,*">
 
@@ -22,42 +32,83 @@
             Style="{StaticResource ErrorLabel}"
             Text="{Binding ErrorMessage}"
             IsVisible="{Binding ErrorMessage, Converter={StaticResource NotNullToBool}}"
-            Padding="16,8"
-            BackgroundColor="#FFEBEE" />
+            BackgroundColor="{StaticResource NegativeBg}"
+            Padding="16,8" />
 
-        <!-- Week navigation -->
-        <Border Grid.Row="1" Margin="12,8,12,4" Padding="10,8">
-            <Grid ColumnDefinitions="Auto,*,Auto">
-                <Button
-                    Grid.Column="0"
-                    Text="&#8592;"
-                    Command="{Binding PrevWeekCommand}"
-                    Padding="14,8"
-                    FontSize="18"
-                    WidthRequest="48"
-                    HeightRequest="40" />
-                <Label
-                    Grid.Column="1"
-                    Text="{Binding WeekLabel}"
-                    HorizontalOptions="Center"
-                    VerticalOptions="Center"
-                    FontSize="14"
-                    FontAttributes="Bold"
-                    TextColor="{StaticResource OnSurface}" />
-                <Button
-                    Grid.Column="2"
-                    Text="&#8594;"
-                    Command="{Binding NextWeekCommand}"
-                    Padding="14,8"
-                    FontSize="18"
-                    WidthRequest="48"
-                    HeightRequest="40" />
-            </Grid>
-        </Border>
+        <!-- Sub-header: ‹/› + period label + Week/Month toggle -->
+        <Grid
+            Grid.Row="1"
+            Padding="12,8"
+            ColumnDefinitions="Auto,Auto,*,Auto"
+            ColumnSpacing="6">
 
-        <!-- Day list -->
+            <Button
+                Grid.Column="0"
+                Text="‹"
+                Style="{StaticResource IconCircleButton}"
+                Command="{Binding PrevPeriodCommand}" />
+
+            <Button
+                Grid.Column="1"
+                Text="›"
+                Style="{StaticResource IconCircleButton}"
+                Command="{Binding NextPeriodCommand}" />
+
+            <Label
+                Grid.Column="2"
+                Text="{Binding PeriodLabel}"
+                FontSize="13"
+                FontAttributes="Bold"
+                TextColor="{StaticResource OnSurface}"
+                HorizontalOptions="Center"
+                VerticalOptions="Center" />
+
+            <!-- Week / Month toggle pill -->
+            <Border
+                Grid.Column="3"
+                StrokeShape="RoundRectangle 100"
+                Stroke="{StaticResource Border}"
+                StrokeThickness="1"
+                BackgroundColor="{StaticResource SurfaceVariant}"
+                Padding="2">
+                <HorizontalStackLayout Spacing="0">
+                    <Border
+                        StrokeShape="RoundRectangle 100"
+                        StrokeThickness="0"
+                        Padding="12,4"
+                        BackgroundColor="{Binding WeekModeBg}">
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding SetViewModeCommand}" CommandParameter="week" />
+                        </Border.GestureRecognizers>
+                        <Label
+                            Text="Week"
+                            FontSize="12"
+                            FontAttributes="Bold"
+                            TextColor="{Binding WeekModeText}" />
+                    </Border>
+                    <Border
+                        StrokeShape="RoundRectangle 100"
+                        StrokeThickness="0"
+                        Padding="12,4"
+                        BackgroundColor="{Binding MonthModeBg}">
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding SetViewModeCommand}" CommandParameter="month" />
+                        </Border.GestureRecognizers>
+                        <Label
+                            Text="Month"
+                            FontSize="12"
+                            FontAttributes="Bold"
+                            TextColor="{Binding MonthModeText}" />
+                    </Border>
+                </HorizontalStackLayout>
+            </Border>
+
+        </Grid>
+
+        <!-- ── Week view ── -->
         <CollectionView
             Grid.Row="2"
+            IsVisible="{Binding IsWeekMode}"
             ItemsSource="{Binding Days}"
             Margin="12,0,12,12">
 
@@ -66,10 +117,10 @@
                     <VerticalStackLayout Margin="0,4,0,0" Spacing="0">
 
                         <!-- Day card header -->
-                        <Border Padding="10,8"
-                                StrokeShape="RoundRectangle 8,8,0,0"
-                                BackgroundColor="{StaticResource Surface}">
-
+                        <Border
+                            Padding="10,8"
+                            StrokeShape="RoundRectangle 8,8,0,0"
+                            BackgroundColor="{StaticResource Card}">
                             <Border.GestureRecognizers>
                                 <TapGestureRecognizer
                                     Command="{Binding Source={RelativeSource AncestorType={x:Type vm:WeeklyCalendarViewModel}}, Path=ToggleDayCommand}"
@@ -101,7 +152,7 @@
                                 <!-- Center: tags + histogram -->
                                 <VerticalStackLayout Grid.Column="1" Spacing="2" VerticalOptions="Center">
 
-                                    <!-- Positive tags above (left-half aligned) -->
+                                    <!-- Positive tags above -->
                                     <Grid ColumnDefinitions="*,*" IsVisible="{Binding HasPosTags}">
                                         <HorizontalStackLayout
                                             Grid.Column="0"
@@ -111,7 +162,7 @@
                                             <BindableLayout.ItemTemplate>
                                                 <DataTemplate x:DataType="models:TagCountDto">
                                                     <Border
-                                                        BackgroundColor="#dcfce7"
+                                                        BackgroundColor="{StaticResource PositiveBg}"
                                                         Stroke="Transparent"
                                                         StrokeThickness="0"
                                                         Padding="5,1">
@@ -120,7 +171,7 @@
                                                         </Border.StrokeShape>
                                                         <Label
                                                             Text="{Binding Name}"
-                                                            TextColor="#166534"
+                                                            TextColor="{StaticResource PositiveText}"
                                                             FontSize="11" />
                                                     </Border>
                                                 </DataTemplate>
@@ -137,58 +188,53 @@
                                         IsVisible="{Binding IsEmpty}" />
 
                                     <!-- Histogram -->
-                                    <Grid ColumnDefinitions="18,*,2,*,18" HeightRequest="22"
-                                          IsVisible="{Binding HasEvents}">
+                                    <Grid ColumnDefinitions="18,*,2,*,18" HeightRequest="22" IsVisible="{Binding HasEvents}">
 
-                                        <!-- Positive count -->
                                         <Label
                                             Grid.Column="0"
                                             Text="{Binding PosCountText}"
-                                            TextColor="#16a34a"
+                                            TextColor="{StaticResource Positive}"
                                             FontSize="11"
                                             HorizontalOptions="End"
                                             VerticalOptions="Center" />
 
-                                        <!-- Left track: green bar right-aligned (grows toward center) -->
                                         <Grid Grid.Column="1" VerticalOptions="Center">
                                             <BoxView
                                                 HorizontalOptions="End"
                                                 VerticalOptions="Center"
                                                 WidthRequest="{Binding PosBarWidth}"
                                                 HeightRequest="12"
-                                                Color="#4ade80"
+                                                Color="{StaticResource PositiveBar}"
                                                 CornerRadius="2,0,2,0" />
                                         </Grid>
 
-                                        <!-- Center divider -->
                                         <BoxView
                                             Grid.Column="2"
-                                            Color="#aaaaaa"
+                                            Color="{StaticResource Border}"
                                             HeightRequest="18"
                                             WidthRequest="2"
                                             VerticalOptions="Center" />
 
-                                        <!-- Right track: red bar left-aligned (grows from center) -->
                                         <Grid Grid.Column="3" VerticalOptions="Center">
                                             <BoxView
                                                 HorizontalOptions="Start"
                                                 VerticalOptions="Center"
                                                 WidthRequest="{Binding NegBarWidth}"
                                                 HeightRequest="12"
-                                                Color="#f87171"
+                                                Color="{StaticResource NegativeBar}"
                                                 CornerRadius="0,2,0,2" />
                                         </Grid>
 
-                                        <!-- Negative count -->
                                         <Label
                                             Grid.Column="4"
                                             Text="{Binding NegCountText}"
-                                            TextColor="#dc2626"
+                                            TextColor="{StaticResource Negative}"
                                             FontSize="11"
                                             VerticalOptions="Center" />
+
                                     </Grid>
 
-                                    <!-- Negative tags below (right-half aligned) -->
+                                    <!-- Negative tags below -->
                                     <Grid ColumnDefinitions="*,*" IsVisible="{Binding HasNegTags}">
                                         <HorizontalStackLayout
                                             Grid.Column="1"
@@ -198,7 +244,7 @@
                                             <BindableLayout.ItemTemplate>
                                                 <DataTemplate x:DataType="models:TagCountDto">
                                                     <Border
-                                                        BackgroundColor="#fee2e2"
+                                                        BackgroundColor="{StaticResource NegativeBg}"
                                                         Stroke="Transparent"
                                                         StrokeThickness="0"
                                                         Padding="5,1">
@@ -207,7 +253,7 @@
                                                         </Border.StrokeShape>
                                                         <Label
                                                             Text="{Binding Name}"
-                                                            TextColor="#991b1b"
+                                                            TextColor="{StaticResource NegativeText}"
                                                             FontSize="11" />
                                                     </Border>
                                                 </DataTemplate>
@@ -252,7 +298,7 @@
                         <Border
                             IsVisible="{Binding IsExpanded}"
                             Padding="10,8"
-                            BackgroundColor="{StaticResource Surface}"
+                            BackgroundColor="{StaticResource Card}"
                             Stroke="{StaticResource Border}"
                             StrokeThickness="1">
                             <Border.StrokeShape>
@@ -261,7 +307,6 @@
 
                             <VerticalStackLayout Spacing="0">
 
-                                <!-- Loading indicator -->
                                 <ActivityIndicator
                                     IsRunning="{Binding IsExpandedLoading}"
                                     IsVisible="{Binding IsExpandedLoading}"
@@ -269,7 +314,6 @@
                                     HorizontalOptions="Center"
                                     Margin="0,8" />
 
-                                <!-- Empty state -->
                                 <Label
                                     Text="No events on this day."
                                     Style="{StaticResource MutedLabel}"
@@ -277,7 +321,6 @@
                                     Margin="0,8"
                                     IsVisible="{Binding IsExpandedEmpty}" />
 
-                                <!-- Event items -->
                                 <VerticalStackLayout
                                     BindableLayout.ItemsSource="{Binding ExpandedEvents}"
                                     Spacing="0">
@@ -288,15 +331,13 @@
                                                 ColumnSpacing="8"
                                                 Padding="0,6,0,6">
 
-                                                <!-- Type indicator -->
                                                 <Label
-                                                        Text="{Binding IntensityText}"
-                                                        FontSize="13"
-                                                        FontAttributes="Bold"
-                                                        TextColor="{Binding TypeColor}"
-                                                        HorizontalOptions="End" />
+                                                    Text="{Binding IntensityText}"
+                                                    FontSize="13"
+                                                    FontAttributes="Bold"
+                                                    TextColor="{Binding TypeColor}"
+                                                    HorizontalOptions="End" />
 
-                                                <!-- Event info -->
                                                 <VerticalStackLayout Grid.Column="1" Spacing="2">
                                                     <Label
                                                         Text="{Binding Title}"
@@ -313,7 +354,6 @@
                                                         IsVisible="{Binding HasTags}" />
                                                 </VerticalStackLayout>
 
-                                                <!-- Time + intensity -->
                                                 <VerticalStackLayout
                                                     Grid.Column="2"
                                                     HorizontalOptions="End"
@@ -322,8 +362,8 @@
                                                         Text="{Binding TimeText}"
                                                         Style="{StaticResource MutedLabel}"
                                                         HorizontalOptions="End" />
-
                                                 </VerticalStackLayout>
+
                                             </Grid>
                                         </DataTemplate>
                                     </BindableLayout.ItemTemplate>
@@ -335,7 +375,135 @@
                     </VerticalStackLayout>
                 </DataTemplate>
             </CollectionView.ItemTemplate>
+
         </CollectionView>
+
+        <!-- ── Month view ── -->
+        <ScrollView Grid.Row="2" IsVisible="{Binding IsMonthMode}" Padding="12,4,12,12">
+            <VerticalStackLayout Spacing="12">
+
+                <!-- Weekday header -->
+                <Grid ColumnDefinitions="*,*,*,*,*,*,*">
+                    <Label Grid.Column="0" Text="MON" FontSize="10" TextColor="{StaticResource Muted}" HorizontalOptions="Center" />
+                    <Label Grid.Column="1" Text="TUE" FontSize="10" TextColor="{StaticResource Muted}" HorizontalOptions="Center" />
+                    <Label Grid.Column="2" Text="WED" FontSize="10" TextColor="{StaticResource Muted}" HorizontalOptions="Center" />
+                    <Label Grid.Column="3" Text="THU" FontSize="10" TextColor="{StaticResource Muted}" HorizontalOptions="Center" />
+                    <Label Grid.Column="4" Text="FRI" FontSize="10" TextColor="{StaticResource Muted}" HorizontalOptions="Center" />
+                    <Label Grid.Column="5" Text="SAT" FontSize="10" TextColor="{StaticResource Muted}" HorizontalOptions="Center" />
+                    <Label Grid.Column="6" Text="SUN" FontSize="10" TextColor="{StaticResource Muted}" HorizontalOptions="Center" />
+                </Grid>
+
+                <!-- Day cells grid -->
+                <CollectionView ItemsSource="{Binding MonthDays}">
+                    <CollectionView.ItemsLayout>
+                        <GridItemsLayout
+                            Orientation="Vertical"
+                            Span="7"
+                            HorizontalItemSpacing="3"
+                            VerticalItemSpacing="3" />
+                    </CollectionView.ItemsLayout>
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate x:DataType="vm:MonthDayCellViewModel">
+                            <Border
+                                MinimumHeightRequest="52"
+                                StrokeShape="RoundRectangle 6"
+                                Stroke="{Binding CellBorder}"
+                                StrokeThickness="1"
+                                BackgroundColor="{Binding CellBackground}"
+                                Padding="4,3">
+                                <Grid RowDefinitions="Auto,*,3">
+
+                                    <!-- Day number -->
+                                    <Label
+                                        Grid.Row="0"
+                                        Text="{Binding DayNumber}"
+                                        FontSize="12"
+                                        FontAttributes="Bold"
+                                        TextColor="{StaticResource OnSurface}" />
+
+                                    <!-- Event dots -->
+                                    <HorizontalStackLayout
+                                        Grid.Row="1"
+                                        Spacing="2"
+                                        HorizontalOptions="Center"
+                                        VerticalOptions="Center"
+                                        IsVisible="{Binding HasEvents}">
+                                        <BoxView
+                                            WidthRequest="4"
+                                            HeightRequest="4"
+                                            CornerRadius="2"
+                                            Color="{StaticResource PositiveBar}"
+                                            IsVisible="{Binding HasPositive}" />
+                                        <BoxView
+                                            WidthRequest="4"
+                                            HeightRequest="4"
+                                            CornerRadius="2"
+                                            Color="{StaticResource NegativeBar}"
+                                            IsVisible="{Binding HasNegative}" />
+                                    </HorizontalStackLayout>
+
+                                    <!-- Intensity bar -->
+                                    <BoxView
+                                        Grid.Row="2"
+                                        HeightRequest="3"
+                                        HorizontalOptions="Start"
+                                        WidthRequest="{Binding IntensityBarWidth}"
+                                        Color="{Binding IntensityBarColor}"
+                                        IsVisible="{Binding HasEvents}" />
+
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+
+                <!-- Monthly summary card -->
+                <Border Style="{StaticResource CardSurface}">
+                    <VerticalStackLayout Spacing="10">
+
+                        <Label Text="{Binding MonthSummaryHeader}" Style="{StaticResource SectionLabel}" />
+
+                        <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+                            <Border
+                                Grid.Column="0"
+                                StrokeShape="RoundRectangle 8"
+                                StrokeThickness="0"
+                                BackgroundColor="{StaticResource PositiveBg}"
+                                Padding="10,8">
+                                <VerticalStackLayout Spacing="2">
+                                    <Label Text="POSITIVE" FontSize="10" FontAttributes="Bold" TextColor="{StaticResource PositiveText}" />
+                                    <Label Text="{Binding MonthPosTotal}" FontSize="22" FontAttributes="Bold" TextColor="{StaticResource PositiveText}" />
+                                </VerticalStackLayout>
+                            </Border>
+                            <Border
+                                Grid.Column="1"
+                                StrokeShape="RoundRectangle 8"
+                                StrokeThickness="0"
+                                BackgroundColor="{StaticResource NegativeBg}"
+                                Padding="10,8">
+                                <VerticalStackLayout Spacing="2">
+                                    <Label Text="NEGATIVE" FontSize="10" FontAttributes="Bold" TextColor="{StaticResource NegativeText}" />
+                                    <Label Text="{Binding MonthNegTotal}" FontSize="22" FontAttributes="Bold" TextColor="{StaticResource NegativeText}" />
+                                </VerticalStackLayout>
+                            </Border>
+                        </Grid>
+
+                        <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+                            <VerticalStackLayout Grid.Column="0" Spacing="2">
+                                <Label Text="Best day" FontSize="10" TextColor="{StaticResource Muted}" />
+                                <Label Text="{Binding MonthBestDayLabel}" FontSize="13" FontAttributes="Bold" TextColor="{StaticResource Positive}" />
+                            </VerticalStackLayout>
+                            <VerticalStackLayout Grid.Column="1" Spacing="2">
+                                <Label Text="Worst day" FontSize="10" TextColor="{StaticResource Muted}" />
+                                <Label Text="{Binding MonthWorstDayLabel}" FontSize="13" FontAttributes="Bold" TextColor="{StaticResource Negative}" />
+                            </VerticalStackLayout>
+                        </Grid>
+
+                    </VerticalStackLayout>
+                </Border>
+
+            </VerticalStackLayout>
+        </ScrollView>
 
         <!-- Loading overlay -->
         <ActivityIndicator
