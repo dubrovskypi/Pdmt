@@ -99,7 +99,7 @@
 **Файлы:** `Pdmt.Maui/Views/InsightsPage.xaml(.cs)`, `Pdmt.Maui/Views/InsightCardTemplateSelector.cs`, шаблоны в `Views/InsightCards/`.
 
 - Period chips (Week / 2 weeks / Month) сверху + counter справа.
-- Insight card: `Border` 14 radius, category badge (10/700 uppercase coloured pill), title 15/600, description 12/muted, опциональный bar chart.
+- Insight card: `Border` 14 radius, category badge (10/700 uppercase coloured pill), title 15/600, description 12/muted, опциональный bar chart. Менять только офрмление карточек, не содержимое. Можно менять разноцветную подпись типа карточки, тайтл, описание, границы карточки. Гистаграмы, их подписи и оформление менять не стоит. В конце собрать в таблицу рекомендации для карточек, содержимое которых рекомендуется поменять чтобы соответствовать общему стилю и нормам дизайна.
 - Использовать существующий `CarouselView` + `IndicatorView` (см. handoff Option 1). Сделать **tappable dots**: заменить `IndicatorView` на `BindableLayout` из `BoxView`/`ImageButton` 24×24 hit area с `TapGestureRecognizer`, биндить `Position` `CarouselView` через `TwoWay` биндинг к VM.
 - Сохранить lifecycle: `OnDisappearing` → `CancelLoad()` (см. CLAUDE.md, конвенция Pdmt.Maui).
 

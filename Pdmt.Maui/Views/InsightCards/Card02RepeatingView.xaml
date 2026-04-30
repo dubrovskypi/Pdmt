@@ -6,12 +6,12 @@
     xmlns:cards="clr-namespace:Pdmt.Maui.ViewModels.Cards"
     x:DataType="cards:Card02RepeatingViewModel">
 
-    <Border Margin="4,0" Padding="16" BackgroundColor="{StaticResource Surface}">
+    <Border Margin="4,0" Padding="16" BackgroundColor="{StaticResource Card}">
         <Grid RowDefinitions="Auto,Auto,Auto,*,Auto" RowSpacing="0">
-            <Border Grid.Row="0" BackgroundColor="#f3e8ff" Stroke="Transparent" StrokeThickness="0"
+            <Border Grid.Row="0" BackgroundColor="{StaticResource PurpleBg}" Stroke="Transparent" StrokeThickness="0"
                     Padding="8,3" HorizontalOptions="Start">
                 <Border.StrokeShape><RoundRectangle CornerRadius="10" /></Border.StrokeShape>
-                <Label Text="Repeats" TextColor="#6b21a8" FontSize="12" FontAttributes="Bold" />
+                <Label Text="Repeats" TextColor="{StaticResource PurpleText}" FontSize="12" FontAttributes="Bold" />
             </Border>
             <Label Grid.Row="1" Text="Повторяющиеся триггеры"
                    FontAttributes="Bold" FontSize="16" Margin="0,8,0,2" />
@@ -27,7 +27,7 @@
                             <Label Grid.Column="0" Text="{Binding TagName}"
                                    FontSize="13" LineBreakMode="TailTruncation" VerticalOptions="Center" />
                             <BoxView Grid.Column="1" WidthRequest="{Binding BarWidth}" HeightRequest="14"
-                                     Color="#c084fc" CornerRadius="2"
+                                     Color="{StaticResource PurpleAccent}" CornerRadius="2"
                                      HorizontalOptions="Start" VerticalOptions="Center" />
                             <Label Grid.Column="2"
                                    Text="{Binding Count, StringFormat='{0}×'}"

@@ -6,6 +6,25 @@ using System.Collections.ObjectModel;
 
 namespace Pdmt.Maui.ViewModels;
 
+public partial class DotViewModel : ObservableObject
+{
+    public int Index { get; }
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(DotColor))]
+    private bool _isSelected;
+
+    public DotViewModel(int index, bool isSelected)
+    {
+        Index = index;
+        IsSelected = isSelected;
+    }
+
+    public Color DotColor => IsSelected
+        ? (Color)Application.Current!.Resources["Primary"]
+        : (Color)Application.Current!.Resources["Border"];
+}
+
 public partial class InsightsViewModel : ObservableObject
 {
     public record PeriodOption(string Label, int Days);
@@ -14,7 +33,17 @@ public partial class InsightsViewModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(IsWeekSelected))]
     [NotifyPropertyChangedFor(nameof(IsTwoWeeksSelected))]
     [NotifyPropertyChangedFor(nameof(IsMonthSelected))]
+    [NotifyPropertyChangedFor(nameof(WeekChipBg))]
+    [NotifyPropertyChangedFor(nameof(WeekChipText))]
+    [NotifyPropertyChangedFor(nameof(TwoWeeksChipBg))]
+    [NotifyPropertyChangedFor(nameof(TwoWeeksChipText))]
+    [NotifyPropertyChangedFor(nameof(MonthChipBg))]
+    [NotifyPropertyChangedFor(nameof(MonthChipText))]
     private PeriodOption _selectedPeriod;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CardCounterLabel))]
+    private int _currentPosition;
 
     [ObservableProperty]
     private bool _isPageLoading;
@@ -28,10 +57,29 @@ public partial class InsightsViewModel : ObservableObject
     ];
 
     public ObservableCollection<InsightCardViewModel> Cards { get; }
+    public ObservableCollection<DotViewModel> Dots { get; }
 
     public bool IsWeekSelected => SelectedPeriod == PeriodOptions[0];
     public bool IsTwoWeeksSelected => SelectedPeriod == PeriodOptions[1];
     public bool IsMonthSelected => SelectedPeriod == PeriodOptions[2];
+
+    public string CardCounterLabel => $"{CurrentPosition + 1} / {Cards.Count}";
+
+    public Color WeekChipBg => IsWeekSelected
+        ? (Color)Application.Current!.Resources["Primary"] : Colors.Transparent;
+    public Color WeekChipText => IsWeekSelected
+        ? (Color)Application.Current!.Resources["OnPrimary"]
+        : (Color)Application.Current!.Resources["OnSurfaceVariant"];
+    public Color TwoWeeksChipBg => IsTwoWeeksSelected
+        ? (Color)Application.Current!.Resources["Primary"] : Colors.Transparent;
+    public Color TwoWeeksChipText => IsTwoWeeksSelected
+        ? (Color)Application.Current!.Resources["OnPrimary"]
+        : (Color)Application.Current!.Resources["OnSurfaceVariant"];
+    public Color MonthChipBg => IsMonthSelected
+        ? (Color)Application.Current!.Resources["Primary"] : Colors.Transparent;
+    public Color MonthChipText => IsMonthSelected
+        ? (Color)Application.Current!.Resources["OnPrimary"]
+        : (Color)Application.Current!.Resources["OnSurfaceVariant"];
 
     public InsightsViewModel(InsightsService insightsService)
     {
@@ -49,6 +97,15 @@ public partial class InsightsViewModel : ObservableObject
             new Card09TagTrendViewModel(insightsService),
             new Card10InfluenceViewModel(insightsService),
         ];
+
+        Dots = new ObservableCollection<DotViewModel>(
+            Cards.Select((_, i) => new DotViewModel(i, i == 0)));
+    }
+
+    partial void OnCurrentPositionChanged(int value)
+    {
+        for (int i = 0; i < Dots.Count; i++)
+            Dots[i].IsSelected = i == value;
     }
 
     public void CancelLoad()
@@ -59,9 +116,11 @@ public partial class InsightsViewModel : ObservableObject
     }
 
     [RelayCommand]
+    private void GoToCard(int index) => CurrentPosition = index;
+
+    [RelayCommand]
     private async Task LoadAsync()
     {
-        // Отменяем предыдущую загрузку при быстром переключении периода
         CancelLoad();
         _cts = new CancellationTokenSource();
         var ct = _cts.Token;
@@ -72,25 +131,12 @@ public partial class InsightsViewModel : ObservableObject
         IsPageLoading = true;
         try
         {
-            // Приоритет: загружаем карточки 0–1 синхронно
-            // showLoading: false чтобы per-card спиннеры не отвлекали от страничного
             await Task.WhenAll(Cards.Take(2).Select(c => c.LoadAsync(from, to, showLoading: false, ct)));
-
-            // Страница готова — убираем спиннер
             IsPageLoading = false;
-
-            // Остальные 8 карточек в фоне (с per-card spinner),
-            // но всё ещё в await'е чтобы CancellationToken их отменял
             await Task.WhenAll(Cards.Skip(2).Select(c => c.LoadAsync(from, to, showLoading: true, ct)));
         }
-        catch (OperationCanceledException)
-        {
-            // Загрузка отменена (уход со страницы или смена периода) — это норма
-        }
-        catch (Exception) when (ct.IsCancellationRequested)
-        {
-            // Исключение из-за отмены токена (например, SocketException) — не показываем ошибку
-        }
+        catch (OperationCanceledException) { }
+        catch (Exception) when (ct.IsCancellationRequested) { }
         finally
         {
             IsPageLoading = false;

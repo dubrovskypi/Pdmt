@@ -9,7 +9,22 @@
     xmlns:views="clr-namespace:Pdmt.Maui.Views"
     x:DataType="vm:InsightsViewModel"
     Title="Insights"
-    BackgroundColor="{StaticResource Secondary}">
+    BackgroundColor="{StaticResource Background}">
+
+    <Shell.TitleView>
+        <Grid Padding="12,0" ColumnDefinitions="*,Auto">
+            <Label Grid.Column="0"
+                   Text="Insights"
+                   FontSize="18" FontAttributes="Bold"
+                   TextColor="{StaticResource OnSurface}"
+                   VerticalOptions="Center" />
+            <Label Grid.Column="1"
+                   Text="{Binding CardCounterLabel}"
+                   FontSize="13"
+                   TextColor="{StaticResource OnSurfaceVariant}"
+                   VerticalOptions="Center" />
+        </Grid>
+    </Shell.TitleView>
 
     <ContentPage.Resources>
 
@@ -60,54 +75,52 @@
 
     <Grid RowDefinitions="Auto,*,Auto">
 
-        <!-- Row 0: Period selector -->
-        <Border Grid.Row="0" Margin="12,4,12,4" Padding="8">
-            <Grid ColumnDefinitions="*,*,*" ColumnSpacing="8">
+        <!-- Row 0: Period pill toggle -->
+        <Border Grid.Row="0" Margin="12,8,12,4"
+                StrokeShape="RoundRectangle 100"
+                Stroke="{StaticResource Border}"
+                StrokeThickness="1"
+                BackgroundColor="{StaticResource SurfaceVariant}"
+                Padding="2"
+                HorizontalOptions="Center">
+            <HorizontalStackLayout Spacing="0">
 
-                <Button Grid.Column="0"
-                        Text="{Binding PeriodOptions[0].Label}"
-                        Style="{StaticResource SecondaryButton}"
-                        Command="{Binding SelectPeriodCommand}"
-                        CommandParameter="{Binding PeriodOptions[0]}">
-                    <Button.Triggers>
-                        <DataTrigger TargetType="Button" Binding="{Binding IsWeekSelected}" Value="True">
-                            <Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
-                            <Setter Property="TextColor" Value="White" />
-                            <Setter Property="BorderColor" Value="{StaticResource Primary}" />
-                        </DataTrigger>
-                    </Button.Triggers>
-                </Button>
+                <Border StrokeShape="RoundRectangle 100" StrokeThickness="0" Padding="16,6"
+                        BackgroundColor="{Binding WeekChipBg}">
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Command="{Binding SelectPeriodCommand}"
+                                              CommandParameter="{Binding PeriodOptions[0]}" />
+                    </Border.GestureRecognizers>
+                    <Label Text="{Binding PeriodOptions[0].Label}"
+                           FontSize="12" FontAttributes="Bold"
+                           TextColor="{Binding WeekChipText}" />
+                </Border>
 
-                <Button Grid.Column="1"
-                        Text="{Binding PeriodOptions[1].Label}"
-                        Style="{StaticResource SecondaryButton}"
-                        Command="{Binding SelectPeriodCommand}"
-                        CommandParameter="{Binding PeriodOptions[1]}">
-                    <Button.Triggers>
-                        <DataTrigger TargetType="Button" Binding="{Binding IsTwoWeeksSelected}" Value="True">
-                            <Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
-                            <Setter Property="TextColor" Value="White" />
-                            <Setter Property="BorderColor" Value="{StaticResource Primary}" />
-                        </DataTrigger>
-                    </Button.Triggers>
-                </Button>
+                <Border StrokeShape="RoundRectangle 100" StrokeThickness="0" Padding="16,6"
+                        BackgroundColor="{Binding TwoWeeksChipBg}">
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Command="{Binding SelectPeriodCommand}"
+                                              CommandParameter="{Binding PeriodOptions[1]}" />
+                    </Border.GestureRecognizers>
+                    <Label Text="{Binding PeriodOptions[1].Label}"
+                           FontSize="12" FontAttributes="Bold"
+                           TextColor="{Binding TwoWeeksChipText}" />
+                </Border>
 
-                <Button Grid.Column="2"
-                        Text="{Binding PeriodOptions[2].Label}"
-                        Style="{StaticResource SecondaryButton}"
-                        Command="{Binding SelectPeriodCommand}"
-                        CommandParameter="{Binding PeriodOptions[2]}">
-                    <Button.Triggers>
-                        <DataTrigger TargetType="Button" Binding="{Binding IsMonthSelected}" Value="True">
-                            <Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
-                            <Setter Property="TextColor" Value="White" />
-                            <Setter Property="BorderColor" Value="{StaticResource Primary}" />
-                        </DataTrigger>
-                    </Button.Triggers>
-                </Button>
+                <Border StrokeShape="RoundRectangle 100" StrokeThickness="0" Padding="16,6"
+                        BackgroundColor="{Binding MonthChipBg}">
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Command="{Binding SelectPeriodCommand}"
+                                              CommandParameter="{Binding PeriodOptions[2]}" />
+                    </Border.GestureRecognizers>
+                    <Label Text="{Binding PeriodOptions[2].Label}"
+                           FontSize="12" FontAttributes="Bold"
+                           TextColor="{Binding MonthChipText}" />
+                </Border>
 
-            </Grid>
+            </HorizontalStackLayout>
         </Border>
+
         <!-- Row 1: Carousel -->
         <CarouselView
             Grid.Row="1"
@@ -116,7 +129,7 @@
             ItemTemplate="{StaticResource CardSelector}"
             PeekAreaInsets="20"
             Loop="False"
-            IndicatorView="CardIndicator">
+            Position="{Binding CurrentPosition, Mode=TwoWay}">
             <CarouselView.ItemsLayout>
                 <LinearItemsLayout Orientation="Horizontal" ItemSpacing="8" />
             </CarouselView.ItemsLayout>
@@ -131,14 +144,29 @@
             VerticalOptions="Center"
             HorizontalOptions="Center" />
 
-        <!-- Row 2: Dot indicators -->
-        <IndicatorView
+        <!-- Row 2: Tappable dot indicators -->
+        <HorizontalStackLayout
             Grid.Row="2"
-            x:Name="CardIndicator"
-            IndicatorColor="{StaticResource Border}"
-            SelectedIndicatorColor="{StaticResource Primary}"
+            Spacing="4"
             HorizontalOptions="Center"
-            Margin="0,4,0,12" />
+            Margin="0,4,0,12"
+            BindableLayout.ItemsSource="{Binding Dots}">
+            <BindableLayout.ItemTemplate>
+                <DataTemplate x:DataType="vm:DotViewModel">
+                    <Border WidthRequest="24" HeightRequest="24"
+                            StrokeThickness="0" BackgroundColor="Transparent">
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer
+                                Command="{Binding Source={x:Reference InsightsCarousel}, Path=BindingContext.GoToCardCommand}"
+                                CommandParameter="{Binding Index}" />
+                        </Border.GestureRecognizers>
+                        <BoxView WidthRequest="8" HeightRequest="8" CornerRadius="4"
+                                 Color="{Binding DotColor}"
+                                 HorizontalOptions="Center" VerticalOptions="Center" />
+                    </Border>
+                </DataTemplate>
+            </BindableLayout.ItemTemplate>
+        </HorizontalStackLayout>
 
     </Grid>
 </ContentPage>

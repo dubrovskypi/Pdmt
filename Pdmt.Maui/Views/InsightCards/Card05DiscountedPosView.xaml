@@ -6,12 +6,12 @@
     xmlns:cards="clr-namespace:Pdmt.Maui.ViewModels.Cards"
     x:DataType="cards:Card05DiscountedPosViewModel">
 
-    <Border Margin="4,0" Padding="16" BackgroundColor="{StaticResource Surface}">
+    <Border Margin="4,0" Padding="16" BackgroundColor="{StaticResource Card}">
         <Grid RowDefinitions="Auto,Auto,Auto,*,Auto" RowSpacing="0">
-            <Border Grid.Row="0" BackgroundColor="#fef3c7" Stroke="Transparent" StrokeThickness="0"
+            <Border Grid.Row="0" BackgroundColor="{StaticResource AmberBg}" Stroke="Transparent" StrokeThickness="0"
                     Padding="8,3" HorizontalOptions="Start">
                 <Border.StrokeShape><RoundRectangle CornerRadius="10" /></Border.StrokeShape>
-                <Label Text="Discounted positives" TextColor="#92400e" FontSize="12" FontAttributes="Bold" />
+                <Label Text="Discounted positives" TextColor="{StaticResource AmberText}" FontSize="12" FontAttributes="Bold" />
             </Border>
             <Label Grid.Row="1" Text="Недооценённые позитивные события"
                    FontAttributes="Bold" FontSize="16" Margin="0,8,0,2" />
@@ -27,7 +27,7 @@
                             <Label Grid.Column="0" Text="{Binding TagName}"
                                    FontSize="13" LineBreakMode="TailTruncation" VerticalOptions="Center" />
                             <BoxView Grid.Column="1" WidthRequest="{Binding BarWidth}" HeightRequest="14"
-                                     Color="#fcd34d" CornerRadius="2"
+                                     Color="{StaticResource AmberAccent}" CornerRadius="2"
                                      HorizontalOptions="Start" VerticalOptions="Center" />
                             <Label Grid.Column="2" Text="{Binding FormattedAnnotation}"
                                    FontSize="12" TextColor="{StaticResource Muted}" 

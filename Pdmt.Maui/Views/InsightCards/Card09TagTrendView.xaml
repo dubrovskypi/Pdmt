@@ -6,12 +6,12 @@
     xmlns:cards="clr-namespace:Pdmt.Maui.ViewModels.Cards"
     x:DataType="cards:Card09TagTrendViewModel">
 
-    <Border Margin="4,0" Padding="16" BackgroundColor="{StaticResource Surface}">
+    <Border Margin="4,0" Padding="16" BackgroundColor="{StaticResource Card}">
         <Grid RowDefinitions="Auto,Auto,Auto,*,Auto" RowSpacing="0">
-            <Border Grid.Row="0" BackgroundColor="#dbeafe" Stroke="Transparent" StrokeThickness="0"
+            <Border Grid.Row="0" BackgroundColor="{StaticResource BlueBg}" Stroke="Transparent" StrokeThickness="0"
                     Padding="8,3" HorizontalOptions="Start">
                 <Border.StrokeShape><RoundRectangle CornerRadius="10" /></Border.StrokeShape>
-                <Label Text="Tags trend" TextColor="#1e40af" FontSize="12" FontAttributes="Bold" />
+                <Label Text="Tags trend" TextColor="{StaticResource BlueText}" FontSize="12" FontAttributes="Bold" />
             </Border>
             <Label Grid.Row="1" Text="Тренд тегов"
                    FontAttributes="Bold" FontSize="16" Margin="0,8,0,2" />

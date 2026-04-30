@@ -6,12 +6,12 @@
     xmlns:cards="clr-namespace:Pdmt.Maui.ViewModels.Cards"
     x:DataType="cards:Card03BalanceViewModel">
 
-    <Border Margin="4,0" Padding="16" BackgroundColor="{StaticResource Surface}">
+    <Border Margin="4,0" Padding="16" BackgroundColor="{StaticResource Card}">
         <Grid RowDefinitions="Auto,Auto,Auto,*,Auto" RowSpacing="0">
-            <Border Grid.Row="0" BackgroundColor="#ccfbf1" Stroke="Transparent" StrokeThickness="0"
+            <Border Grid.Row="0" BackgroundColor="{StaticResource TealBg}" Stroke="Transparent" StrokeThickness="0"
                     Padding="8,3" HorizontalOptions="Start">
                 <Border.StrokeShape><RoundRectangle CornerRadius="10" /></Border.StrokeShape>
-                <Label Text="Balance" TextColor="#134e4a" FontSize="12" FontAttributes="Bold" />
+                <Label Text="Balance" TextColor="{StaticResource TealText}" FontSize="12" FontAttributes="Bold" />
             </Border>
             <Label Grid.Row="1" Text="Баланс позитивного и негативного"
                    FontAttributes="Bold" FontSize="16" Margin="0,8,0,2" />
@@ -40,7 +40,7 @@
                     <Grid ColumnDefinitions="80,*,36" ColumnSpacing="8">
                         <Label Grid.Column="0" Text="Позитивные" FontSize="12" VerticalOptions="Center" />
                         <BoxView Grid.Column="1" WidthRequest="{Binding PosBarWidth}" HeightRequest="14"
-                                 Color="#4ade80" CornerRadius="2"
+                                 Color="{StaticResource PositiveBar}" CornerRadius="2"
                                  HorizontalOptions="Start" VerticalOptions="Center" />
                         <Label Grid.Column="2"
                                Text="{Binding AvgPosIntensity, StringFormat='{0:F1}'}"
@@ -50,7 +50,7 @@
                     <Grid ColumnDefinitions="80,*,36" ColumnSpacing="8">
                         <Label Grid.Column="0" Text="Негативные" FontSize="12" VerticalOptions="Center" />
                         <BoxView Grid.Column="1" WidthRequest="{Binding NegBarWidth}" HeightRequest="14"
-                                 Color="#f87171" CornerRadius="2"
+                                 Color="{StaticResource NegativeBar}" CornerRadius="2"
                                  HorizontalOptions="Start" VerticalOptions="Center" />
                         <Label Grid.Column="2"
                                Text="{Binding AvgNegIntensity, StringFormat='{0:F1}'}"

@@ -43,6 +43,25 @@
     <Color x:Key="Error">#B00020</Color>
     <Color x:Key="Amber">#f59e0b</Color>
 
+    <!-- ── Insight card category accents ─────────────────── -->
+    <Color x:Key="PurpleBg">#f3e8ff</Color>
+    <Color x:Key="PurpleText">#6b21a8</Color>
+    <Color x:Key="PurpleAccent">#c084fc</Color>
+
+    <Color x:Key="TealBg">#ccfbf1</Color>
+    <Color x:Key="TealText">#134e4a</Color>
+    <Color x:Key="TealAccent">#2dd4bf</Color>
+
+    <Color x:Key="BlueBg">#dbeafe</Color>
+    <Color x:Key="BlueText">#1e40af</Color>
+
+    <Color x:Key="AmberBg">#fef3c7</Color>
+    <Color x:Key="AmberText">#92400e</Color>
+    <Color x:Key="AmberAccent">#fcd34d</Color>
+
+    <Color x:Key="Slate">#94a3b8</Color>
+    <Color x:Key="SlateLight">#cbd5e1</Color>
+
     <!-- ── Legacy event-form tokens (kept for backward-compat) -->
     <Color x:Key="SaveActiveColor">#006a60</Color>
 

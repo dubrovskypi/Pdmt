@@ -6,12 +6,12 @@
     xmlns:cards="clr-namespace:Pdmt.Maui.ViewModels.Cards"
     x:DataType="cards:Card10InfluenceViewModel">
 
-    <Border Margin="4,0" Padding="16" BackgroundColor="{StaticResource Surface}">
+    <Border Margin="4,0" Padding="16" BackgroundColor="{StaticResource Card}">
         <Grid RowDefinitions="Auto,Auto,Auto,*,Auto" RowSpacing="0">
-            <Border Grid.Row="0" BackgroundColor="#ccfbf1" Stroke="Transparent" StrokeThickness="0"
+            <Border Grid.Row="0" BackgroundColor="{StaticResource TealBg}" Stroke="Transparent" StrokeThickness="0"
                     Padding="8,3" HorizontalOptions="Start">
                 <Border.StrokeShape><RoundRectangle CornerRadius="10" /></Border.StrokeShape>
-                <Label Text="Control" TextColor="#134e4a" FontSize="12" FontAttributes="Bold" />
+                <Label Text="Control" TextColor="{StaticResource TealText}" FontSize="12" FontAttributes="Bold" />
             </Border>
             <Label Grid.Row="1" Text="Что в твоих силах"
                    FontAttributes="Bold" FontSize="16" Margin="0,8,0,2" />
@@ -23,13 +23,13 @@
                         <ColumnDefinition Width="{Binding CanGridLength}" />
                         <ColumnDefinition Width="{Binding CannotGridLength}" />
                     </Grid.ColumnDefinitions>
-                    <BoxView Grid.Column="0" Color="#2dd4bf" CornerRadius="4,0,4,0" />
-                    <BoxView Grid.Column="1" Color="#cbd5e1" CornerRadius="0,4,0,4" />
+                    <BoxView Grid.Column="0" Color="{StaticResource TealAccent}" CornerRadius="4,0,4,0" />
+                    <BoxView Grid.Column="1" Color="{StaticResource SlateLight}" CornerRadius="0,4,0,4" />
                 </Grid>
                 <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
                     <VerticalStackLayout Grid.Column="0" Spacing="2">
                         <HorizontalStackLayout Spacing="6">
-                            <BoxView WidthRequest="12" HeightRequest="12" Color="#2dd4bf"
+                            <BoxView WidthRequest="12" HeightRequest="12" Color="{StaticResource TealAccent}"
                                      CornerRadius="2" VerticalOptions="Center" />
                             <Label Text="Могу влиять" FontSize="13" VerticalOptions="Center" />
                         </HorizontalStackLayout>
@@ -40,7 +40,7 @@
                     </VerticalStackLayout>
                     <VerticalStackLayout Grid.Column="1" Spacing="2">
                         <HorizontalStackLayout Spacing="6">
-                            <BoxView WidthRequest="12" HeightRequest="12" Color="#cbd5e1"
+                            <BoxView WidthRequest="12" HeightRequest="12" Color="{StaticResource SlateLight}"
                                      CornerRadius="2" VerticalOptions="Center" />
                             <Label Text="Не могу влиять" FontSize="13" VerticalOptions="Center" />
                         </HorizontalStackLayout>
