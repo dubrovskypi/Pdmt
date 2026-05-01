@@ -13,6 +13,9 @@ public partial class RegisterViewModel(AuthService authService, ITokenService to
     private string _password = "";
 
     [ObservableProperty]
+    private string _confirmPassword = "";
+
+    [ObservableProperty]
     private string? _errorMessage;
 
     [ObservableProperty]
@@ -33,6 +36,12 @@ public partial class RegisterViewModel(AuthService authService, ITokenService to
         if (Password.Length < 8)
         {
             ErrorMessage = "Password must be at least 8 characters";
+            return;
+        }
+
+        if (Password != ConfirmPassword)
+        {
+            ErrorMessage = "Passwords do not match";
             return;
         }
 

@@ -94,7 +94,7 @@
                         FontSize="13"
                         TextColor="{StaticResource Muted}" />
                     <Button
-                        Text="Register"
+                        Text="Sign up"
                         Style="{StaticResource LinkButton}"
                         Command="{Binding GoToRegisterCommand}" />
                 </HorizontalStackLayout>

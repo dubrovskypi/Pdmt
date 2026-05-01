@@ -70,8 +70,14 @@
                     ReturnType="Next" />
 
                 <Entry
-                    Placeholder="Password (min 8 characters)"
+                    Placeholder="Password"
                     Text="{Binding Password}"
+                    IsPassword="True"
+                    ReturnType="Next" />
+
+                <Entry
+                    Placeholder="Confirm password"
+                    Text="{Binding ConfirmPassword}"
                     IsPassword="True"
                     ReturnType="Done"
                     ReturnCommand="{Binding RegisterCommand}" />
