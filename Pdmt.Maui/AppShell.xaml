@@ -12,7 +12,7 @@
     TabBarBackgroundColor="#f9f9f9"
     TabBarForegroundColor="#006a60"
     TabBarUnselectedColor="#888888"
-    TabBarTitleColor="#111111">
+    TabBarTitleColor="#006a60">
 
     <!-- Main tabs -->
     <TabBar>
