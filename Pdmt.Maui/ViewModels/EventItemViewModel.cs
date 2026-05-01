@@ -17,15 +17,21 @@ public class EventItemViewModel(EventResponseDto dto)
     public bool CanInfluence => dto.CanInfluence;
     public IReadOnlyList<TagResponseDto> Tags => dto.Tags;
 
-    public Color TypeColor => Type == EventType.Positive
-        ? Color.FromArgb("#2E7D32")
-        : Color.FromArgb("#C62828");
+    public Color BarColor => Type == EventType.Positive
+        ? Color.FromArgb("#4ade80")
+        : Color.FromArgb("#f87171");
+
+    public Color MetaColor => Type == EventType.Positive
+        ? Color.FromArgb("#16a34a")
+        : Color.FromArgb("#dc2626");
+
+    public Color TypeColor => MetaColor;
 
     public Color CardBackgroundColor => Type == EventType.Positive
-        ? Color.FromArgb("#F1F8E9")
-        : Color.FromArgb("#FFEBEE");
+        ? Color.FromArgb("#f0fdf4")
+        : Color.FromArgb("#fff1f2");
 
     public Color CardBorderColor => Type == EventType.Positive
-        ? Color.FromArgb("#C8E6C9")
-        : Color.FromArgb("#FFCDD2");
+        ? Color.FromArgb("#bbf7d0")
+        : Color.FromArgb("#fecdd3");
 }

@@ -12,18 +12,11 @@
     BackgroundColor="{StaticResource Background}">
 
     <Shell.TitleView>
-        <Grid Padding="12,0" ColumnDefinitions="*,Auto">
-            <Label Grid.Column="0"
-                   Text="Insights"
-                   FontSize="18" FontAttributes="Bold"
-                   TextColor="{StaticResource OnSurface}"
-                   VerticalOptions="Center" />
-            <Label Grid.Column="1"
-                   Text="{Binding CardCounterLabel}"
-                   FontSize="13"
-                   TextColor="{StaticResource OnSurfaceVariant}"
-                   VerticalOptions="Center" />
-        </Grid>
+        <Label Text="Insights"
+               FontSize="18" FontAttributes="Bold"
+               TextColor="{StaticResource OnSurface}"
+               VerticalOptions="Center"
+               Padding="12,0" />
     </Shell.TitleView>
 
     <ContentPage.Resources>
@@ -75,51 +68,78 @@
 
     <Grid RowDefinitions="Auto,*,Auto">
 
-        <!-- Row 0: Period pill toggle -->
-        <Border Grid.Row="0" Margin="12,8,12,4"
-                StrokeShape="RoundRectangle 100"
-                Stroke="{StaticResource Border}"
-                StrokeThickness="1"
-                BackgroundColor="{StaticResource SurfaceVariant}"
-                Padding="2"
-                HorizontalOptions="Center">
-            <HorizontalStackLayout Spacing="0">
+        <!-- Row 0: Period chips + counter -->
+        <Grid Grid.Row="0" Padding="12,8" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
 
-                <Border StrokeShape="RoundRectangle 100" StrokeThickness="0" Padding="16,6"
-                        BackgroundColor="{Binding WeekChipBg}">
+            <HorizontalStackLayout Grid.Column="0" Spacing="5">
+                <Border Style="{StaticResource MChipBorder}">
+                    <Border.Triggers>
+                        <DataTrigger TargetType="Border" Binding="{Binding IsWeekSelected}" Value="True">
+                            <Setter Property="BackgroundColor" Value="{StaticResource PrimaryContainer}" />
+                            <Setter Property="Stroke" Value="{StaticResource Primary}" />
+                        </DataTrigger>
+                    </Border.Triggers>
                     <Border.GestureRecognizers>
                         <TapGestureRecognizer Command="{Binding SelectPeriodCommand}"
                                               CommandParameter="{Binding PeriodOptions[0]}" />
                     </Border.GestureRecognizers>
-                    <Label Text="{Binding PeriodOptions[0].Label}"
-                           FontSize="12" FontAttributes="Bold"
-                           TextColor="{Binding WeekChipText}" />
+                    <Label Text="{Binding PeriodOptions[0].Label}" Style="{StaticResource MChipLabel}">
+                        <Label.Triggers>
+                            <DataTrigger TargetType="Label" Binding="{Binding IsWeekSelected}" Value="True">
+                                <Setter Property="TextColor" Value="{StaticResource Primary}" />
+                            </DataTrigger>
+                        </Label.Triggers>
+                    </Label>
                 </Border>
 
-                <Border StrokeShape="RoundRectangle 100" StrokeThickness="0" Padding="16,6"
-                        BackgroundColor="{Binding TwoWeeksChipBg}">
+                <Border Style="{StaticResource MChipBorder}">
+                    <Border.Triggers>
+                        <DataTrigger TargetType="Border" Binding="{Binding IsTwoWeeksSelected}" Value="True">
+                            <Setter Property="BackgroundColor" Value="{StaticResource PrimaryContainer}" />
+                            <Setter Property="Stroke" Value="{StaticResource Primary}" />
+                        </DataTrigger>
+                    </Border.Triggers>
                     <Border.GestureRecognizers>
                         <TapGestureRecognizer Command="{Binding SelectPeriodCommand}"
                                               CommandParameter="{Binding PeriodOptions[1]}" />
                     </Border.GestureRecognizers>
-                    <Label Text="{Binding PeriodOptions[1].Label}"
-                           FontSize="12" FontAttributes="Bold"
-                           TextColor="{Binding TwoWeeksChipText}" />
+                    <Label Text="{Binding PeriodOptions[1].Label}" Style="{StaticResource MChipLabel}">
+                        <Label.Triggers>
+                            <DataTrigger TargetType="Label" Binding="{Binding IsTwoWeeksSelected}" Value="True">
+                                <Setter Property="TextColor" Value="{StaticResource Primary}" />
+                            </DataTrigger>
+                        </Label.Triggers>
+                    </Label>
                 </Border>
 
-                <Border StrokeShape="RoundRectangle 100" StrokeThickness="0" Padding="16,6"
-                        BackgroundColor="{Binding MonthChipBg}">
+                <Border Style="{StaticResource MChipBorder}">
+                    <Border.Triggers>
+                        <DataTrigger TargetType="Border" Binding="{Binding IsMonthSelected}" Value="True">
+                            <Setter Property="BackgroundColor" Value="{StaticResource PrimaryContainer}" />
+                            <Setter Property="Stroke" Value="{StaticResource Primary}" />
+                        </DataTrigger>
+                    </Border.Triggers>
                     <Border.GestureRecognizers>
                         <TapGestureRecognizer Command="{Binding SelectPeriodCommand}"
                                               CommandParameter="{Binding PeriodOptions[2]}" />
                     </Border.GestureRecognizers>
-                    <Label Text="{Binding PeriodOptions[2].Label}"
-                           FontSize="12" FontAttributes="Bold"
-                           TextColor="{Binding MonthChipText}" />
+                    <Label Text="{Binding PeriodOptions[2].Label}" Style="{StaticResource MChipLabel}">
+                        <Label.Triggers>
+                            <DataTrigger TargetType="Label" Binding="{Binding IsMonthSelected}" Value="True">
+                                <Setter Property="TextColor" Value="{StaticResource Primary}" />
+                            </DataTrigger>
+                        </Label.Triggers>
+                    </Label>
                 </Border>
-
             </HorizontalStackLayout>
-        </Border>
+
+            <Label Grid.Column="2"
+                   Text="{Binding CardCounterLabel}"
+                   FontSize="13"
+                   TextColor="{StaticResource OnSurfaceVariant}"
+                   VerticalOptions="Center" />
+
+        </Grid>
 
         <!-- Row 1: Carousel -->
         <CarouselView

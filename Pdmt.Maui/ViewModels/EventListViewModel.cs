@@ -17,9 +17,9 @@ public partial class EventListViewModel(
 
     public IReadOnlyList<EventTypeFilter> EventTypeFilters { get; } = [
         new("All", null),
-        ..Enum.GetValues<EventType>()
-        .Select(t => new EventTypeFilter(t.ToString(), t))
-        ];
+        new("Positive", EventType.Positive),
+        new("Negative", EventType.Negative),
+    ];
 
     public ObservableCollection<TagFilter> TagFilters { get; } = [];
 

@@ -247,4 +247,21 @@
         <Setter Property="MinimumHeightRequest" Value="0" />
     </Style>
 
+    <!-- ── MChip: design-system pill chip ──────────────────────── -->
+
+    <Style x:Key="MChipBorder" TargetType="Border">
+        <Setter Property="StrokeShape" Value="RoundRectangle 100" />
+        <Setter Property="StrokeThickness" Value="1" />
+        <Setter Property="Padding" Value="12,4" />
+        <Setter Property="BackgroundColor" Value="Transparent" />
+        <Setter Property="Stroke" Value="{StaticResource Border}" />
+    </Style>
+
+    <Style x:Key="MChipLabel" TargetType="Label">
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="FontAttributes" Value="None" />
+        <Setter Property="TextColor" Value="{StaticResource OnSurfaceVariant}" />
+        <Setter Property="VerticalOptions" Value="Center" />
+    </Style>
+
 </ResourceDictionary>
