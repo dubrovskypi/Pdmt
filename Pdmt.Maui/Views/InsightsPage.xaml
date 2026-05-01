@@ -12,11 +12,22 @@
     BackgroundColor="{StaticResource Background}">
 
     <Shell.TitleView>
-        <Label Text="Insights"
-               FontSize="18" FontAttributes="Bold"
-               TextColor="{StaticResource OnSurface}"
-               VerticalOptions="Center"
-               Padding="12,0" />
+        <Grid ColumnDefinitions="Auto,*" Padding="8,0">
+            <Image
+                Grid.Column="0"
+                Source="logo.svg"
+                HeightRequest="24"
+                WidthRequest="24"
+                VerticalOptions="Center"
+                Margin="0,0,8,0" />
+            <Label
+                Grid.Column="1"
+                Text="Insights"
+                FontSize="18"
+                FontAttributes="Bold"
+                TextColor="{StaticResource OnSurface}"
+                VerticalOptions="Center" />
+        </Grid>
     </Shell.TitleView>
 
     <ContentPage.Resources>

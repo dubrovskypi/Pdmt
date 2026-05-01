@@ -14,8 +14,16 @@
     </ContentPage.Resources>
 
     <Shell.TitleView>
-        <Grid Padding="8,0">
+        <Grid ColumnDefinitions="Auto,*" Padding="8,0">
+            <Image
+                Grid.Column="0"
+                Source="logo.svg"
+                HeightRequest="24"
+                WidthRequest="24"
+                VerticalOptions="Center"
+                Margin="0,0,8,0" />
             <Label
+                Grid.Column="1"
                 Text="Calendar"
                 FontSize="18"
                 FontAttributes="Bold"
