@@ -18,12 +18,8 @@
 
     <!-- ── Brand primary ───────────────────────────────────── -->
     <Color x:Key="Primary">#006a60</Color>
-    <Color x:Key="PrimaryDark">#004f47</Color>
     <Color x:Key="PrimaryContainer">#cde8e1</Color>
     <Color x:Key="OnPrimary">#ffffff</Color>
-
-    <!-- ── Legacy keys (kept for backward-compat with existing bindings) -->
-    <Color x:Key="Secondary">#eeeeee</Color>
 
     <!-- ── Positive (green) ────────────────────────────────── -->
     <Color x:Key="Positive">#16a34a</Color>
