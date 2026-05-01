@@ -158,32 +158,6 @@
                         </BindableLayout.ItemTemplate>
                     </FlexLayout>
 
-                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="6">
-                        <Border
-                            Grid.Column="0"
-                            BackgroundColor="{StaticResource Card}"
-                            Stroke="{StaticResource Border}"
-                            StrokeThickness="1.5"
-                            StrokeShape="RoundRectangle 10"
-                            Padding="8,0">
-                            <Entry
-                                Placeholder="Custom tag…"
-                                Text="{Binding TagInput}"
-                                ReturnCommand="{Binding CommitTagInputCommand}"
-                                ReturnType="Done"
-                                FontSize="14" />
-                        </Border>
-                        <Button
-                            Grid.Column="1"
-                            Text="Add"
-                            Command="{Binding CommitTagInputCommand}"
-                            BackgroundColor="{StaticResource Primary}"
-                            IsVisible="{Binding TagInput, Converter={StaticResource NotNullToBool}}"
-                            CornerRadius="8"
-                            FontSize="13"
-                            Padding="12,7" />
-                    </Grid>
-
                     <Border
                         IsVisible="{Binding HasSuggestions}"
                         Padding="0"
@@ -207,6 +181,32 @@
                             </CollectionView.ItemTemplate>
                         </CollectionView>
                     </Border>
+
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="6">
+                        <Border
+                            Grid.Column="0"
+                            BackgroundColor="{StaticResource Card}"
+                            Stroke="{StaticResource Border}"
+                            StrokeThickness="1.5"
+                            StrokeShape="RoundRectangle 10"
+                            Padding="8,0">
+                            <Entry
+                                Placeholder="Custom tag…"
+                                Text="{Binding TagInput}"
+                                ReturnCommand="{Binding CommitTagInputCommand}"
+                                ReturnType="Done"
+                                FontSize="14" />
+                        </Border>
+                        <Button
+                            Grid.Column="1"
+                            Text="Add"
+                            Command="{Binding CommitTagInputCommand}"
+                            BackgroundColor="{StaticResource Primary}"
+                            IsVisible="{Binding HasTagInput}"
+                            CornerRadius="8"
+                            FontSize="13"
+                            Padding="12,7" />
+                    </Grid>
 
                 </VerticalStackLayout>
 
