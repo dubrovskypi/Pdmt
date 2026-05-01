@@ -31,100 +31,104 @@
         </Grid>
     </Shell.TitleView>
 
-    <ScrollView>
-        <VerticalStackLayout Padding="16" Spacing="16">
+    <Grid RowDefinitions="Auto,*,Auto">
+        <BoxView Grid.Row="0" HeightRequest="1" Color="{StaticResource Border}" />
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Padding="16" Spacing="16">
 
-            <!-- Avatar + email + member since -->
-            <VerticalStackLayout Spacing="8" HorizontalOptions="Center" Margin="0,16,0,0">
-                <Border
-                    WidthRequest="72"
-                    HeightRequest="72"
-                    StrokeShape="RoundRectangle 36"
-                    BackgroundColor="{StaticResource PrimaryContainer}"
-                    StrokeThickness="0">
+                <!-- Avatar + email + member since -->
+                <VerticalStackLayout Spacing="8" HorizontalOptions="Center" Margin="0,16,0,0">
+                    <Border
+                        WidthRequest="72"
+                        HeightRequest="72"
+                        StrokeShape="RoundRectangle 36"
+                        BackgroundColor="{StaticResource PrimaryContainer}"
+                        StrokeThickness="0">
+                        <Label
+                            Text="{Binding Initial}"
+                            FontSize="28"
+                            FontAttributes="Bold"
+                            TextColor="{StaticResource Primary}"
+                            HorizontalOptions="Center"
+                            VerticalOptions="Center" />
+                    </Border>
                     <Label
-                        Text="{Binding Initial}"
-                        FontSize="28"
+                        Text="{Binding Email}"
+                        FontSize="15"
                         FontAttributes="Bold"
-                        TextColor="{StaticResource Primary}"
+                        TextColor="{StaticResource OnSurface}"
+                        HorizontalOptions="Center" />
+                    <Label
+                        Text="{Binding MemberSinceLabel}"
+                        FontSize="12"
+                        TextColor="{StaticResource Muted}"
                         HorizontalOptions="Center"
-                        VerticalOptions="Center" />
+                        IsVisible="{Binding MemberSinceLabel, Converter={StaticResource NotNullToBool}}" />
+                </VerticalStackLayout>
+
+                <!-- Stats card -->
+                <Border
+                    BackgroundColor="{StaticResource Card}"
+                    Padding="0"
+                    StrokeShape="RoundRectangle 10"
+                    StrokeThickness="1"
+                    Stroke="{StaticResource Border}">
+                    <VerticalStackLayout Spacing="0">
+                        <Grid Padding="16,12" ColumnDefinitions="*,Auto">
+                            <Label Grid.Column="0" Text="Total events" FontSize="14"
+                                   TextColor="{StaticResource OnSurface}" VerticalOptions="Center" />
+                            <Label Grid.Column="1" Text="{Binding TotalCount}" FontSize="14"
+                                   FontAttributes="Bold" TextColor="{StaticResource OnSurface}"
+                                   VerticalOptions="Center" />
+                        </Grid>
+                        <BoxView HeightRequest="1" Color="{StaticResource Border}" />
+                        <Grid Padding="16,12" ColumnDefinitions="*,Auto">
+                            <Label Grid.Column="0" Text="Positive" FontSize="14"
+                                   TextColor="{StaticResource OnSurface}" VerticalOptions="Center" />
+                            <Label Grid.Column="1" Text="{Binding PositiveCount}" FontSize="14"
+                                   FontAttributes="Bold" TextColor="{StaticResource PositiveText}"
+                                   VerticalOptions="Center" />
+                        </Grid>
+                        <BoxView HeightRequest="1" Color="{StaticResource Border}" />
+                        <Grid Padding="16,12" ColumnDefinitions="*,Auto">
+                            <Label Grid.Column="0" Text="Negative" FontSize="14"
+                                   TextColor="{StaticResource OnSurface}" VerticalOptions="Center" />
+                            <Label Grid.Column="1" Text="{Binding NegativeCount}" FontSize="14"
+                                   FontAttributes="Bold" TextColor="{StaticResource NegativeText}"
+                                   VerticalOptions="Center" />
+                        </Grid>
+                        <BoxView HeightRequest="1" Color="{StaticResource Border}" />
+                        <Grid Padding="16,12" ColumnDefinitions="*,Auto">
+                            <Label Grid.Column="0" Text="Tags" FontSize="14"
+                                   TextColor="{StaticResource OnSurface}" VerticalOptions="Center" />
+                            <Label Grid.Column="1" Text="{Binding TagCount}" FontSize="14"
+                                   FontAttributes="Bold" TextColor="{StaticResource OnSurface}"
+                                   VerticalOptions="Center" />
+                        </Grid>
+                    </VerticalStackLayout>
                 </Border>
-                <Label
-                    Text="{Binding Email}"
-                    FontSize="15"
-                    FontAttributes="Bold"
-                    TextColor="{StaticResource OnSurface}"
+
+                <ActivityIndicator
+                    IsRunning="{Binding IsLoading}"
+                    IsVisible="{Binding IsLoading}"
+                    Color="{StaticResource Primary}"
                     HorizontalOptions="Center" />
                 <Label
-                    Text="{Binding MemberSinceLabel}"
-                    FontSize="12"
-                    TextColor="{StaticResource Muted}"
-                    HorizontalOptions="Center"
-                    IsVisible="{Binding MemberSinceLabel, Converter={StaticResource NotNullToBool}}" />
+                    Style="{StaticResource ErrorLabel}"
+                    Text="{Binding ErrorMessage}"
+                    IsVisible="{Binding ErrorMessage, Converter={StaticResource NotNullToBool}}"
+                    HorizontalOptions="Center" />
+
+                <!-- Logout: outlined -->
+                <Button
+                    Text="Logout"
+                    Command="{Binding LogoutCommand}"
+                    Style="{StaticResource SecondaryButton}"
+                    Margin="0,8,0,0" />
+
             </VerticalStackLayout>
-
-            <!-- Stats card -->
-            <Border
-                BackgroundColor="{StaticResource Card}"
-                Padding="0"
-                StrokeShape="RoundRectangle 10"
-                StrokeThickness="1"
-                Stroke="{StaticResource Border}">
-                <VerticalStackLayout Spacing="0">
-                    <Grid Padding="16,12" ColumnDefinitions="*,Auto">
-                        <Label Grid.Column="0" Text="Total events" FontSize="14"
-                               TextColor="{StaticResource OnSurface}" VerticalOptions="Center" />
-                        <Label Grid.Column="1" Text="{Binding TotalCount}" FontSize="14"
-                               FontAttributes="Bold" TextColor="{StaticResource OnSurface}"
-                               VerticalOptions="Center" />
-                    </Grid>
-                    <BoxView HeightRequest="1" Color="{StaticResource Border}" />
-                    <Grid Padding="16,12" ColumnDefinitions="*,Auto">
-                        <Label Grid.Column="0" Text="Positive" FontSize="14"
-                               TextColor="{StaticResource OnSurface}" VerticalOptions="Center" />
-                        <Label Grid.Column="1" Text="{Binding PositiveCount}" FontSize="14"
-                               FontAttributes="Bold" TextColor="{StaticResource PositiveText}"
-                               VerticalOptions="Center" />
-                    </Grid>
-                    <BoxView HeightRequest="1" Color="{StaticResource Border}" />
-                    <Grid Padding="16,12" ColumnDefinitions="*,Auto">
-                        <Label Grid.Column="0" Text="Negative" FontSize="14"
-                               TextColor="{StaticResource OnSurface}" VerticalOptions="Center" />
-                        <Label Grid.Column="1" Text="{Binding NegativeCount}" FontSize="14"
-                               FontAttributes="Bold" TextColor="{StaticResource NegativeText}"
-                               VerticalOptions="Center" />
-                    </Grid>
-                    <BoxView HeightRequest="1" Color="{StaticResource Border}" />
-                    <Grid Padding="16,12" ColumnDefinitions="*,Auto">
-                        <Label Grid.Column="0" Text="Tags" FontSize="14"
-                               TextColor="{StaticResource OnSurface}" VerticalOptions="Center" />
-                        <Label Grid.Column="1" Text="{Binding TagCount}" FontSize="14"
-                               FontAttributes="Bold" TextColor="{StaticResource OnSurface}"
-                               VerticalOptions="Center" />
-                    </Grid>
-                </VerticalStackLayout>
-            </Border>
-
-            <ActivityIndicator
-                IsRunning="{Binding IsLoading}"
-                IsVisible="{Binding IsLoading}"
-                Color="{StaticResource Primary}"
-                HorizontalOptions="Center" />
-            <Label
-                Style="{StaticResource ErrorLabel}"
-                Text="{Binding ErrorMessage}"
-                IsVisible="{Binding ErrorMessage, Converter={StaticResource NotNullToBool}}"
-                HorizontalOptions="Center" />
-
-            <!-- Logout: outlined -->
-            <Button
-                Text="Logout"
-                Command="{Binding LogoutCommand}"
-                Style="{StaticResource SecondaryButton}"
-                Margin="0,8,0,0" />
-
-        </VerticalStackLayout>
-    </ScrollView>
+        </ScrollView>
+        <BoxView Grid.Row="2" HeightRequest="1" Color="{StaticResource Border}" />
+    </Grid>
 
 </ContentPage>

@@ -59,18 +59,20 @@
         </Grid>
     </Shell.TitleView>
 
-    <Grid RowDefinitions="Auto,Auto,*">
+    <Grid RowDefinitions="Auto,Auto,Auto,*,Auto">
+
+        <BoxView Grid.Row="0" HeightRequest="1" Color="{StaticResource Border}" />
 
         <!-- Error banner -->
         <Label
-            Grid.Row="0"
+            Grid.Row="1"
             Style="{StaticResource ErrorLabel}"
             Text="{Binding ErrorMessage}"
             IsVisible="{Binding ErrorMessage, Converter={StaticResource NotNullToBool}}"
             Padding="16,8" />
 
         <!-- Filter panel: full-width SurfaceVariant strip with bottom border -->
-        <Grid Grid.Row="1" RowDefinitions="*,1" IsVisible="{Binding IsFilterPanelVisible}">
+        <Grid Grid.Row="2" RowDefinitions="*,1" IsVisible="{Binding IsFilterPanelVisible}">
             <VerticalStackLayout
                 Grid.Row="0"
                 BackgroundColor="{StaticResource SurfaceVariant}"
@@ -211,7 +213,7 @@
 
         <!-- Event list -->
         <RefreshView
-            Grid.Row="2"
+            Grid.Row="3"
             Command="{Binding RefreshCommand}"
             IsRefreshing="{Binding IsRefreshing}"
             RefreshColor="{StaticResource Primary}">
@@ -351,16 +353,18 @@
 
         <!-- Loading overlay -->
         <ActivityIndicator
-            Grid.Row="2"
+            Grid.Row="3"
             IsRunning="{Binding IsBusy}"
             IsVisible="{Binding IsBusy}"
             Color="{StaticResource Primary}"
             VerticalOptions="Center"
             HorizontalOptions="Center" />
 
+        <BoxView Grid.Row="4" HeightRequest="1" Color="{StaticResource Border}" />
+
         <!-- Extended FAB: centered at bottom -->
         <Border
-            Grid.Row="0"
+            Grid.Row="1"
             Grid.RowSpan="3"
             StrokeShape="RoundRectangle 14"
             BackgroundColor="{StaticResource Primary}"

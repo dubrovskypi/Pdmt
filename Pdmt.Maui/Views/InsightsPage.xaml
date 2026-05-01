@@ -77,10 +77,12 @@
 
     </ContentPage.Resources>
 
-    <Grid RowDefinitions="Auto,*,Auto">
+    <Grid RowDefinitions="Auto,Auto,Auto,*,Auto,Auto">
 
-        <!-- Row 0: Period chips + counter -->
-        <Grid Grid.Row="0" Padding="12,8" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+        <BoxView Grid.Row="0" HeightRequest="1" Color="{StaticResource Border}" />
+        
+        <!-- Period chips + counter -->
+        <Grid Grid.Row="1" Padding="12,8" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
 
             <HorizontalStackLayout Grid.Column="0" Spacing="5">
                 <Border Style="{StaticResource MChipBorder}">
@@ -152,15 +154,18 @@
 
         </Grid>
 
-        <!-- Row 1: Carousel -->
+        <BoxView Grid.Row="2" HeightRequest="1" Color="{StaticResource Border}" />
+
+        <!-- Carousel -->
         <CarouselView
-            Grid.Row="1"
+            Grid.Row="3"
             x:Name="InsightsCarousel"
             ItemsSource="{Binding Cards}"
             ItemTemplate="{StaticResource CardSelector}"
             PeekAreaInsets="20"
             Loop="False"
-            Position="{Binding CurrentPosition, Mode=TwoWay}">
+            Position="{Binding CurrentPosition, Mode=TwoWay}"
+            Margin="0,12,0,0">
             <CarouselView.ItemsLayout>
                 <LinearItemsLayout Orientation="Horizontal" ItemSpacing="8" />
             </CarouselView.ItemsLayout>
@@ -168,16 +173,16 @@
 
         <!-- Page-level loading overlay -->
         <ActivityIndicator
-            Grid.Row="1"
+            Grid.Row="3"
             IsRunning="{Binding IsPageLoading}"
             IsVisible="{Binding IsPageLoading}"
             Color="{StaticResource Primary}"
             VerticalOptions="Center"
             HorizontalOptions="Center" />
 
-        <!-- Row 2: Tappable dot indicators -->
+        <!-- Tappable dot indicators -->
         <HorizontalStackLayout
-            Grid.Row="2"
+            Grid.Row="4"
             Spacing="4"
             HorizontalOptions="Center"
             Margin="0,4,0,12"
@@ -198,6 +203,8 @@
                 </DataTemplate>
             </BindableLayout.ItemTemplate>
         </HorizontalStackLayout>
+
+        <BoxView Grid.Row="5" HeightRequest="1" Color="{StaticResource Border}" />
 
     </Grid>
 </ContentPage>

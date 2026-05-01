@@ -32,11 +32,13 @@
         </Grid>
     </Shell.TitleView>
 
-    <Grid RowDefinitions="Auto,Auto,*">
+    <Grid RowDefinitions="Auto,Auto,Auto,Auto,*,Auto">
+
+        <BoxView Grid.Row="0" HeightRequest="1" Color="{StaticResource Border}" />
 
         <!-- Error banner -->
         <Label
-            Grid.Row="0"
+            Grid.Row="1"
             Style="{StaticResource ErrorLabel}"
             Text="{Binding ErrorMessage}"
             IsVisible="{Binding ErrorMessage, Converter={StaticResource NotNullToBool}}"
@@ -45,7 +47,7 @@
 
         <!-- Sub-header: ‹/› + period label + Week/Month toggle -->
         <Grid
-            Grid.Row="1"
+            Grid.Row="2"
             Padding="12,8"
             ColumnDefinitions="Auto,Auto,*,Auto"
             ColumnSpacing="6">
@@ -113,9 +115,11 @@
 
         </Grid>
 
-        <!-- ── Week view ── -->
+        <BoxView Grid.Row="3" HeightRequest="1" Color="{StaticResource Border}" />
+        
+        <!-- Week view -->
         <CollectionView
-            Grid.Row="2"
+            Grid.Row="4"
             IsVisible="{Binding IsWeekMode}"
             ItemsSource="{Binding Days}"
             Margin="12,0,12,12">
@@ -386,8 +390,8 @@
 
         </CollectionView>
 
-        <!-- ── Month view ── -->
-        <ScrollView Grid.Row="2" IsVisible="{Binding IsMonthMode}" Padding="12,4,12,12">
+        <!-- Month view -->
+        <ScrollView Grid.Row="4" IsVisible="{Binding IsMonthMode}" Padding="12,4,12,12">
             <VerticalStackLayout Spacing="12">
 
                 <!-- Weekday header -->
@@ -466,7 +470,7 @@
                 </CollectionView>
 
                 <!-- Monthly summary card -->
-                <Border Style="{StaticResource CardSurface}">
+                <Border Style="{StaticResource CardSurface}" Padding="12">
                     <VerticalStackLayout Spacing="10">
 
                         <Label Text="{Binding MonthSummaryHeader}" Style="{StaticResource SectionLabel}" />
@@ -515,12 +519,14 @@
 
         <!-- Loading overlay -->
         <ActivityIndicator
-            Grid.Row="2"
+            Grid.Row="4"
             IsRunning="{Binding IsBusy}"
             IsVisible="{Binding IsBusy}"
             Color="{StaticResource Primary}"
             VerticalOptions="Center"
             HorizontalOptions="Center" />
+
+        <BoxView Grid.Row="5" HeightRequest="1" Color="{StaticResource Border}" />
 
     </Grid>
 </ContentPage>
