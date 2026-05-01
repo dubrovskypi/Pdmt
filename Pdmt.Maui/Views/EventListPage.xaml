@@ -32,16 +32,21 @@
                 VerticalOptions="Center" />
             <!-- Filter toggle button + active badge -->
             <Grid Grid.Column="2" VerticalOptions="Center">
-                <Button
-                    Text="⊟"
-                    FontSize="18"
+                <ImageButton
+                    Source="ic_filter.svg"
+                    WidthRequest="40"
+                    HeightRequest="40"
                     BackgroundColor="Transparent"
-                    TextColor="{StaticResource OnSurface}"
                     BorderWidth="0"
-                    Padding="8,4"
-                    MinimumWidthRequest="0"
-                    MinimumHeightRequest="0"
-                    Command="{Binding ToggleFilterPanelCommand}" />
+                    Aspect="AspectFit"
+                    Padding="10"
+                    Command="{Binding ToggleFilterPanelCommand}">
+                    <ImageButton.Triggers>
+                        <DataTrigger TargetType="ImageButton" Binding="{Binding HasActiveFilters}" Value="True">
+                            <Setter Property="Source" Value="ic_filter_active.svg" />
+                        </DataTrigger>
+                    </ImageButton.Triggers>
+                </ImageButton>
                 <Ellipse
                     WidthRequest="8"
                     HeightRequest="8"
