@@ -212,7 +212,6 @@
 
                 <!-- Divider + optional section label -->
                 <BoxView HeightRequest="1" BackgroundColor="{StaticResource Border}" Margin="0,4" />
-                <Label Text="OPTIONAL" Style="{StaticResource SectionLabel}" />
 
                 <!-- Error -->
                 <Label
@@ -222,7 +221,7 @@
 
                 <!-- Context -->
                 <VerticalStackLayout Spacing="4">
-                    <Label Text="CONTEXT" Style="{StaticResource SectionLabel}" />
+                    <Label Text="CONTEXT (OPTIONAL)" Style="{StaticResource SectionLabel}" />
                     <Border
                         Padding="4,0"
                         BackgroundColor="{StaticResource Card}"
@@ -230,7 +229,7 @@
                         StrokeThickness="1.5"
                         StrokeShape="RoundRectangle 10">
                         <Entry
-                            Placeholder="Where / when (optional)"
+                            Placeholder="Add context…"
                             Text="{Binding Context}"
                             FontSize="14" />
                     </Border>
@@ -238,7 +237,7 @@
 
                 <!-- Description -->
                 <VerticalStackLayout Spacing="4">
-                    <Label Text="DESCRIPTION" Style="{StaticResource SectionLabel}" />
+                    <Label Text="DESCRIPTION (OPTIONAL)" Style="{StaticResource SectionLabel}" />
                     <Border
                         Padding="4,0"
                         BackgroundColor="{StaticResource Card}"
@@ -259,12 +258,12 @@
                     <Grid.GestureRecognizers>
                         <TapGestureRecognizer Command="{Binding ToggleInfluenceCommand}" />
                     </Grid.GestureRecognizers>
+                    <Label Grid.Column="0" Text="CAN INFLUENCE" Style="{StaticResource SectionLabel}" VerticalOptions="Center" />
                     <Switch
-                        Grid.Column="0"
+                        Grid.Column="1"
                         IsToggled="{Binding CanInfluence}"
                         OnColor="{StaticResource PositiveBar}"
                         VerticalOptions="Center" />
-                    <Label Grid.Column="1" Text="I can influence" FontSize="13" VerticalOptions="Center" />
                 </Grid>
 
                 <!-- Event time -->
