@@ -10,7 +10,7 @@ public record BlindSpotBarItem(string TagName, double AvgIntensity, int Count, d
 
 public partial class Card05DiscountedPosViewModel(InsightsService insightsService) : InsightCardViewModel
 {
-    private const double DesignMaxWidth = 160.0;
+    private const double DesignMaxWidth = 130.0;
 
     [ObservableProperty] private IReadOnlyList<BlindSpotBarItem> _items = [];
     [ObservableProperty] private bool _isEmpty;

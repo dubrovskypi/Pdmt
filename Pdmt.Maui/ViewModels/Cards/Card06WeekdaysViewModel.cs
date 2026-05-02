@@ -7,7 +7,7 @@ public record DayBarItem(string DayLabel, double AvgScore, double BarWidth, stri
 
 public partial class Card06WeekdaysViewModel(InsightsService insightsService) : InsightCardViewModel
 {
-    private const double DesignMaxWidth = 140.0;
+    private const double DesignMaxWidth = 160.0;
 
     private static string GetBarColor(int pos, int neg)
     {

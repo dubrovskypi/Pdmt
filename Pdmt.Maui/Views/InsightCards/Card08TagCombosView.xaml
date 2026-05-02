@@ -19,13 +19,13 @@
                    Style="{StaticResource MutedLabel}" Margin="0,0,0,10" />
             <CollectionView Grid.Row="3" ItemsSource="{Binding Items}">
                 <CollectionView.ItemsLayout>
-                    <LinearItemsLayout Orientation="Vertical" ItemSpacing="10" />
+                    <LinearItemsLayout Orientation="Vertical" ItemSpacing="5" />
                 </CollectionView.ItemsLayout>
                 <CollectionView.ItemTemplate>
                     <DataTemplate x:DataType="cards:ComboItem">
-                        <VerticalStackLayout Spacing="3">
+                        <VerticalStackLayout Spacing="2">
                             <Label Text="{Binding Label}" FontSize="13" FontAttributes="Bold" />
-                            <Grid ColumnDefinitions="56,*,36" ColumnSpacing="6">
+                            <Grid ColumnDefinitions="80,*,36" ColumnSpacing="6">
                                 <Label Grid.Column="0" Text="Вместе" FontSize="11"
                                        TextColor="{StaticResource Muted}" VerticalOptions="Center" />
                                 <BoxView Grid.Column="1" WidthRequest="{Binding CombinedBarWidth}"
@@ -36,7 +36,7 @@
                                        FontSize="11" TextColor="{StaticResource Muted}"
                                        HorizontalOptions="End" VerticalOptions="Center" />
                             </Grid>
-                            <Grid ColumnDefinitions="56,*,36" ColumnSpacing="6">
+                            <Grid ColumnDefinitions="80,*,36" ColumnSpacing="6">
                                 <Label Grid.Column="0" Text="{Binding Tag1Name}" FontSize="11"
                                        TextColor="{StaticResource Muted}" VerticalOptions="Center"
                                        LineBreakMode="TailTruncation" />
@@ -48,7 +48,7 @@
                                        FontSize="11" TextColor="{StaticResource Muted}"
                                        HorizontalOptions="End" VerticalOptions="Center" />
                             </Grid>
-                            <Grid ColumnDefinitions="56,*,36" ColumnSpacing="6">
+                            <Grid ColumnDefinitions="80,*,36" ColumnSpacing="6">
                                 <Label Grid.Column="0" Text="{Binding Tag2Name}" FontSize="11"
                                        TextColor="{StaticResource Muted}" VerticalOptions="Center"
                                        LineBreakMode="TailTruncation" />

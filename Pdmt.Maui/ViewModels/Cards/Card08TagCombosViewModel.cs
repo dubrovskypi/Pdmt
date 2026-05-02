@@ -17,7 +17,7 @@ public record ComboItem(
 
 public partial class Card08TagCombosViewModel(InsightsService insightsService) : InsightCardViewModel
 {
-    private const double DesignMaxWidth = 130.0;
+    private const double DesignMaxWidth = 160.0;
 
     [ObservableProperty] private IReadOnlyList<ComboItem> _items = [];
 

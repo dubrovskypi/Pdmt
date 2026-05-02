@@ -7,7 +7,7 @@ public record NextDayBarItem(string TagName, double NextDayAvgScore, int Occurre
 
 public partial class Card07NextDayViewModel(InsightsService insightsService) : InsightCardViewModel
 {
-    private const double DesignMaxWidth = 140.0;
+    private const double DesignMaxWidth = 160.0;
 
     [ObservableProperty] private IReadOnlyList<NextDayBarItem> _items = [];
 
