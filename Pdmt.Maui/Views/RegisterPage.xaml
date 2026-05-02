@@ -24,8 +24,8 @@
             VerticalOptions="Center">
             <Image
                 Source="logo.svg"
-                HeightRequest="56"
-                WidthRequest="56"
+                HeightRequest="150"
+                WidthRequest="150"
                 HorizontalOptions="Center" />
             <Label
                 Text="Pdmt"
