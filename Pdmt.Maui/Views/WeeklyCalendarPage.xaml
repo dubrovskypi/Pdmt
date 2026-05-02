@@ -49,29 +49,31 @@
         <Grid
             Grid.Row="2"
             Padding="12,8"
-            ColumnDefinitions="Auto,Auto,*,Auto"
+            ColumnDefinitions="Auto,*,Auto,Auto"
             ColumnSpacing="6">
 
             <Button
                 Grid.Column="0"
                 Text="‹"
+                FontSize="16"
                 Style="{StaticResource IconCircleButton}"
                 Command="{Binding PrevPeriodCommand}" />
-
-            <Button
-                Grid.Column="1"
-                Text="›"
-                Style="{StaticResource IconCircleButton}"
-                Command="{Binding NextPeriodCommand}" />
-
+            
             <Label
-                Grid.Column="2"
+                Grid.Column="1"
                 Text="{Binding PeriodLabel}"
                 FontSize="13"
                 FontAttributes="Bold"
                 TextColor="{StaticResource OnSurface}"
                 HorizontalOptions="Center"
                 VerticalOptions="Center" />
+
+            <Button
+                Grid.Column="2"
+                Text="›"
+                FontSize="16"
+                Style="{StaticResource IconCircleButton}"
+                Command="{Binding NextPeriodCommand}" />
 
             <!-- Week / Month toggle pill -->
             <Border
@@ -80,7 +82,8 @@
                 Stroke="{StaticResource Border}"
                 StrokeThickness="1"
                 BackgroundColor="{StaticResource SurfaceVariant}"
-                Padding="2">
+                Padding="2"
+                Margin="10,0,0,0">
                 <HorizontalStackLayout Spacing="0">
                     <Border
                         StrokeShape="RoundRectangle 100"
