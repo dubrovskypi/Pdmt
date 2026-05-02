@@ -12,6 +12,7 @@ public partial class DotViewModel : ObservableObject
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(DotColor))]
+    [NotifyPropertyChangedFor(nameof(DotWidth))]
     private bool _isSelected;
 
     public DotViewModel(int index, bool isSelected)
@@ -23,6 +24,8 @@ public partial class DotViewModel : ObservableObject
     public Color DotColor => IsSelected
         ? (Color)Application.Current!.Resources["Primary"]
         : (Color)Application.Current!.Resources["Border"];
+
+    public double DotWidth => IsSelected ? 16 : 8;
 }
 
 public partial class InsightsViewModel : ObservableObject
@@ -49,6 +52,10 @@ public partial class InsightsViewModel : ObservableObject
     private bool _isPageLoading;
 
     private CancellationTokenSource? _cts;
+    private int _previousDotIndex;
+    private bool _isLoaded;
+
+    public event Action<int>? ScrollToCardRequested;
 
     public IReadOnlyList<PeriodOption> PeriodOptions { get; } = [
         new("Week", 7),
@@ -104,8 +111,11 @@ public partial class InsightsViewModel : ObservableObject
 
     partial void OnCurrentPositionChanged(int value)
     {
-        for (int i = 0; i < Dots.Count; i++)
-            Dots[i].IsSelected = i == value;
+        if (_previousDotIndex < Dots.Count)
+            Dots[_previousDotIndex].IsSelected = false;
+        if (value < Dots.Count)
+            Dots[value].IsSelected = true;
+        _previousDotIndex = value;
     }
 
     public void CancelLoad()
@@ -116,11 +126,14 @@ public partial class InsightsViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void GoToCard(int index) => CurrentPosition = index;
+    private void GoToCard(int index) => ScrollToCardRequested?.Invoke(index);
+
+    public void SetCurrentPosition(int index) => CurrentPosition = index;
 
     [RelayCommand]
     private async Task LoadAsync()
     {
+        if (_isLoaded) return;
         CancelLoad();
         _cts = new CancellationTokenSource();
         var ct = _cts.Token;
@@ -134,6 +147,8 @@ public partial class InsightsViewModel : ObservableObject
             await Task.WhenAll(Cards.Take(2).Select(c => c.LoadAsync(from, to, showLoading: false, ct)));
             IsPageLoading = false;
             await Task.WhenAll(Cards.Skip(2).Select(c => c.LoadAsync(from, to, showLoading: true, ct)));
+            if (!ct.IsCancellationRequested)
+                _isLoaded = true;
         }
         catch (OperationCanceledException) { }
         catch (Exception) when (ct.IsCancellationRequested) { }
@@ -148,6 +163,7 @@ public partial class InsightsViewModel : ObservableObject
     {
         if (period == SelectedPeriod) return;
         SelectedPeriod = period;
+        _isLoaded = false;
         await LoadAsync();
     }
 }

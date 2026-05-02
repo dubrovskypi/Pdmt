@@ -97,7 +97,7 @@ public static class MauiProgram
         builder.Services.AddTransient<EventListViewModel>();
         builder.Services.AddTransient<WeeklyCalendarViewModel>();
         builder.Services.AddTransient<AccountViewModel>();
-        builder.Services.AddTransient<InsightsViewModel>();
+        builder.Services.AddSingleton<InsightsViewModel>();
 
         // Pages
         builder.Services.AddTransient<LoginPage>();
@@ -107,7 +107,7 @@ public static class MauiProgram
         builder.Services.AddTransient<EventListPage>();
         builder.Services.AddTransient<WeeklyCalendarPage>();
         builder.Services.AddTransient<AccountPage>();
-        builder.Services.AddTransient<InsightsPage>();
+        builder.Services.AddSingleton<InsightsPage>();
 
         // Shell
         builder.Services.AddSingleton<AppShell>();

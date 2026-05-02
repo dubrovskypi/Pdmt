@@ -164,10 +164,12 @@
             ItemTemplate="{StaticResource CardSelector}"
             PeekAreaInsets="20"
             Loop="False"
-            Position="{Binding CurrentPosition, Mode=TwoWay}"
+            PositionChanged="OnCarouselPositionChanged"
             Margin="0,12,0,0">
             <CarouselView.ItemsLayout>
-                <LinearItemsLayout Orientation="Horizontal" ItemSpacing="8" />
+                <LinearItemsLayout Orientation="Horizontal" ItemSpacing="8"
+                    SnapPointsType="MandatorySingle"
+                    SnapPointsAlignment="Center" />
             </CarouselView.ItemsLayout>
         </CarouselView>
 
@@ -196,7 +198,7 @@
                                 Command="{Binding Source={x:Reference InsightsCarousel}, Path=BindingContext.GoToCardCommand}"
                                 CommandParameter="{Binding Index}" />
                         </Border.GestureRecognizers>
-                        <BoxView WidthRequest="8" HeightRequest="8" CornerRadius="4"
+                        <BoxView WidthRequest="{Binding DotWidth}" HeightRequest="8" CornerRadius="4"
                                  Color="{Binding DotColor}"
                                  HorizontalOptions="Center" VerticalOptions="Center" />
                     </Border>

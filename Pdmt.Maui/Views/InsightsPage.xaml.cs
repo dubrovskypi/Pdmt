@@ -1,4 +1,5 @@
 using Pdmt.Maui.ViewModels;
+using Pdmt.Maui.ViewModels.Cards;
 
 namespace Pdmt.Maui.Views;
 
@@ -8,6 +9,7 @@ public partial class InsightsPage : ContentPage
     {
         InitializeComponent();
         BindingContext = viewModel;
+        viewModel.ScrollToCardRequested += OnScrollToCardRequested;
     }
 
     protected override async void OnAppearing()
@@ -20,5 +22,17 @@ public partial class InsightsPage : ContentPage
     {
         base.OnDisappearing();
         ((InsightsViewModel)BindingContext).CancelLoad();
+    }
+
+    private void OnScrollToCardRequested(int index)
+    {
+        var vm = (InsightsViewModel)BindingContext;
+        if (index < vm.Cards.Count)
+            InsightsCarousel.ScrollTo(vm.Cards[index], position: ScrollToPosition.Center, animate: true);
+    }
+
+    private void OnCarouselPositionChanged(object? sender, PositionChangedEventArgs e)
+    {
+        ((InsightsViewModel)BindingContext).SetCurrentPosition(e.CurrentPosition);
     }
 }
