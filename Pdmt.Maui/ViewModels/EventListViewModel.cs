@@ -57,7 +57,7 @@ public partial class EventListViewModel(
         SelectedTypeFilter.Value is not null
         || SelectedTagFilter is not null
         || (FilterFrom.HasValue && FilterFrom.Value.Date != DateTime.Today.AddDays(-6))
-        || (FilterTo.HasValue && FilterTo.Value.Date != DateTime.Today.AddDays(1));
+        || (FilterTo.HasValue && FilterTo.Value.Date != DateTime.Today);
 
     public bool IsAllTypeSelected => SelectedTypeFilter.Value is null;
     public bool IsPositiveTypeSelected => SelectedTypeFilter.Value == EventType.Positive;
@@ -95,7 +95,7 @@ public partial class EventListViewModel(
     private void SetDefaultDateRange()
     {
         FilterFrom = DateTime.Today.AddDays(-6);
-        FilterTo = DateTime.Today.AddDays(1);
+        FilterTo = DateTime.Today;
     }
 
     private async Task FetchAndPopulateAsync()
@@ -105,10 +105,12 @@ public partial class EventListViewModel(
             : null;
 
         DateTimeOffset? fromOffset = FilterFrom.HasValue
-            ? new DateTimeOffset(DateTime.SpecifyKind(FilterFrom.Value.Date, DateTimeKind.Utc))
+            ? new DateTimeOffset(DateTime.SpecifyKind(FilterFrom.Value.Date, DateTimeKind.Local))
+                .ToUniversalTime()
             : null;
         DateTimeOffset? toOffset = FilterTo.HasValue
-            ? new DateTimeOffset(DateTime.SpecifyKind(FilterTo.Value.Date, DateTimeKind.Utc))
+            ? new DateTimeOffset(DateTime.SpecifyKind(FilterTo.Value.Date, DateTimeKind.Local))
+                .AddDays(1).AddMilliseconds(-1).ToUniversalTime()
             : null;
 
         var results = await eventService.GetEventsAsync(
