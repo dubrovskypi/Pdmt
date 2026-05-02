@@ -7,14 +7,37 @@
     xmlns:models="clr-namespace:Pdmt.Maui.Models"
     xmlns:vm="clr-namespace:Pdmt.Maui.ViewModels"
     x:DataType="vm:EditEventViewModel"
-    Title="Edit event"
     BackgroundColor="{StaticResource Background}">
 
     <ContentPage.Resources>
         <conv:NotNullToBoolConverter x:Key="NotNullToBool" />
         <conv:InvertBoolConverter x:Key="InvertBool" />
     </ContentPage.Resources>
-
+    
+    <Shell.TitleView>
+        <Grid ColumnDefinitions="Auto,*,Auto" Padding="8,0">
+            <Label
+                Grid.Column="0"
+                Text="Edit event"
+                FontSize="18"
+                FontAttributes="Bold"
+                TextColor="{StaticResource OnSurface}"
+                VerticalOptions="Center" />
+            <Button
+                Grid.Column="2"
+                Text="Save changes"
+                Command="{Binding SaveCommand}"
+                IsEnabled="{Binding CanSave}"
+                BackgroundColor="{Binding SaveButtonBg}"
+                TextColor="{Binding SaveButtonTextColor}"
+                HeightRequest="48"
+                CornerRadius="14"
+                FontSize="15"
+                FontAttributes="Bold"
+                Margin="0,0,10,0" />
+        </Grid>
+    </Shell.TitleView>
+    
     <Grid RowDefinitions="*,Auto">
 
         <!-- Scrollable form -->
@@ -341,22 +364,6 @@
 
             </VerticalStackLayout>
         </ScrollView>
-
-        <!-- Sticky bottom bar -->
-        <VerticalStackLayout Grid.Row="1" Spacing="0">
-            <BoxView HeightRequest="1" Color="{StaticResource Border}" />
-            <Button
-                Text="Save changes"
-                Command="{Binding SaveCommand}"
-                IsEnabled="{Binding CanSave}"
-                BackgroundColor="{Binding SaveButtonBg}"
-                TextColor="{Binding SaveButtonTextColor}"
-                HeightRequest="48"
-                CornerRadius="14"
-                FontSize="15"
-                FontAttributes="Bold"
-                Margin="16,12,16,16" />
-        </VerticalStackLayout>
 
     </Grid>
 </ContentPage>

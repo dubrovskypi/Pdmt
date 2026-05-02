@@ -63,24 +63,45 @@
                     Text="{Binding ErrorMessage}"
                     IsVisible="{Binding ErrorMessage, Converter={StaticResource NotNullToBool}}" />
 
-                <Entry
-                    Placeholder="Email"
-                    Text="{Binding Email}"
-                    Keyboard="Email"
-                    ReturnType="Next" />
+                <Border
+                    BackgroundColor="{StaticResource Card}"
+                    Stroke="{StaticResource Border}"
+                    StrokeThickness="1.5"
+                    StrokeShape="RoundRectangle 10"
+                    Padding="8,0">
+                    <Entry
+                        Placeholder="Email"
+                        Text="{Binding Email}"
+                        Keyboard="Email"
+                        ReturnType="Next" />
+                </Border>
 
-                <Entry
-                    Placeholder="Password"
-                    Text="{Binding Password}"
-                    IsPassword="True"
-                    ReturnType="Next" />
+                <Border
+                    BackgroundColor="{StaticResource Card}"
+                    Stroke="{StaticResource Border}"
+                    StrokeThickness="1.5"
+                    StrokeShape="RoundRectangle 10"
+                    Padding="8,0">
+                    <Entry
+                        Placeholder="Password"
+                        Text="{Binding Password}"
+                        IsPassword="True"
+                        ReturnType="Next" />
+                </Border>
 
-                <Entry
-                    Placeholder="Confirm password"
-                    Text="{Binding ConfirmPassword}"
-                    IsPassword="True"
-                    ReturnType="Done"
-                    ReturnCommand="{Binding RegisterCommand}" />
+                <Border
+                    BackgroundColor="{StaticResource Card}"
+                    Stroke="{StaticResource Border}"
+                    StrokeThickness="1.5"
+                    StrokeShape="RoundRectangle 10"
+                    Padding="8,0">
+                    <Entry
+                        Placeholder="Confirm password"
+                        Text="{Binding ConfirmPassword}"
+                        IsPassword="True"
+                        ReturnType="Done"
+                        ReturnCommand="{Binding RegisterCommand}" />
+                </Border>
 
                 <Button
                     Text="Sign up"
