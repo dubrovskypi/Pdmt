@@ -13,19 +13,18 @@
                 <Border.StrokeShape><RoundRectangle CornerRadius="10" /></Border.StrokeShape>
                 <Label Text="Tags trend" TextColor="{StaticResource BlueText}" FontSize="12" FontAttributes="Bold" />
             </Border>
-            <Label Grid.Row="1" Text="Тренд тегов"
+            <Label Grid.Row="1" Text="Tag Trend"
                    FontAttributes="Bold" FontSize="16" Margin="0,8,0,2" />
-            <Label Grid.Row="2" Text="Как менялась частота трёх самых распространённых тегов."
+            <Label Grid.Row="2" Text="How the frequency of the three most common tags changed."
                    Style="{StaticResource MutedLabel}" Margin="0,0,0,10" />
 
             <VerticalStackLayout Grid.Row="3" Spacing="16">
-                <!-- Пустое состояние -->
-                <Label Text="Нет данных для тренда тега"
+                
+                <Label Text="No data for tag trend"
                        Style="{StaticResource MutedLabel}"
                        IsVisible="{Binding IsEmpty}"
                        HorizontalOptions="Center" Margin="0,16" />
-
-                <!-- Серии топ-3 тегов -->
+                
                 <VerticalStackLayout Spacing="10"
                                      BindableLayout.ItemsSource="{Binding Series}">
                     <BindableLayout.ItemTemplate>

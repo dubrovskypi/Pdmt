@@ -13,9 +13,9 @@
                 <Border.StrokeShape><RoundRectangle CornerRadius="10" /></Border.StrokeShape>
                 <Label Text="Discounted positives" TextColor="{StaticResource AmberText}" FontSize="12" FontAttributes="Bold" />
             </Border>
-            <Label Grid.Row="1" Text="Недооценённые позитивные события"
+            <Label Grid.Row="1" Text="Undervalued Positive Events"
                    FontAttributes="Bold" FontSize="16" Margin="0,8,0,2" />
-            <Label Grid.Row="2" Text="Теги с высокой частотой, но низкой средней интенсивностью. Хорошее есть — просто ты его недооцениваешь."
+            <Label Grid.Row="2" Text="Tags with high frequency but low average intensity. The good is there — you just undervalue it."
                    Style="{StaticResource MutedLabel}" Margin="0,0,0,10" />
             <CollectionView Grid.Row="3" ItemsSource="{Binding Items}">
                 <CollectionView.ItemsLayout>
@@ -36,7 +36,7 @@
                     </DataTemplate>
                 </CollectionView.ItemTemplate>
             </CollectionView>
-            <Label Grid.Row="3" Text="Нет тегов с 5+ позитивными событиями и средней интенсивностью менее 4.0"
+            <Label Grid.Row="3" Text="No tags with 5+ positive events and average intensity below 4.0"
                    Style="{StaticResource MutedLabel}" HorizontalTextAlignment="Center"
                    IsVisible="{Binding IsEmpty}" VerticalOptions="Center" Margin="0,20" />
             <ActivityIndicator Grid.Row="4" IsRunning="{Binding IsLoading}" IsVisible="{Binding IsLoading}"

@@ -33,15 +33,15 @@ public partial class Card05DiscountedPosViewModel(InsightsService insightsServic
         }
         catch (OperationCanceledException)
         {
-            // Загрузка отменена — не показываем ошибку
+            // Load cancelled — do not show error
         }
         catch (Exception) when (ct.IsCancellationRequested)
         {
-            // Исключение из-за отмены токена (например, SocketException) — не показываем ошибку
+            // Exception due to token cancellation (e.g. SocketException) — do not show error
         }
         catch
         {
-            ErrorMessage = "Не удалось загрузить данные.";
+            ErrorMessage = LoadErrorMessage;
         }
         finally
         {

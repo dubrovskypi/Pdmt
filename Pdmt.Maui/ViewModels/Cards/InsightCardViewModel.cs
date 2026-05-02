@@ -5,6 +5,7 @@ namespace Pdmt.Maui.ViewModels.Cards;
 
 public abstract partial class InsightCardViewModel : ObservableObject
 {
+    protected const string LoadErrorMessage = "Failed to load data.";
     [ObservableProperty] private bool _isLoading;
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasError))]

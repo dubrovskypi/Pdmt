@@ -13,9 +13,9 @@
                 <Border.StrokeShape><RoundRectangle CornerRadius="10" /></Border.StrokeShape>
                 <Label Text="Tag combos" TextColor="{StaticResource PurpleText}" FontSize="12" FontAttributes="Bold" />
             </Border>
-            <Label Grid.Row="1" Text="Комбинации тегов"
+            <Label Grid.Row="1" Text="Tag Combinations"
                    FontAttributes="Bold" FontSize="16" Margin="0,8,0,2" />
-            <Label Grid.Row="2" Text="Пары тегов, которые часто встречаются вместе, и как комбинация отличается от каждого отдельно."
+            <Label Grid.Row="2" Text="Tag pairs that often appear together, and how the combination differs from each alone."
                    Style="{StaticResource MutedLabel}" Margin="0,0,0,10" />
             <CollectionView Grid.Row="3" ItemsSource="{Binding Items}">
                 <CollectionView.ItemsLayout>
@@ -26,7 +26,7 @@
                         <VerticalStackLayout Spacing="2">
                             <Label Text="{Binding Label}" FontSize="13" FontAttributes="Bold" />
                             <Grid ColumnDefinitions="80,*,36" ColumnSpacing="6">
-                                <Label Grid.Column="0" Text="Вместе" FontSize="11"
+                                <Label Grid.Column="0" Text="Together" FontSize="11"
                                        TextColor="{StaticResource Muted}" VerticalOptions="Center" />
                                 <BoxView Grid.Column="1" WidthRequest="{Binding CombinedBarWidth}"
                                          HeightRequest="12" Color="{StaticResource PurpleAccent}" CornerRadius="2"

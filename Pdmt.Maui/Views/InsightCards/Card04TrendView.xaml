@@ -13,9 +13,9 @@
                 <Border.StrokeShape><RoundRectangle CornerRadius="10" /></Border.StrokeShape>
                 <Label Text="Trends" TextColor="{StaticResource BlueText}" FontSize="12" FontAttributes="Bold" />
             </Border>
-            <Label Grid.Row="1" Text="Тренд соотношения по неделям"
+            <Label Grid.Row="1" Text="Weekly Ratio Trend"
                    FontAttributes="Bold" FontSize="16" Margin="0,8,0,2" />
-            <Label Grid.Row="2" Text="Высота полоски — количество событий. Яркость — средняя интенсивность."
+            <Label Grid.Row="2" Text="Weekly positive/negative balance over time. Bar height — event count. Brightness — average intensity."
                    Style="{StaticResource MutedLabel}" Margin="0,0,0,10" />
             <FlexLayout Grid.Row="3" BindableLayout.ItemsSource="{Binding Weeks}"
                         JustifyContent="SpaceEvenly" HorizontalOptions="Fill" VerticalOptions="End">
@@ -41,7 +41,7 @@
                     </DataTemplate>
                 </BindableLayout.ItemTemplate>
             </FlexLayout>
-            <Label Grid.Row="3" Text="Нет данных за период"
+            <Label Grid.Row="3" Text="No data for the period"
                    Style="{StaticResource MutedLabel}" HorizontalTextAlignment="Center"
                    IsVisible="{Binding IsEmpty}" VerticalOptions="Center" Margin="0,20" />
             <ActivityIndicator Grid.Row="4" IsRunning="{Binding IsLoading}" IsVisible="{Binding IsLoading}"

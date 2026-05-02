@@ -13,9 +13,9 @@
                 <Border.StrokeShape><RoundRectangle CornerRadius="10" /></Border.StrokeShape>
                 <Label Text="Repeats" TextColor="{StaticResource PurpleText}" FontSize="12" FontAttributes="Bold" />
             </Border>
-            <Label Grid.Row="1" Text="Повторяющиеся триггеры"
+            <Label Grid.Row="1" Text="Repeating Triggers"
                    FontAttributes="Bold" FontSize="16" Margin="0,8,0,2" />
-            <Label Grid.Row="2" Text="Теги, которые встречались 3 и более раз."
+            <Label Grid.Row="2" Text="Tags that appeared 3 or more times."
                    Style="{StaticResource MutedLabel}" Margin="0,0,0,10" />
             <CollectionView Grid.Row="3" ItemsSource="{Binding Items}">
                 <CollectionView.ItemsLayout>
@@ -37,7 +37,7 @@
                     </DataTemplate>
                 </CollectionView.ItemTemplate>
             </CollectionView>
-            <Label Grid.Row="3" Text="Нет тегов с 3+ повторениями за выбранный период"
+            <Label Grid.Row="3" Text="No tags with 3+ occurrences for the selected period"
                    Style="{StaticResource MutedLabel}" HorizontalTextAlignment="Center"
                    IsVisible="{Binding IsEmpty}" VerticalOptions="Center" Margin="0,20" />
             <ActivityIndicator Grid.Row="4" IsRunning="{Binding IsLoading}" IsVisible="{Binding IsLoading}"

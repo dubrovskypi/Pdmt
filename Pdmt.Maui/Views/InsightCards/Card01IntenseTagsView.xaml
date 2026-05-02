@@ -33,20 +33,20 @@
                 <Border.StrokeShape><RoundRectangle CornerRadius="10" /></Border.StrokeShape>
                 <Label Text="Intense" TextColor="{StaticResource NegativeText}" FontSize="12" FontAttributes="Bold" />
             </Border>
-            <Label Grid.Row="1" Text="Сильнейшие триггеры"
+            <Label Grid.Row="1" Text="Strongest Triggers"
                    FontAttributes="Bold" FontSize="16" Margin="0,8,0,2" />
-            <Label Grid.Row="2" Text="Топ тегов по средней интенсивности за период."
+            <Label Grid.Row="2" Text="Top tags by average intensity for the period."
                    Style="{StaticResource MutedLabel}" Margin="0,0,0,10" />
-            <Label Grid.Row="3" Text="Нет данных за период"
+            <Label Grid.Row="3" Text="No data for the period"
                    Style="{StaticResource MutedLabel}" IsVisible="{Binding IsEmpty}"
                    HorizontalOptions="Center" Margin="0,16" />
 
             <VerticalStackLayout Grid.Row="3" Spacing="12" IsVisible="{Binding IsEmpty, Converter={StaticResource InvertBoolConverter}}">
                 <VerticalStackLayout Spacing="6">
-                    <Label Text="Позитивные" FontSize="12" FontAttributes="Bold" TextColor="{StaticResource PositiveText}" />
+                    <Label Text="Positive" FontSize="12" FontAttributes="Bold" TextColor="{StaticResource PositiveText}" />
                     <CollectionView ItemsSource="{Binding PosItems}" ItemTemplate="{StaticResource TriggerBarTemplate}">
                         <CollectionView.EmptyView>
-                            <Label Text="Нет позитивных событий за период" Style="{StaticResource MutedLabel}" />
+                            <Label Text="No positive events for the period" Style="{StaticResource MutedLabel}" />
                         </CollectionView.EmptyView>
                         <CollectionView.ItemsLayout>
                             <LinearItemsLayout Orientation="Vertical" ItemSpacing="8" />
@@ -55,10 +55,10 @@
                 </VerticalStackLayout>
 
                 <VerticalStackLayout Spacing="6">
-                    <Label Text="Негативные" FontSize="12" FontAttributes="Bold" TextColor="{StaticResource NegativeText}" />
+                    <Label Text="Negative" FontSize="12" FontAttributes="Bold" TextColor="{StaticResource NegativeText}" />
                     <CollectionView ItemsSource="{Binding NegItems}" ItemTemplate="{StaticResource TriggerBarTemplate}">
                         <CollectionView.EmptyView>
-                            <Label Text="Нет негативных событий за период" Style="{StaticResource MutedLabel}" />
+                            <Label Text="No negative events for the period" Style="{StaticResource MutedLabel}" />
                         </CollectionView.EmptyView>
                         <CollectionView.ItemsLayout>
                             <LinearItemsLayout Orientation="Vertical" ItemSpacing="8" />
