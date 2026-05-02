@@ -44,6 +44,10 @@ public static class MauiProgram
                     sw.TrackTintList = new Android.Content.Res.ColorStateList(states,
                         [Android.Graphics.Color.ParseColor("#22c55e"), Android.Graphics.Color.ParseColor("#BBBBBB")]);
                 });
+                Microsoft.Maui.Handlers.ImageButtonHandler.Mapper.AppendToMapping("ImageTint", (handler, _) =>
+                    handler.PlatformView.ImageTintList =
+                        Android.Content.Res.ColorStateList.ValueOf(
+                            Android.Graphics.Color.ParseColor("#111111")));
 #endif
             });
 

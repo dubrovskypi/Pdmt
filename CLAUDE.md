@@ -83,6 +83,7 @@ npm run build  # Output: dist/ directory; requires VITE_PDMT_API_BASE_URL env va
 - Services (`AuthService`, `EventService`, `TagService`, `AnalyticsService`, `InsightsService`) contain all business logic; controllers are thin
 - Controllers: `AuthController`, `WebAuthController`, `EventsController`, `TagsController`, `AnalyticsController`, `InsightsController`
 - `AnalyticsController` routes: `/weekly-summary`, `/correlations`, `/calendar/week`, `/calendar/month`
+- Timezone-aware date boundary calculations (week/month start) — use `DateHelper` (`Infrastructure/DateHelper.cs`), don't inline
 - `InsightsController` routes (all under `/api/insights/`): `most-intense-tags`, `repeating-triggers`, `balance`, `trends`, `discounted-positives`, `weekday-stats`, `next-day-effects`, `tag-combos`, `tag-trend`, `influenceability`
 - Add `[ProducesResponseType]` and response code attributes to action methods for Swagger documentation
 - `TokenCleanupBgService` — background service that purges expired refresh tokens (currently commented out in `Program.cs` — uncomment to enable automatic cleanup of stale refresh tokens)
@@ -98,7 +99,7 @@ npm run build  # Output: dist/ directory; requires VITE_PDMT_API_BASE_URL env va
  
 ### Authentication
  
-- JWT Bearer tokens (60 min access token, 1 day refresh token)
+- JWT Bearer tokens (60 min access token, 30 day refresh token)
 - Refresh tokens are SHA256-hashed before storage; never stored in plaintext
 - Token rotation: old refresh tokens are invalidated on login/refresh
 - **Two auth endpoint groups** — same `IAuthService`, different response contracts:
