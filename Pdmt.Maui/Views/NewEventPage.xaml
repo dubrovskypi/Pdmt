@@ -7,6 +7,7 @@
     xmlns:models="clr-namespace:Pdmt.Maui.Models"
     xmlns:vm="clr-namespace:Pdmt.Maui.ViewModels"
     x:DataType="vm:NewEventViewModel"
+    Shell.NavBarIsVisible="False"
     BackgroundColor="{StaticResource Background}">
 
     <ContentPage.Resources>
@@ -14,10 +15,24 @@
         <conv:InvertBoolConverter x:Key="InvertBool" />
     </ContentPage.Resources>
 
-    <Shell.TitleView>
-        <Grid ColumnDefinitions="Auto,*,Auto" Padding="8,0">
-            <Label
+    <Grid RowDefinitions="Auto,*">
+
+        <!-- Sticky header -->
+        <Grid
+            Grid.Row="0"
+            ColumnDefinitions="Auto,*,Auto"
+            Padding="8,0"
+            BackgroundColor="{StaticResource Background}">
+            <ImageButton
                 Grid.Column="0"
+                Source="ic_arrow_back.svg"
+                BackgroundColor="Transparent"
+                HeightRequest="48"
+                WidthRequest="48"
+                Padding="12"
+                Command="{Binding CancelCommand}" />
+            <Label
+                Grid.Column="1"
                 Text="New event"
                 FontSize="18"
                 FontAttributes="Bold"
@@ -36,12 +51,9 @@
                 FontAttributes="Bold"
                 Margin="0,0,10,0" />
         </Grid>
-    </Shell.TitleView>
-
-    <Grid RowDefinitions="*,Auto">
 
         <!-- Scrollable form -->
-        <ScrollView Grid.Row="0">
+        <ScrollView Grid.Row="1">
             <VerticalStackLayout Padding="16,14,16,8" Spacing="12">
 
                 <!-- Type toggle -->
