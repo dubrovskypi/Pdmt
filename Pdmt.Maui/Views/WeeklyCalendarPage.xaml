@@ -54,9 +54,9 @@
 
             <Button
                 Grid.Column="0"
-                Text="‹"
-                FontSize="16"
+                ImageSource="ic_chevron_left.svg"
                 Style="{StaticResource IconCircleButton}"
+                Padding="6"
                 Command="{Binding PrevPeriodCommand}" />
             
             <Label
@@ -70,9 +70,9 @@
 
             <Button
                 Grid.Column="2"
-                Text="›"
-                FontSize="16"
+                ImageSource="ic_chevron_right.svg"
                 Style="{StaticResource IconCircleButton}"
+                Padding="6"
                 Command="{Binding NextPeriodCommand}" />
 
             <!-- Week / Month toggle pill -->
