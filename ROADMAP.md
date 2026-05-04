@@ -563,7 +563,38 @@ Vite config proxies `/api/*` to the backend to avoid CORS during development.
 
 ---
 
+## Phase 4.0 — debt from earlier phases (do before Phase 4)
+
+These are items that fell out of Phases 1–3 — small cleanups, missed pieces of features that landed without all originally planned details, and deferred decisions that now block Phase 4 work. None are large; each can ship independently.
+
+### 4.0.1 API debt
+
+- **`TokenCleanupBgService` is commented out in `Program.cs`.** Background service that purges expired refresh tokens never runs. Either uncomment + verify, or delete the service if we accept that expired rows accumulate.
+- **Hard-coded `RefreshTokenExpiration = 30 days`** in `WebAuthController`. Move to config (`Jwt:RefreshTokenExpirationDays`) and read from `IOptions<JwtOptions>` like the other JWT params; make sure `AuthController` and `WebAuthController` agree.
+- **Seed data for new users.** A freshly registered account has empty insights — every card shows "no data" until the user logs ~10 events. Add an opt-in onboarding seed (sample events + tags spread across the past 2–3 weeks) so insights look meaningful from day one. Triggered from `AuthService.RegisterAsync` behind a feature flag or a `?seed=true` query param.
+
+### 4.0.2 React SPA debt
+
+- **i18n / English UI.** UI is mixed Russian / English strings inline. Introduce `react-i18next` (or a thin custom `t()` wrapper), extract all visible strings, default locale `en`, switchable `ru`.
+- **Loading skeletons.** `"Загрузка..."` text everywhere causes layout shift on page transitions and during lazy card loading. Replace with Shadcn `Skeleton` components matching the final layout (event cards, calendar day rows, insight cards).
+- **Date library.** Manual date math (`new Date(...)`, `getDay()`, week-start arithmetic) is fragile around DST and timezone transitions. Adopt `date-fns` (tree-shakeable, well-typed) for week/month boundary calculations and any local-time formatting.
+- **Hooks consistency.** `useEventList` exists for `EventListPage` but other pages keep `useState`/`useEffect` inline. Either generalize the pattern across all pages with similar filter/pagination state, or remove `useEventList` and inline its logic — pick one, don't keep both styles.
+
+### 4.0.3 MAUI debt
+
+- **Confirmation dialogs.** Currently delete-event and back-from-edit-with-unsaved-changes proceed silently. Add `DisplayAlert` confirmation for: deleting an event, leaving `NewEventPage`/`EditEventPage` with dirty state.
+- **Account page summary block.** Render a separate summary section on `AccountPage` (event count, account age, last activity) — currently the page shows only logout/profile actions.
+- **Calendar UX revisit.** Current `WeeklyCalendarPage` mixes weekly histograms and a month grid. Decide whether the month grid stays here, moves to a dedicated page, or is dropped on mobile. Tighten styles: spacing, color tokens, contrast for the day-score dot.
+
+### 4.0.4 Cross-cutting
+
+- **Registration on web.** `RegisterPage.tsx` exists in `pdmt-web` (added beyond the original spec). Confirm it's intentional and document it in §3.4 if so; otherwise remove and keep web single-user.
+
+---
+
 ## Phase 4 — future features
+
+> Status: **none started** except partial work on §4.6 (monthly calendar in MAUI).
 
 ### 4.1 Export for therapist
 - `GET /api/export/report?from=...&to=...&format=pdf`
@@ -592,9 +623,11 @@ Vite config proxies `/api/*` to the backend to avoid CORS during development.
 - Could use local LLM or API call — evaluate when the time comes
 
 ### 4.6 Monthly calendar view
-**API**: `GET /api/analytics/calendar/month?month=2026-03` — already implemented. Returns `days: [{date, positiveCount, negativeCount, dayScore}]`.
+**API**: `GET /api/analytics/calendar/month?month=2026-03` — ✅ already implemented. Returns `days: [{date, positiveCount, negativeCount, dayScore}]`.
 
-**UI** (React + MAUI): Simpler grid than the weekly view — colored cells only, no histograms. Only useful once several months of data have accumulated.
+**MAUI**: 🚧 partial — `MonthDayCellViewModel` exists and is used inside `WeeklyCalendarPage`. Needs UX polish (see §4.0.3 calendar revisit).
+
+**Web (React)**: ❌ not started — no month grid component in `pdmt-web`. Simpler grid than the weekly view — colored cells only, no histograms. Only useful once several months of data have accumulated.
 - Monthly grid, each day colored by dominant mood (green → yellow → red gradient based on dayScore)
 - Tap/click day → see events for that day
 - Swipe or prev/next buttons to navigate between months
