@@ -71,7 +71,7 @@ namespace Pdmt.Api.Controllers
                 HttpOnly = true,
                 Secure = true,
                 SameSite = SameSiteMode.None,
-                Expires = DateTimeOffset.UtcNow.AddDays(1)
+                Expires = DateTimeOffset.UtcNow.AddDays(30)
             });
 
         private void ClearRefreshCookie() =>

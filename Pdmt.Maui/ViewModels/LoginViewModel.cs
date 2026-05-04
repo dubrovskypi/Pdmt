@@ -19,6 +19,9 @@ public partial class LoginViewModel(AuthService authService, ITokenService token
     private bool _isBusy;
 
     [RelayCommand]
+    private Task GoToRegisterAsync() => Shell.Current.GoToAsync("register");
+
+    [RelayCommand]
     private async Task LoginAsync()
     {
         if (string.IsNullOrWhiteSpace(Email) || string.IsNullOrWhiteSpace(Password))

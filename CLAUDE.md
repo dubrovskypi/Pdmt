@@ -83,6 +83,7 @@ npm run build  # Output: dist/ directory; requires VITE_PDMT_API_BASE_URL env va
 - Services (`AuthService`, `EventService`, `TagService`, `AnalyticsService`, `InsightsService`) contain all business logic; controllers are thin
 - Controllers: `AuthController`, `WebAuthController`, `EventsController`, `TagsController`, `AnalyticsController`, `InsightsController`
 - `AnalyticsController` routes: `/weekly-summary`, `/correlations`, `/calendar/week`, `/calendar/month`
+- Timezone-aware date boundary calculations (week/month start) — use `DateHelper` (`Infrastructure/DateHelper.cs`), don't inline
 - `InsightsController` routes (all under `/api/insights/`): `most-intense-tags`, `repeating-triggers`, `balance`, `trends`, `discounted-positives`, `weekday-stats`, `next-day-effects`, `tag-combos`, `tag-trend`, `influenceability`
 - Add `[ProducesResponseType]` and response code attributes to action methods for Swagger documentation
 - `TokenCleanupBgService` — background service that purges expired refresh tokens (currently commented out in `Program.cs` — uncomment to enable automatic cleanup of stale refresh tokens)
@@ -98,7 +99,7 @@ npm run build  # Output: dist/ directory; requires VITE_PDMT_API_BASE_URL env va
  
 ### Authentication
  
-- JWT Bearer tokens (60 min access token, 1 day refresh token)
+- JWT Bearer tokens (60 min access token, 30 day refresh token)
 - Refresh tokens are SHA256-hashed before storage; never stored in plaintext
 - Token rotation: old refresh tokens are invalidated on login/refresh
 - **Two auth endpoint groups** — same `IAuthService`, different response contracts:
@@ -176,7 +177,9 @@ Composite pattern: tries **Redis** first, falls back to **in-memory** if Redis i
 - Same for `DateTime.Date` property — it preserves `Kind`, so if the source was `Unspecified`, the result is too
 - Heterogeneous `CarouselView`: use `DataTemplateSelector` (see `InsightCardTemplateSelector`) — subclass, expose one `DataTemplate` property per card type, dispatch via pattern-matching `switch`
 - **Insights loading lifecycle**: `InsightsViewModel` owns `CancellationTokenSource`; cards 0–1 load with priority, remaining 8 in background; `OnDisappearing` calls `CancelLoad()` to abort all in-flight HTTP requests before ViewModel is collected
-- **Android input underline (Samsung One UI fix):** All `Entry`/`Editor`/`Picker`/`DatePicker` use a custom `Platforms/Android/Resources/drawable/entry_background.xml` (layer-list with bottom border). Registered globally in `MauiProgram.cs` via `ConfigureMauiHandlers` → `Handler.Mapper.AppendToMapping("Background", ...)`. Required because Samsung One UI overrides default MAUI backgrounds.
+- **Android input underline (Samsung One UI fix):** All `Entry`/`Editor`/`Picker`/`DatePicker` use a custom `Platforms/Android/Resources/drawable/entry_background.xml` (layer-list with bottom border). Registered globally in `MauiProgram.cs` via `ConfigureMauiHandlers` → `Handler.Mapper.AppendToMapping("Background", ...)`. Required because Samsung One UI overrides default MAUI backgrounds. The drawable's `pdmt_primary` color (in `Platforms/Android/Resources/values/colors.xml`) must stay in sync with the XAML `Primary` token (`#006a60`).
+- **Design tokens:** All colors live in `Resources/Styles/Colors.xaml` as semantic keys (`Background`, `Surface`, `Card`, `Primary`, `PrimaryContainer`, `OnSurface`, `Muted`, `PositiveText`/`Bg`/`Border`/`Bar`, `NegativeText`/`Bg`/`Border`/`Bar`, etc.). Bind via `{StaticResource <Key>}`, never hardcode hex in views. Tweak the token, not the view.
+- **Status bar (Android):** `MainActivity.OnCreate` sets `Window.SetStatusBarColor("#f9f9f9")` (matches `Surface`) and `WindowCompat.GetInsetsController(...).AppearanceLightStatusBars = true` for dark icons on the light bar. Splash background (`MauiSplashScreen` `Color` in csproj) is `#cde8e1` (`PrimaryContainer`).
 
 ## Pdmt.Client Conventions
  

@@ -17,23 +17,32 @@ public partial class EventListViewModel(
 
     public IReadOnlyList<EventTypeFilter> EventTypeFilters { get; } = [
         new("All", null),
-        ..Enum.GetValues<EventType>()
-        .Select(t => new EventTypeFilter(t.ToString(), t))
-        ];
+        new("Positive", EventType.Positive),
+        new("Negative", EventType.Negative),
+    ];
 
     public ObservableCollection<TagFilter> TagFilters { get; } = [];
 
+    private bool _filtersInitialized;
+
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasActiveFilters))]
     private DateTime? _filterFrom;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasActiveFilters))]
     private DateTime? _filterTo;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasActiveFilters))]
     private EventTypeFilter _selectedTypeFilter = new("All", null);
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasActiveFilters))]
     private TagFilter? _selectedTagFilter;
+
+    [ObservableProperty]
+    private bool _isFilterPanelVisible;
 
     [ObservableProperty]
     private bool _isRefreshing;
@@ -44,10 +53,49 @@ public partial class EventListViewModel(
     [ObservableProperty]
     private string? _errorMessage;
 
+    public bool HasActiveFilters =>
+        SelectedTypeFilter.Value is not null
+        || SelectedTagFilter is not null
+        || (FilterFrom.HasValue && FilterFrom.Value.Date != DateTime.Today.AddDays(-6))
+        || (FilterTo.HasValue && FilterTo.Value.Date != DateTime.Today);
+
+    public bool IsAllTypeSelected => SelectedTypeFilter.Value is null;
+    public bool IsPositiveTypeSelected => SelectedTypeFilter.Value == EventType.Positive;
+    public bool IsNegativeTypeSelected => SelectedTypeFilter.Value == EventType.Negative;
+
+    [RelayCommand]
+    private void SelectTypeFilter(EventTypeFilter filter) => SelectedTypeFilter = filter;
+
+    partial void OnSelectedTypeFilterChanged(EventTypeFilter value)
+    {
+        OnPropertyChanged(nameof(IsAllTypeSelected));
+        OnPropertyChanged(nameof(IsPositiveTypeSelected));
+        OnPropertyChanged(nameof(IsNegativeTypeSelected));
+        if (_filtersInitialized) _ = ApplyFiltersAsync();
+    }
+
+    partial void OnSelectedTagFilterChanged(TagFilter? value)
+    {
+        if (_filtersInitialized) _ = ApplyFiltersAsync();
+    }
+
+    partial void OnFilterFromChanged(DateTime? value)
+    {
+        if (_filtersInitialized) _ = ApplyFiltersAsync();
+    }
+
+    partial void OnFilterToChanged(DateTime? value)
+    {
+        if (_filtersInitialized) _ = ApplyFiltersAsync();
+    }
+
+    [RelayCommand]
+    private void ToggleFilterPanel() => IsFilterPanelVisible = !IsFilterPanelVisible;
+
     private void SetDefaultDateRange()
     {
         FilterFrom = DateTime.Today.AddDays(-6);
-        FilterTo = DateTime.Today.AddDays(1);
+        FilterTo = DateTime.Today;
     }
 
     private async Task FetchAndPopulateAsync()
@@ -57,10 +105,12 @@ public partial class EventListViewModel(
             : null;
 
         DateTimeOffset? fromOffset = FilterFrom.HasValue
-            ? new DateTimeOffset(DateTime.SpecifyKind(FilterFrom.Value.Date, DateTimeKind.Utc))
+            ? new DateTimeOffset(DateTime.SpecifyKind(FilterFrom.Value.Date, DateTimeKind.Local))
+                .ToUniversalTime()
             : null;
         DateTimeOffset? toOffset = FilterTo.HasValue
-            ? new DateTimeOffset(DateTime.SpecifyKind(FilterTo.Value.Date, DateTimeKind.Utc))
+            ? new DateTimeOffset(DateTime.SpecifyKind(FilterTo.Value.Date, DateTimeKind.Local))
+                .AddDays(1).AddMilliseconds(-1).ToUniversalTime()
             : null;
 
         var results = await eventService.GetEventsAsync(
@@ -90,6 +140,7 @@ public partial class EventListViewModel(
             }
 
             await FetchAndPopulateAsync();
+            _filtersInitialized = true;
         }
         catch
         {
@@ -142,9 +193,11 @@ public partial class EventListViewModel(
     [RelayCommand]
     private async Task ResetFiltersAsync()
     {
+        _filtersInitialized = false;
         SetDefaultDateRange();
         SelectedTypeFilter = EventTypeFilters[0];
         SelectedTagFilter = null;
+        _filtersInitialized = true;
         IsBusy = true;
         ErrorMessage = null;
         try

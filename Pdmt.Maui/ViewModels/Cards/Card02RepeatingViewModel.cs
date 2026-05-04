@@ -22,22 +22,22 @@ public partial class Card02RepeatingViewModel(InsightsService insightsService) :
             var triggers = await insightsService.GetRepeatingTriggersAsync(from, to, ct: ct);
             IsEmpty = triggers.Count == 0;
             double max = triggers.Count > 0 ? triggers.Max(t => (double)t.Count) : 1;
-            Items = triggers.Select(t => new RepeatingBarItem(
+            Items = triggers.Take(15).Select(t => new RepeatingBarItem(
                 t.TagName,
                 t.Count,
                 max > 0 ? t.Count / max * DesignMaxWidth : 0)).ToList();
         }
         catch (OperationCanceledException)
         {
-            // Загрузка отменена — не показываем ошибку
+            // Load cancelled — do not show error
         }
         catch (Exception) when (ct.IsCancellationRequested)
         {
-            // Исключение из-за отмены токена (например, SocketException) — не показываем ошибку
+            // Exception due to token cancellation (e.g. SocketException) — do not show error
         }
         catch
         {
-            ErrorMessage = "Не удалось загрузить данные.";
+            ErrorMessage = LoadErrorMessage;
         }
         finally
         {

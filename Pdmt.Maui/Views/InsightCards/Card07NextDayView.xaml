@@ -6,16 +6,16 @@
     xmlns:cards="clr-namespace:Pdmt.Maui.ViewModels.Cards"
     x:DataType="cards:Card07NextDayViewModel">
 
-    <Border Margin="4,0" Padding="16" BackgroundColor="{StaticResource Surface}">
+    <Border Margin="4,0" Padding="16" BackgroundColor="{StaticResource Card}">
         <Grid RowDefinitions="Auto,Auto,Auto,*,Auto" RowSpacing="0">
-            <Border Grid.Row="0" BackgroundColor="#dbeafe" Stroke="Transparent" StrokeThickness="0"
+            <Border Grid.Row="0" BackgroundColor="{StaticResource BlueBg}" Stroke="Transparent" StrokeThickness="0"
                     Padding="8,3" HorizontalOptions="Start">
                 <Border.StrokeShape><RoundRectangle CornerRadius="10" /></Border.StrokeShape>
-                <Label Text="Next day" TextColor="#1e40af" FontSize="12" FontAttributes="Bold" />
+                <Label Text="Next day" TextColor="{StaticResource BlueText}" FontSize="12" FontAttributes="Bold" />
             </Border>
-            <Label Grid.Row="1" Text="Эффект следующего дня"
+            <Label Grid.Row="1" Text="Next-Day Effect"
                    FontAttributes="Bold" FontSize="16" Margin="0,8,0,2" />
-            <Label Grid.Row="2" Text="Средний балл на следующий день после событий с этим тегом. &quot;После «аргумент» — следующий день в среднем тяжелее.&quot;"
+            <Label Grid.Row="2" Text="Average score the next day after events with this tag. &quot;After 'argument' — the next day is on average harder.&quot;"
                    Style="{StaticResource MutedLabel}" Margin="0,0,0,10" />
             <CollectionView Grid.Row="3" ItemsSource="{Binding Items}">
                 <CollectionView.ItemsLayout>
@@ -30,10 +30,10 @@
                                      CornerRadius="2" HorizontalOptions="Start" VerticalOptions="Center">
                                 <BoxView.Triggers>
                                     <DataTrigger TargetType="BoxView" Binding="{Binding IsPositive}" Value="True">
-                                        <Setter Property="Color" Value="#4ade80" />
+                                        <Setter Property="Color" Value="{StaticResource PositiveBar}" />
                                     </DataTrigger>
                                     <DataTrigger TargetType="BoxView" Binding="{Binding IsPositive}" Value="False">
-                                        <Setter Property="Color" Value="#f87171" />
+                                        <Setter Property="Color" Value="{StaticResource NegativeBar}" />
                                     </DataTrigger>
                                 </BoxView.Triggers>
                             </BoxView>

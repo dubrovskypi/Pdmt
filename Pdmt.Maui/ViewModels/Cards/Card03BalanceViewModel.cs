@@ -5,7 +5,7 @@ namespace Pdmt.Maui.ViewModels.Cards;
 
 public partial class Card03BalanceViewModel(InsightsService insightsService) : InsightCardViewModel
 {
-    private const double DesignMaxWidth = 140.0;
+    private const double DesignMaxWidth = 160.0;
 
     [ObservableProperty] private int _posCount;
     [ObservableProperty] private int _negCount;
@@ -35,15 +35,15 @@ public partial class Card03BalanceViewModel(InsightsService insightsService) : I
         }
         catch (OperationCanceledException)
         {
-            // Загрузка отменена — не показываем ошибку
+            // Load cancelled — do not show error
         }
         catch (Exception) when (ct.IsCancellationRequested)
         {
-            // Исключение из-за отмены токена (например, SocketException) — не показываем ошибку
+            // Exception due to token cancellation (e.g. SocketException) — do not show error
         }
         catch
         {
-            ErrorMessage = "Не удалось загрузить данные.";
+            ErrorMessage = LoadErrorMessage;
         }
         finally
         {

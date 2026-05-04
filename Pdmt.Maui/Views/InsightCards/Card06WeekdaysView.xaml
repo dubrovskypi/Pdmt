@@ -6,16 +6,16 @@
     xmlns:cards="clr-namespace:Pdmt.Maui.ViewModels.Cards"
     x:DataType="cards:Card06WeekdaysViewModel">
 
-    <Border Margin="4,0" Padding="16" BackgroundColor="{StaticResource Surface}">
+    <Border Margin="4,0" Padding="16" BackgroundColor="{StaticResource Card}">
         <Grid RowDefinitions="Auto,Auto,Auto,*,Auto" RowSpacing="0">
-            <Border Grid.Row="0" BackgroundColor="#f3e8ff" Stroke="Transparent" StrokeThickness="0"
+            <Border Grid.Row="0" BackgroundColor="{StaticResource PurpleBg}" Stroke="Transparent" StrokeThickness="0"
                     Padding="8,3" HorizontalOptions="Start">
                 <Border.StrokeShape><RoundRectangle CornerRadius="10" /></Border.StrokeShape>
-                <Label Text="Patterns" TextColor="#6b21a8" FontSize="12" FontAttributes="Bold" />
+                <Label Text="Patterns" TextColor="{StaticResource PurpleText}" FontSize="12" FontAttributes="Bold" />
             </Border>
-            <Label Grid.Row="1" Text="Паттерны по дням недели"
+            <Label Grid.Row="1" Text="Weekday Patterns"
                    FontAttributes="Bold" FontSize="16" Margin="0,8,0,2" />
-            <Label Grid.Row="2" Text="Средняя интенсивность событий по каждому дню недели. Цвет — соотношение позитивных и негативных событий"
+            <Label Grid.Row="2" Text="Average event intensity by day of the week. Color — ratio of positive to negative events"
                    Style="{StaticResource MutedLabel}" Margin="0,0,0,10" />
             <CollectionView Grid.Row="3" ItemsSource="{Binding Days}">
                 <CollectionView.ItemsLayout>

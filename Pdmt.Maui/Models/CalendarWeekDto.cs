@@ -24,3 +24,16 @@ public class TagCountDto
     public required string Name { get; set; }
     public int Count { get; set; }
 }
+
+public class CalendarMonthDto
+{
+    public List<CalendarDayLightDto> Days { get; set; } = [];
+}
+
+public class CalendarDayLightDto
+{
+    public DateTimeOffset Date { get; set; }
+    public int PosCount { get; set; }
+    public int NegCount { get; set; }
+    public double DayScore { get; set; }
+}

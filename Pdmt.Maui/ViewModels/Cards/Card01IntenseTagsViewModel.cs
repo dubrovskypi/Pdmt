@@ -30,7 +30,7 @@ public partial class Card01IntenseTagsViewModel(InsightsService insightsService)
         catch (Exception) when (ct.IsCancellationRequested) { }
         catch
         {
-            ErrorMessage = "Не удалось загрузить триггеры.";
+            ErrorMessage = LoadErrorMessage;
         }
         finally
         {

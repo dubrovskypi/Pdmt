@@ -6,16 +6,16 @@
     xmlns:cards="clr-namespace:Pdmt.Maui.ViewModels.Cards"
     x:DataType="cards:Card04TrendViewModel">
 
-    <Border Margin="4,0" Padding="16" BackgroundColor="{StaticResource Surface}">
+    <Border Margin="4,0" Padding="16" BackgroundColor="{StaticResource Card}">
         <Grid RowDefinitions="Auto,Auto,Auto,*,Auto" RowSpacing="0">
-            <Border Grid.Row="0" BackgroundColor="#dbeafe" Stroke="Transparent" StrokeThickness="0"
+            <Border Grid.Row="0" BackgroundColor="{StaticResource BlueBg}" Stroke="Transparent" StrokeThickness="0"
                     Padding="8,3" HorizontalOptions="Start">
                 <Border.StrokeShape><RoundRectangle CornerRadius="10" /></Border.StrokeShape>
-                <Label Text="Trends" TextColor="#1e40af" FontSize="12" FontAttributes="Bold" />
+                <Label Text="Trends" TextColor="{StaticResource BlueText}" FontSize="12" FontAttributes="Bold" />
             </Border>
-            <Label Grid.Row="1" Text="Тренд соотношения по неделям"
+            <Label Grid.Row="1" Text="Weekly Ratio Trend"
                    FontAttributes="Bold" FontSize="16" Margin="0,8,0,2" />
-            <Label Grid.Row="2" Text="Высота полоски — количество событий. Яркость — средняя интенсивность."
+            <Label Grid.Row="2" Text="Weekly positive/negative balance over time. Bar height — event count. Brightness — average intensity."
                    Style="{StaticResource MutedLabel}" Margin="0,0,0,10" />
             <FlexLayout Grid.Row="3" BindableLayout.ItemsSource="{Binding Weeks}"
                         JustifyContent="SpaceEvenly" HorizontalOptions="Fill" VerticalOptions="End">
@@ -25,12 +25,12 @@
                             <Grid Grid.Row="0" ColumnDefinitions="28,6,28" HorizontalOptions="Center">
                                 <BoxView Grid.Column="0"
                                          WidthRequest="28" HeightRequest="{Binding PosBarHeight}"
-                                         Color="#4ade80" Opacity="{Binding Opacity}"
+                                         Color="{StaticResource PositiveBar}" Opacity="{Binding Opacity}"
                                          CornerRadius="3,3,0,0"
                                          HorizontalOptions="Center" VerticalOptions="End" />
                                 <BoxView Grid.Column="2"
                                          WidthRequest="28" HeightRequest="{Binding NegBarHeight}"
-                                         Color="#f87171" Opacity="{Binding Opacity}"
+                                         Color="{StaticResource NegativeBar}" Opacity="{Binding Opacity}"
                                          CornerRadius="3,3,0,0"
                                          HorizontalOptions="Center" VerticalOptions="End" />
                             </Grid>
@@ -41,7 +41,7 @@
                     </DataTemplate>
                 </BindableLayout.ItemTemplate>
             </FlexLayout>
-            <Label Grid.Row="3" Text="Нет данных за период"
+            <Label Grid.Row="3" Text="No data for the period"
                    Style="{StaticResource MutedLabel}" HorizontalTextAlignment="Center"
                    IsVisible="{Binding IsEmpty}" VerticalOptions="Center" Margin="0,20" />
             <ActivityIndicator Grid.Row="4" IsRunning="{Binding IsLoading}" IsVisible="{Binding IsLoading}"

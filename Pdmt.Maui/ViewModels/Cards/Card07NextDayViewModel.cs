@@ -7,7 +7,7 @@ public record NextDayBarItem(string TagName, double NextDayAvgScore, int Occurre
 
 public partial class Card07NextDayViewModel(InsightsService insightsService) : InsightCardViewModel
 {
-    private const double DesignMaxWidth = 140.0;
+    private const double DesignMaxWidth = 160.0;
 
     [ObservableProperty] private IReadOnlyList<NextDayBarItem> _items = [];
 
@@ -32,15 +32,15 @@ public partial class Card07NextDayViewModel(InsightsService insightsService) : I
         }
         catch (OperationCanceledException)
         {
-            // Загрузка отменена — не показываем ошибку
+            // Load cancelled — do not show error
         }
         catch (Exception) when (ct.IsCancellationRequested)
         {
-            // Исключение из-за отмены токена (например, SocketException) — не показываем ошибку
+            // Exception due to token cancellation (e.g. SocketException) — do not show error
         }
         catch
         {
-            ErrorMessage = "Не удалось загрузить данные.";
+            ErrorMessage = LoadErrorMessage;
         }
         finally
         {

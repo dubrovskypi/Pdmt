@@ -6,26 +6,25 @@
     xmlns:cards="clr-namespace:Pdmt.Maui.ViewModels.Cards"
     x:DataType="cards:Card09TagTrendViewModel">
 
-    <Border Margin="4,0" Padding="16" BackgroundColor="{StaticResource Surface}">
+    <Border Margin="4,0" Padding="16" BackgroundColor="{StaticResource Card}">
         <Grid RowDefinitions="Auto,Auto,Auto,*,Auto" RowSpacing="0">
-            <Border Grid.Row="0" BackgroundColor="#dbeafe" Stroke="Transparent" StrokeThickness="0"
+            <Border Grid.Row="0" BackgroundColor="{StaticResource BlueBg}" Stroke="Transparent" StrokeThickness="0"
                     Padding="8,3" HorizontalOptions="Start">
                 <Border.StrokeShape><RoundRectangle CornerRadius="10" /></Border.StrokeShape>
-                <Label Text="Tags trend" TextColor="#1e40af" FontSize="12" FontAttributes="Bold" />
+                <Label Text="Tags trend" TextColor="{StaticResource BlueText}" FontSize="12" FontAttributes="Bold" />
             </Border>
-            <Label Grid.Row="1" Text="Тренд тегов"
+            <Label Grid.Row="1" Text="Tag Trend"
                    FontAttributes="Bold" FontSize="16" Margin="0,8,0,2" />
-            <Label Grid.Row="2" Text="Как менялась частота трёх самых распространённых тегов."
+            <Label Grid.Row="2" Text="How the frequency of the three most common tags changed."
                    Style="{StaticResource MutedLabel}" Margin="0,0,0,10" />
 
             <VerticalStackLayout Grid.Row="3" Spacing="16">
-                <!-- Пустое состояние -->
-                <Label Text="Нет данных для тренда тега"
+                
+                <Label Text="No data for tag trend"
                        Style="{StaticResource MutedLabel}"
                        IsVisible="{Binding IsEmpty}"
                        HorizontalOptions="Center" Margin="0,16" />
-
-                <!-- Серии топ-3 тегов -->
+                
                 <VerticalStackLayout Spacing="10"
                                      BindableLayout.ItemsSource="{Binding Series}">
                     <BindableLayout.ItemTemplate>

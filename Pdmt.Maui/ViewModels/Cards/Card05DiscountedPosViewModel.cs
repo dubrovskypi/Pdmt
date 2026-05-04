@@ -10,7 +10,7 @@ public record BlindSpotBarItem(string TagName, double AvgIntensity, int Count, d
 
 public partial class Card05DiscountedPosViewModel(InsightsService insightsService) : InsightCardViewModel
 {
-    private const double DesignMaxWidth = 160.0;
+    private const double DesignMaxWidth = 130.0;
 
     [ObservableProperty] private IReadOnlyList<BlindSpotBarItem> _items = [];
     [ObservableProperty] private bool _isEmpty;
@@ -33,15 +33,15 @@ public partial class Card05DiscountedPosViewModel(InsightsService insightsServic
         }
         catch (OperationCanceledException)
         {
-            // Загрузка отменена — не показываем ошибку
+            // Load cancelled — do not show error
         }
         catch (Exception) when (ct.IsCancellationRequested)
         {
-            // Исключение из-за отмены токена (например, SocketException) — не показываем ошибку
+            // Exception due to token cancellation (e.g. SocketException) — do not show error
         }
         catch
         {
-            ErrorMessage = "Не удалось загрузить данные.";
+            ErrorMessage = LoadErrorMessage;
         }
         finally
         {

@@ -6,16 +6,16 @@
     xmlns:cards="clr-namespace:Pdmt.Maui.ViewModels.Cards"
     x:DataType="cards:Card02RepeatingViewModel">
 
-    <Border Margin="4,0" Padding="16" BackgroundColor="{StaticResource Surface}">
+    <Border Margin="4,0" Padding="16" BackgroundColor="{StaticResource Card}">
         <Grid RowDefinitions="Auto,Auto,Auto,*,Auto" RowSpacing="0">
-            <Border Grid.Row="0" BackgroundColor="#f3e8ff" Stroke="Transparent" StrokeThickness="0"
+            <Border Grid.Row="0" BackgroundColor="{StaticResource PurpleBg}" Stroke="Transparent" StrokeThickness="0"
                     Padding="8,3" HorizontalOptions="Start">
                 <Border.StrokeShape><RoundRectangle CornerRadius="10" /></Border.StrokeShape>
-                <Label Text="Repeats" TextColor="#6b21a8" FontSize="12" FontAttributes="Bold" />
+                <Label Text="Repeats" TextColor="{StaticResource PurpleText}" FontSize="12" FontAttributes="Bold" />
             </Border>
-            <Label Grid.Row="1" Text="Повторяющиеся триггеры"
+            <Label Grid.Row="1" Text="Repeating Triggers"
                    FontAttributes="Bold" FontSize="16" Margin="0,8,0,2" />
-            <Label Grid.Row="2" Text="Теги, которые встречались 3 и более раз."
+            <Label Grid.Row="2" Text="Tags that appeared 3 or more times."
                    Style="{StaticResource MutedLabel}" Margin="0,0,0,10" />
             <CollectionView Grid.Row="3" ItemsSource="{Binding Items}">
                 <CollectionView.ItemsLayout>
@@ -27,7 +27,7 @@
                             <Label Grid.Column="0" Text="{Binding TagName}"
                                    FontSize="13" LineBreakMode="TailTruncation" VerticalOptions="Center" />
                             <BoxView Grid.Column="1" WidthRequest="{Binding BarWidth}" HeightRequest="14"
-                                     Color="#c084fc" CornerRadius="2"
+                                     Color="{StaticResource PurpleAccent}" CornerRadius="2"
                                      HorizontalOptions="Start" VerticalOptions="Center" />
                             <Label Grid.Column="2"
                                    Text="{Binding Count, StringFormat='{0}×'}"
@@ -37,7 +37,7 @@
                     </DataTemplate>
                 </CollectionView.ItemTemplate>
             </CollectionView>
-            <Label Grid.Row="3" Text="Нет тегов с 3+ повторениями за выбранный период"
+            <Label Grid.Row="3" Text="No tags with 3+ occurrences for the selected period"
                    Style="{StaticResource MutedLabel}" HorizontalTextAlignment="Center"
                    IsVisible="{Binding IsEmpty}" VerticalOptions="Center" Margin="0,20" />
             <ActivityIndicator Grid.Row="4" IsRunning="{Binding IsLoading}" IsVisible="{Binding IsLoading}"

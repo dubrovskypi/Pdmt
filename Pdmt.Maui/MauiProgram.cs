@@ -17,10 +17,7 @@ public static class MauiProgram
         builder
             .UseMauiApp<App>()
             .UseMauiCommunityToolkit()
-            .ConfigureFonts(fonts =>
-            {
-                fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
-            })
+            .ConfigureFonts(fonts => { })
             .ConfigureMauiHandlers(handlers =>
             {
 #if ANDROID
@@ -47,6 +44,10 @@ public static class MauiProgram
                     sw.TrackTintList = new Android.Content.Res.ColorStateList(states,
                         [Android.Graphics.Color.ParseColor("#22c55e"), Android.Graphics.Color.ParseColor("#BBBBBB")]);
                 });
+                Microsoft.Maui.Handlers.ImageButtonHandler.Mapper.AppendToMapping("ImageTint", (handler, _) =>
+                    handler.PlatformView.ImageTintList =
+                        Android.Content.Res.ColorStateList.ValueOf(
+                            Android.Graphics.Color.ParseColor("#111111")));
 #endif
             });
 
@@ -94,21 +95,23 @@ public static class MauiProgram
 
         // ViewModels
         builder.Services.AddTransient<LoginViewModel>();
+        builder.Services.AddTransient<RegisterViewModel>();
         builder.Services.AddTransient<NewEventViewModel>();
         builder.Services.AddTransient<EditEventViewModel>();
         builder.Services.AddTransient<EventListViewModel>();
         builder.Services.AddTransient<WeeklyCalendarViewModel>();
         builder.Services.AddTransient<AccountViewModel>();
-        builder.Services.AddTransient<InsightsViewModel>();
+        builder.Services.AddSingleton<InsightsViewModel>();
 
         // Pages
         builder.Services.AddTransient<LoginPage>();
+        builder.Services.AddTransient<RegisterPage>();
         builder.Services.AddTransient<NewEventPage>();
         builder.Services.AddTransient<EditEventPage>();
         builder.Services.AddTransient<EventListPage>();
         builder.Services.AddTransient<WeeklyCalendarPage>();
         builder.Services.AddTransient<AccountPage>();
-        builder.Services.AddTransient<InsightsPage>();
+        builder.Services.AddSingleton<InsightsPage>();
 
         // Shell
         builder.Services.AddSingleton<AppShell>();

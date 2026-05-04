@@ -46,7 +46,10 @@ public abstract partial class EventFormViewModel : ObservableObject
     private bool _canInfluence;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasTagInput))]
     private string _tagInput = "";
+
+    public bool HasTagInput => !string.IsNullOrEmpty(TagInput);
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CanSave))]

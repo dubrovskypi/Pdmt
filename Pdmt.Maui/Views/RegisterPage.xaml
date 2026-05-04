@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage
-    x:Class="Pdmt.Maui.Views.LoginPage"
+    x:Class="Pdmt.Maui.Views.RegisterPage"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:conv="clr-namespace:Pdmt.Maui.Converters"
     xmlns:vm="clr-namespace:Pdmt.Maui.ViewModels"
-    x:DataType="vm:LoginViewModel"
+    x:DataType="vm:RegisterViewModel"
+    Shell.NavBarIsVisible="False"
     BackgroundColor="{StaticResource PrimaryContainer}">
 
     <ContentPage.Resources>
@@ -52,7 +53,7 @@
                     Margin="0,0,0,6" />
 
                 <Label
-                    Text="Sign in"
+                    Text="Create account"
                     FontSize="18"
                     FontAttributes="Bold"
                     TextColor="{StaticResource OnSurface}" />
@@ -85,14 +86,27 @@
                         Placeholder="Password"
                         Text="{Binding Password}"
                         IsPassword="True"
+                        ReturnType="Next" />
+                </Border>
+
+                <Border
+                    BackgroundColor="{StaticResource Card}"
+                    Stroke="{StaticResource Border}"
+                    StrokeThickness="1.5"
+                    StrokeShape="RoundRectangle 10"
+                    Padding="8,0">
+                    <Entry
+                        Placeholder="Confirm password"
+                        Text="{Binding ConfirmPassword}"
+                        IsPassword="True"
                         ReturnType="Done"
-                        ReturnCommand="{Binding LoginCommand}" />
+                        ReturnCommand="{Binding RegisterCommand}" />
                 </Border>
 
                 <Button
-                    Text="Sign in"
+                    Text="Sign up"
                     Style="{StaticResource PrimaryFilledButton}"
-                    Command="{Binding LoginCommand}"
+                    Command="{Binding RegisterCommand}"
                     IsEnabled="{Binding IsBusy, Converter={StaticResource InvertBool}}" />
 
                 <ActivityIndicator
@@ -103,14 +117,14 @@
 
                 <HorizontalStackLayout HorizontalOptions="Center" Spacing="2">
                     <Label
-                        Text="No account?"
+                        Text="Have account?"
                         VerticalOptions="Center"
                         FontSize="13"
                         TextColor="{StaticResource Muted}" />
                     <Button
-                        Text="Sign up"
+                        Text="Sign in"
                         Style="{StaticResource LinkButton}"
-                        Command="{Binding GoToRegisterCommand}" />
+                        Command="{Binding GoToLoginCommand}" />
                 </HorizontalStackLayout>
 
             </VerticalStackLayout>

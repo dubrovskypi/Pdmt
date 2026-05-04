@@ -6,6 +6,8 @@ namespace Pdmt.Maui.Services;
 
 public class AuthHeaderHandler(ITokenService tokenService) : DelegatingHandler
 {
+    private readonly SemaphoreSlim _refreshLock = new(1, 1);
+
     protected override async Task<HttpResponseMessage> SendAsync(
         HttpRequestMessage request, CancellationToken cancellationToken)
     {
@@ -23,12 +25,31 @@ public class AuthHeaderHandler(ITokenService tokenService) : DelegatingHandler
         if (response.StatusCode is not HttpStatusCode.Unauthorized)
             return response;
 
-        var refreshed = await TryRefreshAsync(cancellationToken);
+        await _refreshLock.WaitAsync(cancellationToken);
+        bool refreshed;
+        try
+        {
+            // Another concurrent request may have already refreshed — check first
+            var tokenAfterWait = await tokenService.GetAccessTokenAsync();
+            if (tokenAfterWait is not null && tokenAfterWait != accessToken)
+                refreshed = true;
+            else
+                refreshed = await TryRefreshAsync(cancellationToken);
+        }
+        finally
+        {
+            _refreshLock.Release();
+        }
+
         if (!refreshed)
         {
             await tokenService.ClearAsync();
-            await MainThread.InvokeOnMainThreadAsync(() =>
-                Shell.Current.GoToAsync("//login"));
+            try
+            {
+                await MainThread.InvokeOnMainThreadAsync(() =>
+                    Shell.Current.GoToAsync("//login"));
+            }
+            catch { }
             return response;
         }
 
@@ -38,7 +59,12 @@ public class AuthHeaderHandler(ITokenService tokenService) : DelegatingHandler
             retry.Headers.TryAddWithoutValidation(header.Key, header.Value);
 
         if (bodyBytes is not null)
+        {
             retry.Content = new ByteArrayContent(bodyBytes);
+            if (request.Content?.Headers is not null)
+                foreach (var header in request.Content.Headers)
+                    retry.Content.Headers.TryAddWithoutValidation(header.Key, header.Value);
+        }
 
         var newToken = await tokenService.GetAccessTokenAsync();
         retry.Headers.Authorization = new("Bearer", newToken!);
@@ -59,11 +85,11 @@ public class AuthHeaderHandler(ITokenService tokenService) : DelegatingHandler
 
         try
         {
-            var response = await base.SendAsync(refreshRequest, cancellationToken);
-            if (!response.IsSuccessStatusCode)
+            var refreshResponse = await base.SendAsync(refreshRequest, cancellationToken);
+            if (!refreshResponse.IsSuccessStatusCode)
                 return false;
 
-            var result = await response.Content.ReadFromJsonAsync<AuthResultDto>(cancellationToken);
+            var result = await refreshResponse.Content.ReadFromJsonAsync<AuthResultDto>(cancellationToken);
             if (result is null)
                 return false;
 

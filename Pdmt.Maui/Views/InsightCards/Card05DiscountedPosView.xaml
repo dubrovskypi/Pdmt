@@ -6,16 +6,16 @@
     xmlns:cards="clr-namespace:Pdmt.Maui.ViewModels.Cards"
     x:DataType="cards:Card05DiscountedPosViewModel">
 
-    <Border Margin="4,0" Padding="16" BackgroundColor="{StaticResource Surface}">
+    <Border Margin="4,0" Padding="16" BackgroundColor="{StaticResource Card}">
         <Grid RowDefinitions="Auto,Auto,Auto,*,Auto" RowSpacing="0">
-            <Border Grid.Row="0" BackgroundColor="#fef3c7" Stroke="Transparent" StrokeThickness="0"
+            <Border Grid.Row="0" BackgroundColor="{StaticResource AmberBg}" Stroke="Transparent" StrokeThickness="0"
                     Padding="8,3" HorizontalOptions="Start">
                 <Border.StrokeShape><RoundRectangle CornerRadius="10" /></Border.StrokeShape>
-                <Label Text="Discounted positives" TextColor="#92400e" FontSize="12" FontAttributes="Bold" />
+                <Label Text="Discounted positives" TextColor="{StaticResource AmberText}" FontSize="12" FontAttributes="Bold" />
             </Border>
-            <Label Grid.Row="1" Text="Недооценённые позитивные события"
+            <Label Grid.Row="1" Text="Undervalued Positive Events"
                    FontAttributes="Bold" FontSize="16" Margin="0,8,0,2" />
-            <Label Grid.Row="2" Text="Теги с высокой частотой, но низкой средней интенсивностью. Хорошее есть — просто ты его недооцениваешь."
+            <Label Grid.Row="2" Text="Tags with high frequency but low average intensity. The good is there — you just undervalue it."
                    Style="{StaticResource MutedLabel}" Margin="0,0,0,10" />
             <CollectionView Grid.Row="3" ItemsSource="{Binding Items}">
                 <CollectionView.ItemsLayout>
@@ -23,11 +23,11 @@
                 </CollectionView.ItemsLayout>
                 <CollectionView.ItemTemplate>
                     <DataTemplate x:DataType="cards:BlindSpotBarItem">
-                        <Grid ColumnDefinitions="90,*,64" ColumnSpacing="8">
+                        <Grid ColumnDefinitions="90,*,66" ColumnSpacing="8">
                             <Label Grid.Column="0" Text="{Binding TagName}"
                                    FontSize="13" LineBreakMode="TailTruncation" VerticalOptions="Center" />
                             <BoxView Grid.Column="1" WidthRequest="{Binding BarWidth}" HeightRequest="14"
-                                     Color="#fcd34d" CornerRadius="2"
+                                     Color="{StaticResource AmberAccent}" CornerRadius="2"
                                      HorizontalOptions="Start" VerticalOptions="Center" />
                             <Label Grid.Column="2" Text="{Binding FormattedAnnotation}"
                                    FontSize="12" TextColor="{StaticResource Muted}" 
@@ -36,7 +36,7 @@
                     </DataTemplate>
                 </CollectionView.ItemTemplate>
             </CollectionView>
-            <Label Grid.Row="3" Text="Нет тегов с 5+ позитивными событиями и средней интенсивностью менее 4.0"
+            <Label Grid.Row="3" Text="No tags with 5+ positive events and average intensity below 4.0"
                    Style="{StaticResource MutedLabel}" HorizontalTextAlignment="Center"
                    IsVisible="{Binding IsEmpty}" VerticalOptions="Center" Margin="0,20" />
             <ActivityIndicator Grid.Row="4" IsRunning="{Binding IsLoading}" IsVisible="{Binding IsLoading}"
