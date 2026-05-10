@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Pdmt.Api.Data;
 using Pdmt.Api.Domain;
@@ -12,9 +12,10 @@ namespace Pdmt.Api.Services;
 
 public class AuthService(AppDbContext db, IConfiguration config, IRateLimitService rateLimit, SigningCredentials signingCreds) : IAuthService
 {
+    private static readonly TimeSpan RefreshTokenGracePeriod = TimeSpan.FromSeconds(30);
     private readonly SigningCredentials _signingCredentials = signingCreds;
 
-    public async Task<AuthResultDto> RegisterAsync(UserDto dto, string ip)
+    public async Task<AuthResult> RegisterAsync(UserDto dto, string ip)
     {
         await rateLimit.CheckAsync("Auth.Register", ip);
 
@@ -32,29 +33,21 @@ public class AuthService(AppDbContext db, IConfiguration config, IRateLimitServi
         db.Users.Add(user);
         await db.SaveChangesAsync();
 
-        var (refreshTokenEntity, rawRefreshToken) = CreateRefreshToken(user);
-
+        var (refreshTokenEntity, rawRefreshToken) = CreateRefreshToken(user, Guid.NewGuid());
         db.RefreshTokens.Add(refreshTokenEntity);
         await db.SaveChangesAsync();
 
         var accessToken = GenerateAccessToken(user);
-        return new AuthResultDto
-        {
-            AccessToken = accessToken.Token,
-            AccessTokenExpiresAt = accessToken.ExpiresAt,
-            RefreshToken = rawRefreshToken
-        };
+        return new AuthResult(accessToken.Token, accessToken.ExpiresAt, rawRefreshToken, refreshTokenEntity.ExpiresAt);
     }
 
-    public async Task<AuthResultDto> LoginAsync(UserDto dto, string ip)
+    public async Task<AuthResult> LoginAsync(UserDto dto, string ip)
     {
         await rateLimit.CheckAsync("Auth.Login", ip);
 
         var normalizedEmail = dto.Email.Trim().ToLower();
-        var user = await db.Users.
-            Include(u => u.RefreshTokens).
-            FirstOrDefaultAsync(u => u.Email == normalizedEmail);
-        if (user == null || !BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash))
+        var user = await db.Users.FirstOrDefaultAsync(u => u.Email == normalizedEmail);
+        if (user is null || !BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash))
         {
             db.FailedLoginAttempts.Add(new FailedLoginAttempt
             {
@@ -67,48 +60,62 @@ public class AuthService(AppDbContext db, IConfiguration config, IRateLimitServi
             throw new UnauthorizedAccessException("Invalid credentials");
         }
 
-        // revoke old tokens
-        foreach (var rt in user.RefreshTokens)
-            rt.IsRevoked = true;
-
-        var (refreshTokenEntity, rawRefreshToken) = CreateRefreshToken(user);
-
+        var (refreshTokenEntity, rawRefreshToken) = CreateRefreshToken(user, Guid.NewGuid());
         db.RefreshTokens.Add(refreshTokenEntity);
         await db.SaveChangesAsync();
 
         var accessToken = GenerateAccessToken(user);
-        return new AuthResultDto
-        {
-            AccessToken = accessToken.Token,
-            AccessTokenExpiresAt = accessToken.ExpiresAt,
-            RefreshToken = rawRefreshToken
-        };
+        return new AuthResult(accessToken.Token, accessToken.ExpiresAt, rawRefreshToken, refreshTokenEntity.ExpiresAt);
     }
 
-    public async Task<AuthResultDto> RefreshAsync(string refreshToken, string ip)
+    public async Task<AuthResult> RefreshAsync(string refreshToken, string ip)
     {
         await rateLimit.CheckAsync("Auth.Refresh", ip);
 
         var hashedRefreshToken = HashToken(refreshToken);
         var token = await db.RefreshTokens
             .Include(rt => rt.User)
-            .FirstOrDefaultAsync(rt =>
-                rt.Token == hashedRefreshToken &&
-                !rt.IsRevoked &&
-                rt.ExpiresAt > DateTimeOffset.UtcNow) ?? throw new UnauthorizedAccessException("Invalid refresh token");
-        token.IsRevoked = true;
+            .FirstOrDefaultAsync(rt => rt.Token == hashedRefreshToken && rt.ExpiresAt > DateTimeOffset.UtcNow)
+            ?? throw new UnauthorizedAccessException("Invalid refresh token");
 
-        var (newRefreshTokenEntity, rawRefreshToken) = CreateRefreshToken(token.User);
-        db.RefreshTokens.Add(newRefreshTokenEntity);
-        await db.SaveChangesAsync();
-
-        var accessToken = GenerateAccessToken(token.User);
-        return new AuthResultDto
+        if (!token.IsRevoked)
         {
-            AccessToken = accessToken.Token,
-            AccessTokenExpiresAt = accessToken.ExpiresAt,
-            RefreshToken = rawRefreshToken
-        };
+            // Atomic revoke: ensures only one concurrent request succeeds
+            var revoked = await db.RefreshTokens
+                .Where(rt => rt.Id == token.Id && !rt.IsRevoked)
+                .ExecuteUpdateAsync(s => s
+                    .SetProperty(rt => rt.IsRevoked, true)
+                    .SetProperty(rt => rt.RotatedAt, DateTimeOffset.UtcNow));
+
+            if (revoked > 0)
+            {
+                var (newRt, rawRt) = CreateRefreshToken(token.User, token.FamilyId);
+                db.RefreshTokens.Add(newRt);
+                await db.SaveChangesAsync();
+                var newAccess = GenerateAccessToken(token.User);
+                return new AuthResult(newAccess.Token, newAccess.ExpiresAt, rawRt, newRt.ExpiresAt);
+            }
+
+            // Race: another parallel request just revoked this token — reload to get RotatedAt
+            await db.Entry(token).ReloadAsync();
+        }
+
+        // Token is revoked — check grace window for idempotent response
+        if (token.RotatedAt.HasValue && DateTimeOffset.UtcNow < token.RotatedAt.Value.Add(RefreshTokenGracePeriod))
+        {
+            var (newRt, rawRt) = CreateRefreshToken(token.User, token.FamilyId);
+            db.RefreshTokens.Add(newRt);
+            await db.SaveChangesAsync();
+            var newAccess = GenerateAccessToken(token.User);
+            return new AuthResult(newAccess.Token, newAccess.ExpiresAt, rawRt, newRt.ExpiresAt);
+        }
+
+        // Reuse detected outside grace window — revoke entire token family
+        await db.RefreshTokens
+            .Where(rt => rt.FamilyId == token.FamilyId && !rt.IsRevoked)
+            .ExecuteUpdateAsync(s => s.SetProperty(rt => rt.IsRevoked, true));
+
+        throw new UnauthorizedAccessException("Invalid refresh token");
     }
 
     public async Task LogoutAsync(Guid userId)
@@ -130,8 +137,8 @@ public class AuthService(AppDbContext db, IConfiguration config, IRateLimitServi
         var expires = expiresOffset.UtcDateTime;
         var claims = new[]
         {
-        new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-        new Claim(JwtRegisteredClaimNames.Email, user.Email)
+            new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+            new Claim(JwtRegisteredClaimNames.Email, user.Email)
         };
         var token = new JwtSecurityToken(
             issuer: jwt["Issuer"],
@@ -142,7 +149,7 @@ public class AuthService(AppDbContext db, IConfiguration config, IRateLimitServi
         return new AccessToken(new JwtSecurityTokenHandler().WriteToken(token), expiresOffset);
     }
 
-    private (RefreshToken entity, string rawToken) CreateRefreshToken(User user)
+    private (RefreshToken entity, string rawToken) CreateRefreshToken(User user, Guid familyId)
     {
         var days = int.Parse(config["Jwt:RefreshTokenLifetimeDays"]!);
         var rawToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
@@ -152,7 +159,8 @@ public class AuthService(AppDbContext db, IConfiguration config, IRateLimitServi
             UserId = user.Id,
             Token = HashToken(rawToken),
             CreatedAt = DateTimeOffset.UtcNow,
-            ExpiresAt = DateTimeOffset.UtcNow.AddDays(days)
+            ExpiresAt = DateTimeOffset.UtcNow.AddDays(days),
+            FamilyId = familyId
         };
         return (entity, rawToken);
     }

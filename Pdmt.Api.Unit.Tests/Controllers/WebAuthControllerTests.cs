@@ -35,12 +35,11 @@ public class WebAuthControllerTests
         return new ControllerContext { HttpContext = context };
     }
 
-    private static AuthResultDto BuildServiceResult(string refreshToken = "refresh-token") => new()
-    {
-        AccessToken = "access-token",
-        AccessTokenExpiresAt = DateTimeOffset.UtcNow.AddHours(1),
-        RefreshToken = refreshToken
-    };
+    private static AuthResult BuildServiceResult(string refreshToken = "refresh-token") => new(
+        "access-token",
+        DateTimeOffset.UtcNow.AddHours(1),
+        refreshToken,
+        DateTimeOffset.UtcNow.AddDays(30));
 
     #region Register
 

@@ -27,6 +27,8 @@ public class AppDbContext(DbContextOptions options) : DbContext(options)
             .IsUnique();
         modelBuilder.Entity<RefreshToken>()
             .HasIndex(rt => new { rt.UserId, rt.IsRevoked });
+        modelBuilder.Entity<RefreshToken>()
+            .HasIndex(rt => rt.FamilyId);
 
         modelBuilder.Entity<Event>()
             .HasOne(e => e.User)

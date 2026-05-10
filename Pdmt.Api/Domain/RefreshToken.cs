@@ -9,4 +9,6 @@ public class RefreshToken
     public DateTimeOffset ExpiresAt { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
     public bool IsRevoked { get; set; }
+    public Guid FamilyId { get; set; }
+    public DateTimeOffset? RotatedAt { get; set; }
 }

@@ -155,6 +155,7 @@ Composite pattern: tries **Redis** first, falls back to **in-memory** if Redis i
 - No lazy loading — always explicit `.Include()`
 - Never edit migration files manually; generate via `dotnet ef migrations add`
 - Custom C# methods cannot be used inside EF Core queries (`IQueryable`) — EF cannot translate them to SQL. Materialize with `ToListAsync()` first, then apply custom logic in-memory.
+- `ExecuteUpdateAsync` / `ExecuteDeleteAsync` bypass the EF change tracker — entities already loaded in `DbContext` retain stale state. Use `AsNoTracking()` for post-update reads, or call `db.Entry(entity).ReloadAsync()` to refresh a tracked instance.
 - **DateTime/DateTimeOffset**: Use `DateTimeOffset` in all new code. When encountering legacy `DateTime`, propose migration if feasible. Never call `.ToUniversalTime()` in controllers or services — Npgsql handles UTC conversion automatically.
 - **Timezone**: App timezone is configured in `appsettings.json` under `App:DefaultTimeZone` (value: `"Europe/Vilnius"`). Analytics queries that group by local day use `EF.Functions.AtTimeZone(e.Timestamp, tz)`. When per-user timezone is needed, replace config lookup with `user.TimeZone`.
  
@@ -210,7 +211,7 @@ Configuration uses `appsettings.json` (base) + `appsettings.{Environment}.json` 
 
 **Secrets management:**
 - **Dev**: `dotnet user-secrets set "Jwt:Secret" "..."` — stored outside repo, never committed
-- **Prod**: environment variables — never in `appsettings.Production.json`
+- **Prod**: *secrets* go in environment variables — never committed. Non-secret deployment config (topology, feature flags) belongs in `appsettings.Production.json`.
 
 **Required for production (env vars):**
 - `Jwt:Secret` — JWT signing key (min. 32 chars)

@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Pdmt.Api.Dto;
 using Pdmt.Api.Infrastructure.Extensions;
@@ -17,7 +17,7 @@ namespace Pdmt.Api.Controllers
         public async Task<ActionResult<AuthResultDto>> Register(UserDto dto)
         {
             var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-            return StatusCode(StatusCodes.Status201Created, await auth.RegisterAsync(dto, ip));
+            return StatusCode(StatusCodes.Status201Created, ToDto(await auth.RegisterAsync(dto, ip)));
         }
 
         [HttpPost("login")]
@@ -28,7 +28,7 @@ namespace Pdmt.Api.Controllers
         public async Task<ActionResult<AuthResultDto>> Login(UserDto dto)
         {
             var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-            return Ok(await auth.LoginAsync(dto, ip));
+            return Ok(ToDto(await auth.LoginAsync(dto, ip)));
         }
 
         [HttpPost("refresh")]
@@ -39,7 +39,7 @@ namespace Pdmt.Api.Controllers
         public async Task<ActionResult<AuthResultDto>> Refresh(RefreshRequestDto dto)
         {
             var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-            return Ok(await auth.RefreshAsync(dto.RefreshToken, ip));
+            return Ok(ToDto(await auth.RefreshAsync(dto.RefreshToken, ip)));
         }
 
         [HttpPost("logout")]
@@ -52,5 +52,13 @@ namespace Pdmt.Api.Controllers
             await auth.LogoutAsync(User.GetUserId());
             return NoContent();
         }
+
+        private static AuthResultDto ToDto(AuthResult result) => new()
+        {
+            AccessToken = result.AccessToken,
+            AccessTokenExpiresAt = result.AccessTokenExpiresAt,
+            RefreshToken = result.RefreshToken,
+            RefreshTokenExpiresAt = result.RefreshTokenExpiresAt
+        };
     }
 }

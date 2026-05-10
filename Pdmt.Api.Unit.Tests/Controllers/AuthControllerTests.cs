@@ -32,12 +32,11 @@ public class AuthControllerTests
         }
     };
 
-    private static AuthResultDto BuildAuthResult() => new()
-    {
-        AccessToken = "access-token",
-        AccessTokenExpiresAt = DateTimeOffset.UtcNow.AddHours(1),
-        RefreshToken = "refresh-token"
-    };
+    private static AuthResult BuildAuthResult() => new(
+        "access-token",
+        DateTimeOffset.UtcNow.AddHours(1),
+        "refresh-token",
+        DateTimeOffset.UtcNow.AddDays(30));
 
     [Fact]
     public async Task Register_ValidDto_Returns201WithAuthResult()
@@ -50,7 +49,9 @@ public class AuthControllerTests
 
         var objResult = result.Result.Should().BeOfType<ObjectResult>().Subject;
         objResult.StatusCode.Should().Be(201);
-        objResult.Value.Should().Be(authResult);
+        var body = objResult.Value.Should().BeOfType<AuthResultDto>().Subject;
+        body.AccessToken.Should().Be(authResult.AccessToken);
+        body.RefreshToken.Should().Be(authResult.RefreshToken);
     }
 
     [Fact]
@@ -63,7 +64,8 @@ public class AuthControllerTests
         var result = await _sut.Login(dto);
 
         var ok = result.Result.Should().BeOfType<OkObjectResult>().Subject;
-        ok.Value.Should().Be(authResult);
+        ok.Value.Should().BeOfType<AuthResultDto>()
+            .Which.AccessToken.Should().Be(authResult.AccessToken);
     }
 
     [Fact]
@@ -76,7 +78,8 @@ public class AuthControllerTests
         var result = await _sut.Refresh(dto);
 
         var ok = result.Result.Should().BeOfType<OkObjectResult>().Subject;
-        ok.Value.Should().Be(authResult);
+        ok.Value.Should().BeOfType<AuthResultDto>()
+            .Which.AccessToken.Should().Be(authResult.AccessToken);
     }
 
     [Fact]
