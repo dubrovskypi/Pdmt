@@ -36,7 +36,7 @@ public partial class LoginViewModel(AuthService authService, ITokenService token
         try
         {
             var result = await authService.LoginAsync(Email, Password);
-            await tokenService.SetTokensAsync(result.AccessToken, result.RefreshToken);
+            await tokenService.SetTokensAsync(result.AccessToken, result.AccessTokenExpiresAt, result.RefreshToken);
             await Shell.Current.GoToAsync("//events");
         }
         catch (HttpRequestException)
