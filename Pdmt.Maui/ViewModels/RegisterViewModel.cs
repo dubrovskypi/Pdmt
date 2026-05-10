@@ -51,7 +51,7 @@ public partial class RegisterViewModel(AuthService authService, ITokenService to
         try
         {
             var result = await authService.RegisterAsync(Email, Password);
-            await tokenService.SetTokensAsync(result.AccessToken, result.RefreshToken);
+            await tokenService.SetTokensAsync(result.AccessToken, result.AccessTokenExpiresAt, result.RefreshToken);
             await Shell.Current.GoToAsync("//events");
         }
         catch (HttpRequestException ex) when (

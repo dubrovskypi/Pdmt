@@ -11,6 +11,20 @@ public class AuthHeaderHandler(ITokenService tokenService) : DelegatingHandler
     protected override async Task<HttpResponseMessage> SendAsync(
         HttpRequestMessage request, CancellationToken cancellationToken)
     {
+        if (await tokenService.IsAccessTokenExpiredAsync())
+        {
+            await _refreshLock.WaitAsync(cancellationToken);
+            try
+            {
+                if (await tokenService.IsAccessTokenExpiredAsync())
+                    await TryRefreshAsync(cancellationToken);
+            }
+            finally
+            {
+                _refreshLock.Release();
+            }
+        }
+
         var accessToken = await tokenService.GetAccessTokenAsync();
         if (accessToken is not null)
             request.Headers.Authorization = new("Bearer", accessToken);
@@ -93,7 +107,7 @@ public class AuthHeaderHandler(ITokenService tokenService) : DelegatingHandler
             if (result is null)
                 return false;
 
-            await tokenService.SetTokensAsync(result.AccessToken, result.RefreshToken);
+            await tokenService.SetTokensAsync(result.AccessToken, result.AccessTokenExpiresAt, result.RefreshToken);
             return true;
         }
         catch

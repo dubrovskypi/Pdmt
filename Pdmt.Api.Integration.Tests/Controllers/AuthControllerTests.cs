@@ -112,7 +112,7 @@ public class AuthControllerTests(PostgresWebAppFactory factory) : HttpTestBase(f
     }
 
     [Fact]
-    public async Task Refresh_AlreadyUsedToken_Returns401()
+    public async Task Refresh_AlreadyUsedTokenWithinGraceWindow_Returns200()
     {
         var registerResponse = await _anonClient.PostAsJsonAsync("/api/auth/register",
             new UserDto { Email = UniqueEmail(), Password = TestUserHelper.DefaultPassword },
@@ -127,7 +127,7 @@ public class AuthControllerTests(PostgresWebAppFactory factory) : HttpTestBase(f
             new RefreshRequestDto { RefreshToken = registered.RefreshToken },
             TestContext.Current.CancellationToken);
 
-        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
 
     [Fact]

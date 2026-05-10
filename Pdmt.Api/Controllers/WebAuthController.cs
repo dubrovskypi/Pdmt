@@ -22,7 +22,7 @@ namespace Pdmt.Api.Controllers
         {
             var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
             var result = await auth.RegisterAsync(dto, ip);
-            SetRefreshCookie(result.RefreshToken);
+            SetRefreshCookie(result.RefreshToken, result.RefreshTokenExpiresAt);
             return StatusCode(StatusCodes.Status201Created,
                 new WebAuthResultDto(result.AccessToken, result.AccessTokenExpiresAt));
         }
@@ -36,7 +36,7 @@ namespace Pdmt.Api.Controllers
         {
             var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
             var result = await auth.LoginAsync(dto, ip);
-            SetRefreshCookie(result.RefreshToken);
+            SetRefreshCookie(result.RefreshToken, result.RefreshTokenExpiresAt);
             return Ok(new WebAuthResultDto(result.AccessToken, result.AccessTokenExpiresAt));
         }
 
@@ -50,7 +50,7 @@ namespace Pdmt.Api.Controllers
             var token = Request.Cookies["refreshToken"]
                 ?? throw new UnauthorizedAccessException("No refresh token cookie");
             var result = await auth.RefreshAsync(token, ip);
-            SetRefreshCookie(result.RefreshToken);
+            SetRefreshCookie(result.RefreshToken, result.RefreshTokenExpiresAt);
             return Ok(new WebAuthResultDto(result.AccessToken, result.AccessTokenExpiresAt));
         }
 
@@ -65,21 +65,21 @@ namespace Pdmt.Api.Controllers
             return NoContent();
         }
 
-        private void SetRefreshCookie(string token) =>
+        private void SetRefreshCookie(string token, DateTimeOffset expiresAt) =>
             Response.Cookies.Append("refreshToken", token, new CookieOptions
             {
                 HttpOnly = true,
                 Secure = true,
                 SameSite = SameSiteMode.None,
-                Expires = DateTimeOffset.UtcNow.AddDays(30)
+                Expires = expiresAt
             });
 
         private void ClearRefreshCookie() =>
             Response.Cookies.Delete("refreshToken", new CookieOptions
-            { 
-                HttpOnly = true, 
-                Secure = true, 
-                SameSite = SameSiteMode.None 
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.None
             });
     }
 }

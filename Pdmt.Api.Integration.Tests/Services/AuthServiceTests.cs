@@ -128,7 +128,7 @@ public class AuthServiceTests(PostgresContainerFixture fixture) : ServiceTestBas
     }
 
     [Fact]
-    public async Task LoginAsync_ValidCredentials_RevokesOldRefreshTokens()
+    public async Task LoginAsync_ValidCredentials_PreservesOldRefreshTokens()
     {
         var dto = new UserDto { Email = "new@example.com", Password = "password123" };
         await _service.RegisterAsync(dto, "192.168.1.1");
@@ -136,9 +136,40 @@ public class AuthServiceTests(PostgresContainerFixture fixture) : ServiceTestBas
         await _service.LoginAsync(new UserDto { Email = "new@example.com", Password = "password123" }, "192.168.1.2");
 
         var user = await Db.Users.SingleAsync(u => u.Email == "new@example.com", TestContext.Current.CancellationToken);
-        var tokens = await Db.RefreshTokens.Where(rt => rt.UserId == user.Id).ToListAsync(TestContext.Current.CancellationToken);
-        tokens.Count(rt => rt.IsRevoked).Should().Be(1);
-        tokens.Count(rt => !rt.IsRevoked).Should().Be(1);
+        var tokens = await Db.RefreshTokens.AsNoTracking().Where(rt => rt.UserId == user.Id).ToListAsync(TestContext.Current.CancellationToken);
+        tokens.Count(rt => rt.IsRevoked).Should().Be(0);
+        tokens.Count(rt => !rt.IsRevoked).Should().Be(2);
+    }
+
+    [Fact]
+    public async Task LoginAsync_TwoSequentialLogins_BothRefreshTokensWork()
+    {
+        var dto = new UserDto { Email = "new@example.com", Password = "password123" };
+        var r1 = await _service.RegisterAsync(dto, "192.168.1.1");
+        var r2 = await _service.LoginAsync(new UserDto { Email = "new@example.com", Password = "password123" }, "192.168.1.2");
+
+        var refresh1 = await _service.RefreshAsync(r1.RefreshToken, "192.168.1.3");
+        var refresh2 = await _service.RefreshAsync(r2.RefreshToken, "192.168.1.4");
+
+        refresh1.AccessToken.Should().NotBeNullOrEmpty();
+        refresh2.AccessToken.Should().NotBeNullOrEmpty();
+    }
+
+    [Fact]
+    public async Task LoginAsync_NewLogin_CreatesNewFamily()
+    {
+        var dto = new UserDto { Email = "new@example.com", Password = "password123" };
+        await _service.RegisterAsync(dto, "192.168.1.1");
+
+        await _service.LoginAsync(new UserDto { Email = "new@example.com", Password = "password123" }, "192.168.1.2");
+
+        var user = await Db.Users.SingleAsync(u => u.Email == "new@example.com", TestContext.Current.CancellationToken);
+        var familyIds = await Db.RefreshTokens
+            .AsNoTracking()
+            .Where(rt => rt.UserId == user.Id)
+            .Select(rt => rt.FamilyId)
+            .ToListAsync(TestContext.Current.CancellationToken);
+        familyIds.Distinct().Count().Should().Be(2);
     }
 
     [Fact]
@@ -201,8 +232,75 @@ public class AuthServiceTests(PostgresContainerFixture fixture) : ServiceTestBas
 
         await _service.RefreshAsync(registerResult.RefreshToken, "192.168.1.2");
 
-        var oldToken = await Db.RefreshTokens.FirstAsync(rt => rt.Token == oldTokenHash, TestContext.Current.CancellationToken);
+        var oldToken = await Db.RefreshTokens.AsNoTracking().FirstAsync(rt => rt.Token == oldTokenHash, TestContext.Current.CancellationToken);
         oldToken.IsRevoked.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task RefreshAsync_ValidToken_AssignsSameFamilyIdToNewToken()
+    {
+        var dto = new UserDto { Email = "new@example.com", Password = "password123" };
+        var registerResult = await _service.RegisterAsync(dto, "192.168.1.1");
+        var originalFamilyId = await Db.RefreshTokens
+            .Where(rt => !rt.IsRevoked)
+            .Select(rt => rt.FamilyId)
+            .FirstAsync(TestContext.Current.CancellationToken);
+
+        await _service.RefreshAsync(registerResult.RefreshToken, "192.168.1.2");
+
+        var newToken = await Db.RefreshTokens
+            .AsNoTracking()
+            .Where(rt => !rt.IsRevoked)
+            .FirstAsync(TestContext.Current.CancellationToken);
+        newToken.FamilyId.Should().Be(originalFamilyId);
+    }
+
+    [Fact]
+    public async Task RefreshAsync_RevokedTokenWithinGraceWindow_IssuesNewToken()
+    {
+        var dto = new UserDto { Email = "new@example.com", Password = "password123" };
+        var registerResult = await _service.RegisterAsync(dto, "192.168.1.1");
+        var originalFamilyId = await Db.RefreshTokens
+            .Where(rt => !rt.IsRevoked)
+            .Select(rt => rt.FamilyId)
+            .FirstAsync(TestContext.Current.CancellationToken);
+
+        await _service.RefreshAsync(registerResult.RefreshToken, "192.168.1.2");
+
+        // Reuse the same raw token — within the grace window
+        var result = await _service.RefreshAsync(registerResult.RefreshToken, "192.168.1.3");
+
+        result.AccessToken.Should().NotBeNullOrEmpty();
+        var latestToken = await Db.RefreshTokens
+            .AsNoTracking()
+            .Where(rt => !rt.IsRevoked)
+            .OrderByDescending(rt => rt.CreatedAt)
+            .FirstAsync(TestContext.Current.CancellationToken);
+        latestToken.FamilyId.Should().Be(originalFamilyId);
+    }
+
+    [Fact]
+    public async Task RefreshAsync_ReusedTokenAfterGraceWindow_RevokesEntireFamily()
+    {
+        var dto = new UserDto { Email = "new@example.com", Password = "password123" };
+        var registerResult = await _service.RegisterAsync(dto, "192.168.1.1");
+
+        await _service.RefreshAsync(registerResult.RefreshToken, "192.168.1.2");
+
+        // Backdate RotatedAt to simulate being outside the grace window
+        await Db.RefreshTokens
+            .Where(rt => rt.IsRevoked && rt.RotatedAt != null)
+            .ExecuteUpdateAsync(s => s.SetProperty(rt => rt.RotatedAt, DateTimeOffset.UtcNow.AddMinutes(-5)),
+            TestContext.Current.CancellationToken);
+
+        var act = () => _service.RefreshAsync(registerResult.RefreshToken, "192.168.1.3");
+        await act.Should().ThrowAsync<UnauthorizedAccessException>();
+
+        var user = await Db.Users.SingleAsync(u => u.Email == "new@example.com", TestContext.Current.CancellationToken);
+        var activeCount = await Db.RefreshTokens
+            .AsNoTracking()
+            .CountAsync(rt => rt.UserId == user.Id && !rt.IsRevoked, TestContext.Current.CancellationToken);
+        activeCount.Should().Be(0);
     }
 
     [Fact]
@@ -215,7 +313,8 @@ public class AuthServiceTests(PostgresContainerFixture fixture) : ServiceTestBas
             Token = HashToken("expired-token"),
             ExpiresAt = DateTimeOffset.UtcNow.AddDays(-1),
             IsRevoked = false,
-            CreatedAt = DateTimeOffset.UtcNow
+            CreatedAt = DateTimeOffset.UtcNow,
+            FamilyId = Guid.NewGuid()
         });
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
@@ -234,7 +333,8 @@ public class AuthServiceTests(PostgresContainerFixture fixture) : ServiceTestBas
             Token = HashToken("revoked-token"),
             ExpiresAt = DateTimeOffset.UtcNow.AddDays(7),
             IsRevoked = true,
-            CreatedAt = DateTimeOffset.UtcNow
+            CreatedAt = DateTimeOffset.UtcNow,
+            FamilyId = Guid.NewGuid()
         });
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
@@ -268,13 +368,14 @@ public class AuthServiceTests(PostgresContainerFixture fixture) : ServiceTestBas
             Token = Convert.ToBase64String(SHA256.HashData(Encoding.UTF8.GetBytes("second-token"))),
             ExpiresAt = DateTimeOffset.UtcNow.AddDays(7),
             IsRevoked = false,
-            CreatedAt = DateTimeOffset.UtcNow
+            CreatedAt = DateTimeOffset.UtcNow,
+            FamilyId = Guid.NewGuid()
         });
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         await _service.LogoutAsync(user.Id);
 
-        var tokens = await Db.RefreshTokens.Where(rt => rt.UserId == user.Id).ToListAsync(TestContext.Current.CancellationToken);
+        var tokens = await Db.RefreshTokens.AsNoTracking().Where(rt => rt.UserId == user.Id).ToListAsync(TestContext.Current.CancellationToken);
         tokens.Count(rt => rt.IsRevoked).Should().Be(2);
         tokens.Count(rt => !rt.IsRevoked).Should().Be(0);
     }

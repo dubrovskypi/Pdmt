@@ -159,6 +159,23 @@ builder.Services.AddScoped<IRateLimitService, CompositeRateLimitService>();
 
 // Configurations
 builder.Services.Configure<RateLimitOptions>(builder.Configuration.GetSection("RateLimiting"));
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    var section = builder.Configuration.GetSection("ForwardedHeaders");
+    if (section.GetValue<bool>("TrustAllProxies"))
+    {
+        options.KnownProxies.Clear();
+        options.KnownNetworks.Clear();
+        return;
+    }
+    var networks = section.GetSection("KnownNetworks").Get<string[]>() ?? [];
+    foreach (var cidr in networks)
+    {
+        var parts = cidr.Split('/');
+        options.KnownNetworks.Add(new IPNetwork(System.Net.IPAddress.Parse(parts[0]), int.Parse(parts[1])));
+    }
+});
 
 var app = builder.Build();
 
@@ -178,10 +195,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseForwardedHeaders(new ForwardedHeadersOptions
-{
-    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
-});
+app.UseForwardedHeaders();
 app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseMiddleware<HttpLoggingMiddleware>();
