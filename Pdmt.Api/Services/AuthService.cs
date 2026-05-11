@@ -1,9 +1,11 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Pdmt.Api.Data;
 using Pdmt.Api.Domain;
 using Pdmt.Api.Dto;
 using Pdmt.Api.Infrastructure.Exceptions;
+using Pdmt.Api.Infrastructure.Options;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
@@ -11,10 +13,11 @@ using System.Text;
 
 namespace Pdmt.Api.Services;
 
-public class AuthService(AppDbContext db, IConfiguration config, IRateLimitService rateLimit, SigningCredentials signingCreds) : IAuthService
+public class AuthService(AppDbContext db, IOptions<JwtOptions> jwtOptions, IRateLimitService rateLimit, SigningCredentials signingCreds) : IAuthService
 {
     private static readonly TimeSpan RefreshTokenGracePeriod = TimeSpan.FromSeconds(30);
     private readonly SigningCredentials _signingCredentials = signingCreds;
+    private readonly JwtOptions _jwt = jwtOptions.Value;
 
     public async Task<AuthResult> RegisterAsync(UserDto dto, string ip, CancellationToken ct)
     {
@@ -136,8 +139,7 @@ public class AuthService(AppDbContext db, IConfiguration config, IRateLimitServi
 
     private AccessToken GenerateAccessToken(User user)
     {
-        var jwt = config.GetSection("Jwt");
-        var expiresOffset = DateTimeOffset.UtcNow.AddMinutes(int.Parse(jwt["TokenLifetimeMinutes"]!));
+        var expiresOffset = DateTimeOffset.UtcNow.AddMinutes(_jwt.TokenLifetimeMinutes);
         var expires = expiresOffset.UtcDateTime;
         var claims = new[]
         {
@@ -145,8 +147,8 @@ public class AuthService(AppDbContext db, IConfiguration config, IRateLimitServi
             new Claim(JwtRegisteredClaimNames.Email, user.Email)
         };
         var token = new JwtSecurityToken(
-            issuer: jwt["Issuer"],
-            audience: jwt["Audience"],
+            issuer: _jwt.Issuer,
+            audience: _jwt.Audience,
             claims: claims,
             expires: expires,
             signingCredentials: _signingCredentials);
@@ -155,7 +157,6 @@ public class AuthService(AppDbContext db, IConfiguration config, IRateLimitServi
 
     private (RefreshToken entity, string rawToken) CreateRefreshToken(User user, Guid familyId)
     {
-        var days = int.Parse(config["Jwt:RefreshTokenLifetimeDays"]!);
         var rawToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
         var entity = new RefreshToken
         {
@@ -163,7 +164,7 @@ public class AuthService(AppDbContext db, IConfiguration config, IRateLimitServi
             UserId = user.Id,
             Token = HashToken(rawToken),
             CreatedAt = DateTimeOffset.UtcNow,
-            ExpiresAt = DateTimeOffset.UtcNow.AddDays(days),
+            ExpiresAt = DateTimeOffset.UtcNow.AddDays(_jwt.RefreshTokenLifetimeDays),
             FamilyId = familyId
         };
         return (entity, rawToken);

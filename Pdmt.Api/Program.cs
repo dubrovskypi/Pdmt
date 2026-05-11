@@ -10,6 +10,7 @@ using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Pdmt.Api.Data;
 using Pdmt.Api.Infrastructure;
+using Pdmt.Api.Infrastructure.Options;
 using Pdmt.Api.Middleware;
 using Pdmt.Api.Services;
 using StackExchange.Redis;
@@ -159,6 +160,10 @@ builder.Services.AddScoped<IRateLimitService, CompositeRateLimitService>();
 
 // Configurations
 builder.Services.Configure<RateLimitOptions>(builder.Configuration.GetSection("RateLimiting"));
+builder.Services.AddOptions<JwtOptions>()
+    .Bind(builder.Configuration.GetSection("Jwt"))
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
     options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;

@@ -1,9 +1,10 @@
 using FluentAssertions;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Moq;
 using Pdmt.Api.Dto;
 using Pdmt.Api.Infrastructure.Exceptions;
+using Pdmt.Api.Infrastructure.Options;
 using Pdmt.Api.Services;
 using System.Globalization;
 using System.Text;
@@ -19,18 +20,16 @@ public class AuthServiceUnitTests
     private readonly Mock<IRateLimitService> _rateLimitMock = new();
 
     private AuthService CreateSut() =>
-        new(null!, BuildConfig(), _rateLimitMock.Object, TestSigningCredentials);
+        new(null!, BuildJwtOptions(), _rateLimitMock.Object, TestSigningCredentials);
 
-    private static IConfiguration BuildConfig() =>
-        new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?>
-            {
-                ["Jwt:Issuer"] = "pdmt-test",
-                ["Jwt:Audience"] = "pdmt-test",
-                ["Jwt:TokenLifetimeMinutes"] = "60",
-                ["Jwt:RefreshTokenLifetimeDays"] = "1",
-            })
-            .Build();
+    private static IOptions<JwtOptions> BuildJwtOptions() =>
+        Options.Create(new JwtOptions
+        {
+            Issuer = "pdmt-test",
+            Audience = "pdmt-test",
+            TokenLifetimeMinutes = 60,
+            RefreshTokenLifetimeDays = 1
+        });
 
     #region RegisterAsync
 
