@@ -8,7 +8,16 @@ namespace Pdmt.Api.Integration.Tests.Controllers;
 
 public class WebAuthControllerTests(PostgresWebAppFactory factory) : HttpTestBase(factory)
 {
+    private const string TestOrigin = "https://localhost:5173";
+
     private readonly HttpClient _anonClient = factory.CreateClient();
+
+    public override async ValueTask InitializeAsync()
+    {
+        await base.InitializeAsync();
+        Client.DefaultRequestHeaders.Add("Origin", TestOrigin);
+        _anonClient.DefaultRequestHeaders.Add("Origin", TestOrigin);
+    }
 
     #region Register
 
@@ -117,6 +126,7 @@ public class WebAuthControllerTests(PostgresWebAppFactory factory) : HttpTestBas
         var cookie = ExtractRefreshCookie(loginResponse);
 
         var refreshClient = Factory.CreateClient();
+        refreshClient.DefaultRequestHeaders.Add("Origin", TestOrigin);
         refreshClient.DefaultRequestHeaders.Add("Cookie", $"refreshToken={cookie}");
         var response = await refreshClient.PostAsync("/api/auth/web/refresh", null,
             TestContext.Current.CancellationToken);
@@ -135,6 +145,7 @@ public class WebAuthControllerTests(PostgresWebAppFactory factory) : HttpTestBas
         var oldCookie = ExtractRefreshCookie(loginResponse);
 
         var refreshClient = Factory.CreateClient();
+        refreshClient.DefaultRequestHeaders.Add("Origin", TestOrigin);
         refreshClient.DefaultRequestHeaders.Add("Cookie", $"refreshToken={oldCookie}");
         var refreshResponse = await refreshClient.PostAsync("/api/auth/web/refresh", null,
             TestContext.Current.CancellationToken);
@@ -146,6 +157,7 @@ public class WebAuthControllerTests(PostgresWebAppFactory factory) : HttpTestBas
     [Fact]
     public async Task Refresh_WithoutCookie_Returns401()
     {
+        // Origin is set via default headers; expects 401 from missing cookie, not 403 from CSRF check.
         var response = await _anonClient.PostAsync("/api/auth/web/refresh", null,
             TestContext.Current.CancellationToken);
 
