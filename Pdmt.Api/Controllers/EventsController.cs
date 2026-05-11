@@ -66,9 +66,7 @@ namespace Pdmt.Api.Controllers
         public async Task<IActionResult> UpdateEvent(Guid id, [FromBody] UpdateEventDto model, CancellationToken ct)
         {
             var userId = User.GetUserId();
-            var existing = await eventService.GetByIdAsync(userId, id, ct);
-            if (existing == null) return NotFound();
-            await eventService.UpdateEventAsync(userId, id, model, ct);
+            if (!await eventService.UpdateEventAsync(userId, id, model, ct)) return NotFound();
             return NoContent();
         }
 
@@ -78,9 +76,7 @@ namespace Pdmt.Api.Controllers
         public async Task<IActionResult> DeleteEvent(Guid id, CancellationToken ct)
         {
             var userId = User.GetUserId();
-            var existing = await eventService.GetByIdAsync(userId, id, ct);
-            if (existing == null) return NotFound();
-            await eventService.DeleteEventAsync(userId, id, ct);
+            if (!await eventService.DeleteEventAsync(userId, id, ct)) return NotFound();
             return NoContent();
         }
     }

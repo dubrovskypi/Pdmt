@@ -135,25 +135,20 @@ public class EventsControllerTests
     #region UpdateEvent
 
     [Fact]
-    public async Task UpdateEvent_EventNotFound_Returns404_DoesNotCallUpdate()
+    public async Task UpdateEvent_ServiceReturnsFalse_Returns404()
     {
         var id = Guid.NewGuid();
-        _eventService.Setup(s => s.GetByIdAsync(_userId, id, It.IsAny<CancellationToken>())).ReturnsAsync((EventResponseDto?)null);
+        _eventService.Setup(s => s.UpdateEventAsync(_userId, id, It.IsAny<UpdateEventDto>(), It.IsAny<CancellationToken>())).ReturnsAsync(false);
 
         var result = await _sut.UpdateEvent(id, new UpdateEventDto { Title = "T" }, CancellationToken.None);
 
         result.Should().BeOfType<NotFoundResult>();
-        _eventService.Verify(
-            s => s.UpdateEventAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<UpdateEventDto>(), It.IsAny<CancellationToken>()),
-            Times.Never);
     }
 
     [Fact]
-    public async Task UpdateEvent_EventFound_Returns204()
+    public async Task UpdateEvent_ServiceReturnsTrue_Returns204()
     {
         var id = Guid.NewGuid();
-        var existing = new EventResponseDto { Id = id, Title = "T", Type = DtoEventType.Positive, Intensity = 5 };
-        _eventService.Setup(s => s.GetByIdAsync(_userId, id, It.IsAny<CancellationToken>())).ReturnsAsync(existing);
         _eventService.Setup(s => s.UpdateEventAsync(_userId, id, It.IsAny<UpdateEventDto>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
         var result = await _sut.UpdateEvent(id, new UpdateEventDto { Title = "T" }, CancellationToken.None);
@@ -166,26 +161,21 @@ public class EventsControllerTests
     #region DeleteEvent
 
     [Fact]
-    public async Task DeleteEvent_EventNotFound_Returns404_DoesNotCallDelete()
+    public async Task DeleteEvent_ServiceReturnsFalse_Returns404()
     {
         var id = Guid.NewGuid();
-        _eventService.Setup(s => s.GetByIdAsync(_userId, id, It.IsAny<CancellationToken>())).ReturnsAsync((EventResponseDto?)null);
+        _eventService.Setup(s => s.DeleteEventAsync(_userId, id, It.IsAny<CancellationToken>())).ReturnsAsync(false);
 
         var result = await _sut.DeleteEvent(id, CancellationToken.None);
 
         result.Should().BeOfType<NotFoundResult>();
-        _eventService.Verify(
-            s => s.DeleteEventAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
-            Times.Never);
     }
 
     [Fact]
-    public async Task DeleteEvent_EventFound_Returns204()
+    public async Task DeleteEvent_ServiceReturnsTrue_Returns204()
     {
         var id = Guid.NewGuid();
-        var existing = new EventResponseDto { Id = id, Title = "T", Type = DtoEventType.Positive, Intensity = 5 };
-        _eventService.Setup(s => s.GetByIdAsync(_userId, id, It.IsAny<CancellationToken>())).ReturnsAsync(existing);
-        _eventService.Setup(s => s.DeleteEventAsync(_userId, id, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+        _eventService.Setup(s => s.DeleteEventAsync(_userId, id, It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
         var result = await _sut.DeleteEvent(id, CancellationToken.None);
 

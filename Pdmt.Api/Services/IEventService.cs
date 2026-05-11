@@ -17,5 +17,5 @@ public interface IEventService
     Task<EventResponseDto?> GetByIdAsync(Guid userId, Guid id, CancellationToken ct);
     Task<EventResponseDto> CreateEventAsync(Guid userId, CreateEventDto ev, CancellationToken ct);
     Task<bool> UpdateEventAsync(Guid userId, Guid id, UpdateEventDto ev, CancellationToken ct);
-    Task DeleteEventAsync(Guid userId, Guid id, CancellationToken ct);
+    Task<bool> DeleteEventAsync(Guid userId, Guid id, CancellationToken ct);
 }

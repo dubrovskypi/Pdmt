@@ -108,12 +108,12 @@ public class EventService(AppDbContext db) : IEventService
         return true;
     }
 
-    public async Task DeleteEventAsync(Guid userId, Guid id, CancellationToken ct)
+    public async Task<bool> DeleteEventAsync(Guid userId, Guid id, CancellationToken ct)
     {
-        var ev = await db.Events.FirstOrDefaultAsync(e => e.Id == id && e.UserId == userId, ct);
-        if (ev is null) return;
-        db.Events.Remove(ev);
-        await db.SaveChangesAsync(ct);
+        var deleted = await db.Events
+            .Where(e => e.Id == id && e.UserId == userId)
+            .ExecuteDeleteAsync(ct);
+        return deleted > 0;
     }
 
     private async Task<List<Tag>> ResolveTagsAsync(Guid userId, List<string> tagNames, CancellationToken ct)

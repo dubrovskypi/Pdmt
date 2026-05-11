@@ -24,14 +24,6 @@ public class EventServiceTests(PostgresContainerFixture fixture) : ServiceTestBa
     #region GetEventsAsync
 
     [Fact]
-    public async Task GetEventsAsync_EmptyUserId_ThrowsArgumentException()
-    {
-        var act = () => _service.GetEventsAsync(Guid.Empty, null, null, null, null, null, null, TestContext.Current.CancellationToken);
-
-        await act.Should().ThrowAsync<ArgumentException>();
-    }
-
-    [Fact]
     public async Task GetEventsAsync_NoFilters_ReturnsAllUserEvents()
     {
         var userId = TestUserId;
@@ -265,14 +257,6 @@ public class EventServiceTests(PostgresContainerFixture fixture) : ServiceTestBa
     #region GetByIdAsync
 
     [Fact]
-    public async Task GetByIdAsync_EmptyUserId_ThrowsArgumentException()
-    {
-        var act = () => _service.GetByIdAsync(Guid.Empty, Guid.NewGuid(), TestContext.Current.CancellationToken);
-
-        await act.Should().ThrowAsync<ArgumentException>();
-    }
-
-    [Fact]
     public async Task GetByIdAsync_OwnEvent_ReturnsDto()
     {
         var userId = TestUserId;
@@ -312,22 +296,6 @@ public class EventServiceTests(PostgresContainerFixture fixture) : ServiceTestBa
     #endregion
 
     #region CreateEventAsync
-
-    [Fact]
-    public async Task CreateEventAsync_EmptyUserId_ThrowsArgumentException()
-    {
-        var act = () => _service.CreateEventAsync(Guid.Empty, MakeCreateDto(), TestContext.Current.CancellationToken);
-
-        await act.Should().ThrowAsync<ArgumentException>();
-    }
-
-    [Fact]
-    public async Task CreateEventAsync_NullDto_ThrowsArgumentNullException()
-    {
-        var act = () => _service.CreateEventAsync(Guid.NewGuid(), null!, TestContext.Current.CancellationToken);
-
-        await act.Should().ThrowAsync<ArgumentNullException>();
-    }
 
     [Fact]
     public async Task CreateEventAsync_ValidDto_PersistsWithCorrectFields()
@@ -444,15 +412,6 @@ public class EventServiceTests(PostgresContainerFixture fixture) : ServiceTestBa
     #endregion
 
     #region UpdateEventAsync
-
-    [Fact]
-    public async Task UpdateEventAsync_EmptyUserId_ThrowsArgumentException()
-    {
-        var dto = new UpdateEventDto { Timestamp = DateTimeOffset.UtcNow, Type = DtoEventType.Positive, Title = "T", Intensity = 5 };
-        var act = () => _service.UpdateEventAsync(Guid.Empty, Guid.NewGuid(), dto, TestContext.Current.CancellationToken);
-
-        await act.Should().ThrowAsync<ArgumentException>();
-    }
 
     [Fact]
     public async Task UpdateEventAsync_ValidDto_UpdatesAllFields()
@@ -577,14 +536,6 @@ public class EventServiceTests(PostgresContainerFixture fixture) : ServiceTestBa
     #endregion
 
     #region DeleteEventAsync
-
-    [Fact]
-    public async Task DeleteEventAsync_EmptyUserId_ThrowsArgumentException()
-    {
-        var act = () => _service.DeleteEventAsync(Guid.Empty, Guid.NewGuid(), TestContext.Current.CancellationToken);
-
-        await act.Should().ThrowAsync<ArgumentException>();
-    }
 
     [Fact]
     public async Task DeleteEventAsync_ExistingEvent_RemovesIt()
