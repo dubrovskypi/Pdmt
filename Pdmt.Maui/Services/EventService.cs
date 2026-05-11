@@ -6,7 +6,7 @@ namespace Pdmt.Maui.Services;
 
 public class EventService(IHttpClientFactory factory)
 {
-    public async Task<List<EventResponseDto>> GetEventsAsync(
+    public async Task<IReadOnlyList<EventResponseDto>> GetEventsAsync(
         DateTimeOffset? from = null,
         DateTimeOffset? to = null,
         EventType? type = null,

@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Pdmt.Maui.Models;
 using Pdmt.Maui.Services;
 
 namespace Pdmt.Maui.ViewModels;
@@ -36,16 +37,20 @@ public partial class LoginViewModel(AuthService authService, ITokenService token
         try
         {
             var result = await authService.LoginAsync(Email, Password);
-            await tokenService.SetTokensAsync(result.AccessToken, result.AccessTokenExpiresAt, result.RefreshToken);
+            await tokenService.SetTokensAsync(result.AccessToken, result.AccessTokenExpiresAt, result.RefreshToken, result.RefreshTokenExpiresAt);
             await Shell.Current.GoToAsync("//events");
+        }
+        catch (AuthException ex)
+        {
+            ErrorMessage = ex.Message;
         }
         catch (HttpRequestException)
         {
-            ErrorMessage = "Invalid email or password";
+            ErrorMessage = "Network error. Please try again.";
         }
         catch
         {
-            ErrorMessage = "Network error. Please try again.";
+            ErrorMessage = "Unexpected error. Please try again.";
         }
         finally
         {

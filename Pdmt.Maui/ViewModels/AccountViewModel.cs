@@ -74,9 +74,7 @@ public partial class AccountViewModel(
     private async Task LogoutAsync()
     {
         try { await authService.LogoutAsync(); }
-        catch { /* ignore — clear tokens anyway */ }
-
-        await tokenService.ClearAsync();
+        catch { /* AuthService clears tokens in finally — navigate regardless */ }
         await Shell.Current.GoToAsync("//login");
     }
 }
