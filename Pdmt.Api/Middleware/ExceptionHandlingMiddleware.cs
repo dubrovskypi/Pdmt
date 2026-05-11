@@ -16,18 +16,22 @@ namespace Pdmt.Api.Middleware
             }
             catch (RateLimitExceededException ex)
             {
+                logger.LogWarning("Rate limit exceeded: {Rule}", ex.Rule);
                 await HandleException(context, ex, 429);
             }
             catch (NotFoundException ex)
             {
+                logger.LogWarning(ex, "Not found: {Message}", ex.Message);
                 await HandleException(context, ex, 404);
             }
             catch (UnauthorizedAccessException ex)
             {
+                logger.LogWarning(ex, "Unauthorized: {Message}", ex.Message);
                 await HandleException(context, ex, 401);
             }
             catch (ValidationException ex)
             {
+                logger.LogWarning(ex, "Validation failed: {Message}", ex.Message);
                 await HandleException(context, ex, 400);
             }
             catch (Exception ex)

@@ -1,13 +1,16 @@
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Pdmt.Api.Domain;
 using Pdmt.Api.Dto;
 using Pdmt.Api.Infrastructure.Exceptions;
+using Pdmt.Api.Infrastructure.Metrics;
 using Pdmt.Api.Infrastructure.Options;
 using Pdmt.Api.Integration.Tests.Infrastructure;
 using Pdmt.Api.Services;
+using System.Diagnostics.Metrics;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -31,7 +34,8 @@ public class AuthServiceTests(PostgresContainerFixture fixture) : ServiceTestBas
         SigningCredentials testSigningCreds = new(
             new SymmetricSecurityKey(Encoding.UTF8.GetBytes(PostgresWebAppFactory.TestJwtSecret)),
             SecurityAlgorithms.HmacSha256);
-        _service = new AuthService(Db, jwtOptions, new NoOpRateLimitService(), testSigningCreds);
+        _service = new AuthService(Db, jwtOptions, new NoOpRateLimitService(), testSigningCreds,
+            new AuthMetrics(new TestMeterFactory()), NullLogger<AuthService>.Instance);
     }
 
     private static string HashToken(string token)
@@ -466,4 +470,10 @@ public class AuthServiceTests(PostgresContainerFixture fixture) : ServiceTestBas
     }
 
     #endregion
+
+    private sealed class TestMeterFactory : IMeterFactory
+    {
+        public Meter Create(MeterOptions options) => new(options.Name, options.Version);
+        public void Dispose() { }
+    }
 }

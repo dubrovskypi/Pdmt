@@ -1,23 +1,34 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Pdmt.Api.Data;
 
 namespace Pdmt.Api.Services;
 
-public class TokenCleanupBgService(IServiceScopeFactory scopeFactory) : BackgroundService
+public class TokenCleanupBgService(
+    IServiceProvider sp,
+    ILogger<TokenCleanupBgService> logger) : BackgroundService
 {
-    private readonly IServiceScopeFactory _scopeFactory = scopeFactory;
-
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    protected override async Task ExecuteAsync(CancellationToken ct)
     {
-        while (!stoppingToken.IsCancellationRequested)
+        while (!ct.IsCancellationRequested)
         {
-            using var scope = _scopeFactory.CreateScope();
-            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            try
+            {
+                using var scope = sp.CreateScope();
+                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                var deleted = await db.RefreshTokens
+                    .Where(t => t.ExpiresAt < DateTimeOffset.UtcNow)
+                    .ExecuteDeleteAsync(ct);
+                if (deleted > 0)
+                    logger.LogInformation("Cleaned {Count} expired refresh tokens", deleted);
+            }
+            catch (OperationCanceledException) { throw; }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Refresh-token cleanup iteration failed");
+            }
 
-            var expired = await db.RefreshTokens
-                .Where(t => t.ExpiresAt < DateTimeOffset.UtcNow)
-                .ExecuteDeleteAsync(stoppingToken);
-            await Task.Delay(TimeSpan.FromHours(6), stoppingToken);
+            try { await Task.Delay(TimeSpan.FromHours(6), ct); }
+            catch (OperationCanceledException) { break; }
         }
     }
 }

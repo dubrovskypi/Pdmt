@@ -7,7 +7,7 @@ namespace Pdmt.Api.Services;
 
 public class EventService(AppDbContext db) : IEventService
 {
-    public async Task<IReadOnlyList<EventResponseDto>> GetEventsAsync(
+    public async Task<PagedResult<EventResponseDto>> GetEventsAsync(
         Guid userId,
         DateTimeOffset? from,
         DateTimeOffset? to,
@@ -15,6 +15,8 @@ public class EventService(AppDbContext db) : IEventService
         IReadOnlyList<Guid>? tagIds,
         int? minIntensity,
         int? maxIntensity,
+        int page,
+        int pageSize,
         CancellationToken ct)
     {
         var query = db.Events
@@ -34,12 +36,16 @@ public class EventService(AppDbContext db) : IEventService
         if (maxIntensity.HasValue)
             query = query.Where(e => e.Intensity <= maxIntensity.Value);
 
+        var total = await query.CountAsync(ct);
         var events = await query
+            .OrderByDescending(e => e.Timestamp)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .Include(e => e.EventTags)
             .ThenInclude(et => et.Tag)
             .ToListAsync(ct);
 
-        return events.Select(MapToResponseDto).ToList();
+        return new PagedResult<EventResponseDto>(events.Select(MapToResponseDto).ToList(), total, page, pageSize);
     }
 
     public async Task<EventResponseDto?> GetByIdAsync(Guid userId, Guid id, CancellationToken ct)

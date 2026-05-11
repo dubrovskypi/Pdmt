@@ -4,7 +4,7 @@ namespace Pdmt.Api.Services;
 
 public interface IEventService
 {
-    Task<IReadOnlyList<EventResponseDto>> GetEventsAsync(
+    Task<PagedResult<EventResponseDto>> GetEventsAsync(
         Guid userId,
         DateTimeOffset? from,
         DateTimeOffset? to,
@@ -12,6 +12,8 @@ public interface IEventService
         IReadOnlyList<Guid>? tagIds,
         int? minIntensity,
         int? maxIntensity,
+        int page,
+        int pageSize,
         CancellationToken ct);
 
     Task<EventResponseDto?> GetByIdAsync(Guid userId, Guid id, CancellationToken ct);

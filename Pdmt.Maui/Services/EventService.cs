@@ -12,7 +12,9 @@ public class EventService(IHttpClientFactory factory)
         EventType? type = null,
         IReadOnlyList<Guid>? tagIds = null,
         int? minIntensity = null,
-        int? maxIntensity = null)
+        int? maxIntensity = null,
+        int page = 1,
+        int pageSize = 100)
     {
         var query = new StringBuilder("api/events?");
         if (from.HasValue) query.Append($"from={Uri.EscapeDataString(from.Value.ToUniversalTime().ToString("o"))}&");
@@ -21,10 +23,11 @@ public class EventService(IHttpClientFactory factory)
         if (tagIds is { Count: > 0 }) query.Append($"tags={string.Join(",", tagIds)}&");
         if (minIntensity.HasValue) query.Append($"minIntensity={minIntensity.Value}&");
         if (maxIntensity.HasValue) query.Append($"maxIntensity={maxIntensity.Value}&");
+        query.Append($"page={page}&pageSize={pageSize}&");
 
         var http = factory.CreateClient("PdmtApi");
-        var result = await http.GetFromJsonAsync<List<EventResponseDto>>(query.ToString());
-        return result ?? [];
+        var result = await http.GetFromJsonAsync<PagedResult<EventResponseDto>>(query.ToString());
+        return result?.Items ?? [];
     }
 
     public async Task<EventResponseDto> CreateEventAsync(CreateEventDto dto)

@@ -13,17 +13,21 @@ namespace Pdmt.Api.Controllers
     public class EventsController(IEventService eventService) : ControllerBase
     {
         [HttpGet]
-        [ProducesResponseType(typeof(IEnumerable<EventResponseDto>), StatusCodes.Status200OK)]
-        public async Task<ActionResult<IEnumerable<EventResponseDto>>> GetEvents(
+        [ProducesResponseType(typeof(PagedResult<EventResponseDto>), StatusCodes.Status200OK)]
+        public async Task<ActionResult<PagedResult<EventResponseDto>>> GetEvents(
             CancellationToken ct,
             [FromQuery] DateTimeOffset? from = null,
             [FromQuery] DateTimeOffset? to = null,
             [FromQuery] DtoEventType? type = null,
             [FromQuery] string? tags = null,
             [FromQuery] int? minIntensity = null,
-            [FromQuery] int? maxIntensity = null)
+            [FromQuery] int? maxIntensity = null,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 100)
         {
             var userId = User.GetUserId();
+            page = Math.Max(1, page);
+            pageSize = Math.Clamp(pageSize, 1, 500);
 
             IReadOnlyList<Guid>? tagIds = null;
             if (!string.IsNullOrWhiteSpace(tags))
@@ -36,8 +40,8 @@ namespace Pdmt.Api.Controllers
                     .ToList();
             }
 
-            var events = await eventService.GetEventsAsync(userId, from, to, type, tagIds, minIntensity, maxIntensity, ct);
-            return Ok(events);
+            var result = await eventService.GetEventsAsync(userId, from, to, type, tagIds, minIntensity, maxIntensity, page, pageSize, ct);
+            return Ok(result);
         }
 
         [HttpGet("{id:guid}")]

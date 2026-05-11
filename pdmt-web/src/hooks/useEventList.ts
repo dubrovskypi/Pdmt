@@ -17,6 +17,7 @@ function getDateString(daysAgo: number = 0): string {
 
 interface UseEventListReturn {
   events: EventResponseDto[];
+  total: number;
   allTags: TagResponseDto[];
   loading: boolean;
   error: string | null;
@@ -35,6 +36,7 @@ interface UseEventListReturn {
 
 export function useEventList(): UseEventListReturn {
   const [events, setEvents] = useState<EventResponseDto[]>([]);
+  const [total, setTotal] = useState(0);
   const [allTags, setAllTags] = useState<TagResponseDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -71,8 +73,9 @@ export function useEventList(): UseEventListReturn {
                 : undefined,
           tags: tagIds.length > 0 ? tagIds.join(",") : undefined,
         };
-        const evts = await getEvents(filters, signal);
-        setEvents(evts);
+        const result = await getEvents(filters, signal);
+        setEvents(result.items);
+        setTotal(result.total);
       } catch (err: unknown) {
         if (isAbortError(err)) return;
         setError(getErrorMessage(err));
@@ -117,6 +120,7 @@ export function useEventList(): UseEventListReturn {
 
   return {
     events,
+    total,
     allTags,
     loading,
     error,

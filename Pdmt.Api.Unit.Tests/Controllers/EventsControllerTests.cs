@@ -37,49 +37,55 @@ public class EventsControllerTests
     [Fact]
     public async Task GetEvents_NoFilter_Returns200AndCallsService()
     {
-        IReadOnlyList<EventResponseDto> events = [new() { Id = Guid.NewGuid(), Title = "T", Type = DtoEventType.Positive, Intensity = 5 }];
+        var pagedResult = new PagedResult<EventResponseDto>(
+            [new() { Id = Guid.NewGuid(), Title = "T", Type = DtoEventType.Positive, Intensity = 5 }],
+            Total: 1, Page: 1, PageSize: 100);
         _eventService
-            .Setup(s => s.GetEventsAsync(_userId, null, null, null, null, null, null, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(events);
+            .Setup(s => s.GetEventsAsync(_userId, null, null, null, null, null, null, 1, 100, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(pagedResult);
 
         var result = await _sut.GetEvents(CancellationToken.None);
 
         var ok = result.Result.Should().BeOfType<OkObjectResult>().Subject;
-        ok.Value.Should().Be(events);
+        ok.Value.Should().Be(pagedResult);
     }
 
     [Fact]
     public async Task GetEvents_WithTagsQueryString_ParsesValidGuids()
     {
         var tagId = Guid.NewGuid();
+        var emptyResult = new PagedResult<EventResponseDto>([], 0, 1, 100);
         _eventService
             .Setup(s => s.GetEventsAsync(It.IsAny<Guid>(), It.IsAny<DateTimeOffset?>(), It.IsAny<DateTimeOffset?>(),
-                It.IsAny<DtoEventType?>(), It.IsAny<IReadOnlyList<Guid>?>(), It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync([]);
+                It.IsAny<DtoEventType?>(), It.IsAny<IReadOnlyList<Guid>?>(), It.IsAny<int?>(), It.IsAny<int?>(),
+                It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(emptyResult);
 
         await _sut.GetEvents(CancellationToken.None, tags: tagId.ToString());
 
         _eventService.Verify(s => s.GetEventsAsync(
             _userId, null, null, null,
             It.Is<IReadOnlyList<Guid>?>(ids => ids != null && ids.Count == 1 && ids[0] == tagId),
-            null, null, It.IsAny<CancellationToken>()), Times.Once);
+            null, null, 1, 100, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
     public async Task GetEvents_WithMixedInvalidTagGuids_FiltersOutInvalid()
     {
         var tagId = Guid.NewGuid();
+        var emptyResult = new PagedResult<EventResponseDto>([], 0, 1, 100);
         _eventService
             .Setup(s => s.GetEventsAsync(It.IsAny<Guid>(), It.IsAny<DateTimeOffset?>(), It.IsAny<DateTimeOffset?>(),
-                It.IsAny<DtoEventType?>(), It.IsAny<IReadOnlyList<Guid>?>(), It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync([]);
+                It.IsAny<DtoEventType?>(), It.IsAny<IReadOnlyList<Guid>?>(), It.IsAny<int?>(), It.IsAny<int?>(),
+                It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(emptyResult);
 
         await _sut.GetEvents(CancellationToken.None, tags: $"{tagId},not-a-guid,also-invalid");
 
         _eventService.Verify(s => s.GetEventsAsync(
             _userId, null, null, null,
             It.Is<IReadOnlyList<Guid>?>(ids => ids != null && ids.Count == 1 && ids[0] == tagId),
-            null, null, It.IsAny<CancellationToken>()), Times.Once);
+            null, null, 1, 100, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     #endregion

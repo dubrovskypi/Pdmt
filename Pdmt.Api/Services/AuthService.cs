@@ -5,6 +5,7 @@ using Pdmt.Api.Data;
 using Pdmt.Api.Domain;
 using Pdmt.Api.Dto;
 using Pdmt.Api.Infrastructure.Exceptions;
+using Pdmt.Api.Infrastructure.Metrics;
 using Pdmt.Api.Infrastructure.Options;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -13,7 +14,13 @@ using System.Text;
 
 namespace Pdmt.Api.Services;
 
-public class AuthService(AppDbContext db, IOptions<JwtOptions> jwtOptions, IRateLimitService rateLimit, SigningCredentials signingCreds) : IAuthService
+public class AuthService(
+    AppDbContext db,
+    IOptions<JwtOptions> jwtOptions,
+    IRateLimitService rateLimit,
+    SigningCredentials signingCreds,
+    AuthMetrics metrics,
+    ILogger<AuthService> logger) : IAuthService
 {
     private static readonly TimeSpan RefreshTokenGracePeriod = TimeSpan.FromSeconds(30);
     private readonly SigningCredentials _signingCredentials = signingCreds;
@@ -58,11 +65,17 @@ public class AuthService(AppDbContext db, IOptions<JwtOptions> jwtOptions, IRate
         var recentFails = await db.FailedLoginAttempts
             .CountAsync(f => f.Email == normalizedEmail && f.OccurredAtUtc >= cutoff, ct);
         if (recentFails >= LockoutFailureThreshold)
+        {
+            logger.LogWarning("auth.login.locked email:{Email} ip:{Ip} recentFails:{RecentFails}", normalizedEmail, ip, recentFails);
+            metrics.LoginAttempt("locked");
             throw new UnauthorizedAccessException("Account temporarily locked. Try again later.");
+        }
 
         var user = await db.Users.FirstOrDefaultAsync(u => u.Email == normalizedEmail, ct);
         if (user is null || !BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash))
         {
+            logger.LogWarning("auth.login.fail email:{Email} ip:{Ip}", normalizedEmail, ip);
+            metrics.LoginAttempt("invalid_credentials");
             db.FailedLoginAttempts.Add(new FailedLoginAttempt
             {
                 Email = normalizedEmail,
@@ -78,6 +91,8 @@ public class AuthService(AppDbContext db, IOptions<JwtOptions> jwtOptions, IRate
         db.RefreshTokens.Add(refreshTokenEntity);
         await db.SaveChangesAsync(ct);
 
+        logger.LogInformation("auth.login.success userId:{UserId} ip:{Ip}", user.Id, ip);
+        metrics.LoginAttempt("success");
         var accessToken = GenerateAccessToken(user);
         return new AuthResult(accessToken.Token, accessToken.ExpiresAt, rawRefreshToken, refreshTokenEntity.ExpiresAt);
     }
@@ -89,8 +104,14 @@ public class AuthService(AppDbContext db, IOptions<JwtOptions> jwtOptions, IRate
         var hashedRefreshToken = HashToken(refreshToken);
         var token = await db.RefreshTokens
             .Include(rt => rt.User)
-            .FirstOrDefaultAsync(rt => rt.Token == hashedRefreshToken && rt.ExpiresAt > DateTimeOffset.UtcNow, ct)
-            ?? throw new UnauthorizedAccessException("Invalid refresh token");
+            .FirstOrDefaultAsync(rt => rt.Token == hashedRefreshToken && rt.ExpiresAt > DateTimeOffset.UtcNow, ct);
+
+        if (token is null)
+        {
+            logger.LogWarning("auth.refresh.invalid ip:{Ip}", ip);
+            metrics.RefreshAttempt("invalid_token");
+            throw new UnauthorizedAccessException("Invalid refresh token");
+        }
 
         if (!token.IsRevoked)
         {
@@ -106,6 +127,8 @@ public class AuthService(AppDbContext db, IOptions<JwtOptions> jwtOptions, IRate
                 var (newRt, rawRt) = CreateRefreshToken(token.User, token.FamilyId);
                 db.RefreshTokens.Add(newRt);
                 await db.SaveChangesAsync(ct);
+                logger.LogInformation("auth.refresh.success userId:{UserId}", token.UserId);
+                metrics.RefreshAttempt("success");
                 var newAccess = GenerateAccessToken(token.User);
                 return new AuthResult(newAccess.Token, newAccess.ExpiresAt, rawRt, newRt.ExpiresAt);
             }
@@ -120,6 +143,8 @@ public class AuthService(AppDbContext db, IOptions<JwtOptions> jwtOptions, IRate
             var (newRt, rawRt) = CreateRefreshToken(token.User, token.FamilyId);
             db.RefreshTokens.Add(newRt);
             await db.SaveChangesAsync(ct);
+            logger.LogInformation("auth.refresh.race userId:{UserId}", token.UserId);
+            metrics.RefreshAttempt("success");
             var newAccess = GenerateAccessToken(token.User);
             return new AuthResult(newAccess.Token, newAccess.ExpiresAt, rawRt, newRt.ExpiresAt);
         }
@@ -129,6 +154,8 @@ public class AuthService(AppDbContext db, IOptions<JwtOptions> jwtOptions, IRate
             .Where(rt => rt.FamilyId == token.FamilyId && !rt.IsRevoked)
             .ExecuteUpdateAsync(s => s.SetProperty(rt => rt.IsRevoked, true), ct);
 
+        logger.LogWarning("auth.refresh.reuse_detected userId:{UserId} familyId:{FamilyId}", token.UserId, token.FamilyId);
+        metrics.RefreshAttempt("reuse_detected");
         throw new UnauthorizedAccessException("Invalid refresh token");
     }
 

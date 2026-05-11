@@ -1,11 +1,14 @@
 using FluentAssertions;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Moq;
 using Pdmt.Api.Dto;
 using Pdmt.Api.Infrastructure.Exceptions;
+using Pdmt.Api.Infrastructure.Metrics;
 using Pdmt.Api.Infrastructure.Options;
 using Pdmt.Api.Services;
+using System.Diagnostics.Metrics;
 using System.Globalization;
 using System.Text;
 
@@ -20,7 +23,14 @@ public class AuthServiceUnitTests
     private readonly Mock<IRateLimitService> _rateLimitMock = new();
 
     private AuthService CreateSut() =>
-        new(null!, BuildJwtOptions(), _rateLimitMock.Object, TestSigningCredentials);
+        new(null!, BuildJwtOptions(), _rateLimitMock.Object, TestSigningCredentials,
+            new AuthMetrics(new TestMeterFactory()), NullLogger<AuthService>.Instance);
+
+    private sealed class TestMeterFactory : IMeterFactory
+    {
+        public Meter Create(MeterOptions options) => new(options.Name, options.Version);
+        public void Dispose() { }
+    }
 
     private static IOptions<JwtOptions> BuildJwtOptions() =>
         Options.Create(new JwtOptions

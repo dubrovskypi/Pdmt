@@ -10,11 +10,15 @@ using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Pdmt.Api.Data;
 using Pdmt.Api.Infrastructure;
+using Pdmt.Api.Infrastructure.Metrics;
 using Pdmt.Api.Infrastructure.Options;
 using Pdmt.Api.Middleware;
 using Pdmt.Api.Services;
 using StackExchange.Redis;
+using System.Diagnostics;
+using System.IdentityModel.Tokens.Jwt;
 using System.Reflection;
+using System.Security.Claims;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -111,6 +115,17 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidAudience = jwt["Audience"],
             IssuerSigningKey = signingCredentials.Key
         };
+        options.Events = new JwtBearerEvents
+        {
+            OnTokenValidated = ctx =>
+            {
+                var sub = ctx.Principal?.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
+                       ?? ctx.Principal?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (sub is not null)
+                    Activity.Current?.SetTag("enduser.id", sub);
+                return Task.CompletedTask;
+            }
+        };
     });
 builder.Services.AddSingleton(signingCredentials);
 builder.Services.AddAuthorization();
@@ -144,7 +159,8 @@ builder.Services.AddOpenTelemetry()
     .WithMetrics(metrics => metrics
         .AddAspNetCoreInstrumentation()
         .AddHttpClientInstrumentation()
-        .AddRuntimeInstrumentation())
+        .AddRuntimeInstrumentation()
+        .AddMeter(AuthMetrics.MeterName))
     .WithLogging(_ => { });
 // Register application services
 builder.Services.AddScoped<IEventService, EventService>();
@@ -155,8 +171,9 @@ builder.Services.AddScoped<IInsightsService, InsightsService>();
 builder.Services.AddScoped<RedisRateLimitService>();
 builder.Services.AddScoped<InMemoryRateLimitService>();
 builder.Services.AddScoped<IRateLimitService, CompositeRateLimitService>();
+builder.Services.AddSingleton<AuthMetrics>();
 // Register background services
-//builder.Services.AddHostedService<TokenCleanupBgService>(); //uncoment when cleanup will be needed
+builder.Services.AddHostedService<TokenCleanupBgService>();
 builder.Services.AddHostedService<FailedLoginCleanupBgService>();
 
 // Configurations
@@ -225,7 +242,6 @@ if (!app.Environment.IsDevelopment())
 app.UseForwardedHeaders();
 app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseMiddleware<ExceptionHandlingMiddleware>();
-app.UseMiddleware<HttpLoggingMiddleware>();
 // Configure the HTTP request pipeline.
 app.UseCors("WebClients");
 if (app.Environment.IsDevelopment())
