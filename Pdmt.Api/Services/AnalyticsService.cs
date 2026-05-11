@@ -75,6 +75,9 @@ public class AnalyticsService(AppDbContext db, IConfiguration config) : IAnalyti
 
     public async Task<CorrelationsDto> GetCorrelationsAsync(Guid userId, Guid tagId, DateTimeOffset from, DateTimeOffset to, CancellationToken ct)
     {
+        if (from > to)
+            throw new ValidationException("'from' must be earlier than 'to'.");
+
         var tag = await db.Tags
             .AsNoTracking()
             .FirstOrDefaultAsync(t => t.Id == tagId && t.UserId == userId, ct)

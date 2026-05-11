@@ -30,9 +30,6 @@ public class AnalyticsController(IAnalyticsService analyticsService) : Controlle
         [FromQuery] DateTimeOffset to,
         CancellationToken ct)
     {
-        if (from > to)
-            return BadRequest("'from' must be earlier than 'to'.");
-
         var userId = User.GetUserId();
         return Ok(await analyticsService.GetCorrelationsAsync(userId, tagId, from, to, ct));
     }
