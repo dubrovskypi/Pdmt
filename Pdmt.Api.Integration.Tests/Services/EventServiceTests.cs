@@ -21,15 +21,11 @@ public class EventServiceTests(PostgresContainerFixture fixture) : ServiceTestBa
         _service = new EventService(Db);
     }
 
+    private Task<PagedResult<EventResponseDto>> GetAllAsync(Guid userId, DateTimeOffset? from = null, DateTimeOffset? to = null,
+        DtoEventType? type = null, IReadOnlyList<Guid>? tagIds = null, int? minIntensity = null, int? maxIntensity = null)
+        => _service.GetEventsAsync(userId, from, to, type, tagIds, minIntensity, maxIntensity, 1, 1000, TestContext.Current.CancellationToken);
+
     #region GetEventsAsync
-
-    [Fact]
-    public async Task GetEventsAsync_EmptyUserId_ThrowsArgumentException()
-    {
-        var act = () => _service.GetEventsAsync(Guid.Empty, null, null, null, null, null, null);
-
-        await act.Should().ThrowAsync<ArgumentException>();
-    }
 
     [Fact]
     public async Task GetEventsAsync_NoFilters_ReturnsAllUserEvents()
@@ -40,9 +36,9 @@ public class EventServiceTests(PostgresContainerFixture fixture) : ServiceTestBa
             new EventBuilder().WithUserId(userId).WithTitle("B").WithType(EventType.Negative).Build());
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var result = await _service.GetEventsAsync(userId, null, null, null, null, null, null);
+        var result = await GetAllAsync(userId);
 
-        result.Should().HaveCount(2);
+        result.Items.Should().HaveCount(2);
     }
 
     [Fact]
@@ -54,18 +50,18 @@ public class EventServiceTests(PostgresContainerFixture fixture) : ServiceTestBa
             new EventBuilder().WithUserId(OtherUserId).WithTitle("Theirs").Build());
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var result = await _service.GetEventsAsync(userId, null, null, null, null, null, null);
+        var result = await GetAllAsync(userId);
 
-        result.Should().ContainSingle();
-        result[0].Title.Should().Be("Mine");
+        result.Items.Should().ContainSingle();
+        result.Items[0].Title.Should().Be("Mine");
     }
 
     [Fact]
     public async Task GetEventsAsync_NoEvents_ReturnsEmptyList()
     {
-        var result = await _service.GetEventsAsync(TestUserId, null, null, null, null, null, null);
+        var result = await GetAllAsync(TestUserId);
 
-        result.Should().BeEmpty();
+        result.Items.Should().BeEmpty();
     }
 
     [Fact]
@@ -77,10 +73,10 @@ public class EventServiceTests(PostgresContainerFixture fixture) : ServiceTestBa
             new EventBuilder().WithUserId(userId).WithTitle("Neg").WithType(EventType.Negative).WithIntensity(4).Build());
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var result = await _service.GetEventsAsync(userId, null, null, DtoEventType.Negative, null, null, null);
+        var result = await GetAllAsync(userId, type: DtoEventType.Negative);
 
-        result.Should().ContainSingle();
-        result[0].Title.Should().Be("Neg");
+        result.Items.Should().ContainSingle();
+        result.Items[0].Title.Should().Be("Neg");
     }
 
     [Fact]
@@ -94,10 +90,10 @@ public class EventServiceTests(PostgresContainerFixture fixture) : ServiceTestBa
             new EventBuilder().WithUserId(userId).WithTitle("After").WithTimestamp(from.AddDays(1)).Build());
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var result = await _service.GetEventsAsync(userId, from, null, null, null, null, null);
+        var result = await GetAllAsync(userId, from: from);
 
-        result.Should().HaveCount(2);
-        result.Should().NotContain(e => e.Title == "Before");
+        result.Items.Should().HaveCount(2);
+        result.Items.Should().NotContain(e => e.Title == "Before");
     }
 
     [Fact]
@@ -111,10 +107,10 @@ public class EventServiceTests(PostgresContainerFixture fixture) : ServiceTestBa
             new EventBuilder().WithUserId(userId).WithTitle("After").WithTimestamp(to.AddDays(1)).Build());
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var result = await _service.GetEventsAsync(userId, null, to, null, null, null, null);
+        var result = await GetAllAsync(userId, to: to);
 
-        result.Should().HaveCount(2);
-        result.Should().NotContain(e => e.Title == "After");
+        result.Items.Should().HaveCount(2);
+        result.Items.Should().NotContain(e => e.Title == "After");
     }
 
     [Fact]
@@ -131,11 +127,11 @@ public class EventServiceTests(PostgresContainerFixture fixture) : ServiceTestBa
             new EventBuilder().WithUserId(userId).WithTitle("TooLate").WithTimestamp(to.AddDays(1)).Build());
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var result = await _service.GetEventsAsync(userId, from, to, null, null, null, null);
+        var result = await GetAllAsync(userId, from: from, to: to);
 
-        result.Should().HaveCount(3);
-        result.Should().NotContain(e => e.Title == "TooEarly");
-        result.Should().NotContain(e => e.Title == "TooLate");
+        result.Items.Should().HaveCount(3);
+        result.Items.Should().NotContain(e => e.Title == "TooEarly");
+        result.Items.Should().NotContain(e => e.Title == "TooLate");
     }
 
     [Fact]
@@ -149,10 +145,10 @@ public class EventServiceTests(PostgresContainerFixture fixture) : ServiceTestBa
             new EventBuilder().WithUserId(userId).WithTitle("After").WithTimestamp(point.AddSeconds(1)).Build());
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var result = await _service.GetEventsAsync(userId, point, point, null, null, null, null);
+        var result = await GetAllAsync(userId, from: point, to: point);
 
-        result.Should().ContainSingle();
-        result[0].Title.Should().Be("Exact");
+        result.Items.Should().ContainSingle();
+        result.Items[0].Title.Should().Be("Exact");
     }
 
     [Fact]
@@ -182,11 +178,11 @@ public class EventServiceTests(PostgresContainerFixture fixture) : ServiceTestBa
             new EventBuilder().WithUserId(userId).WithTitle("After").WithTimestamp(afterOffset.ToUniversalTime()).Build());
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var result = await _service.GetEventsAsync(userId, from, to, null, null, null, null);
+        var result = await GetAllAsync(userId, from: from, to: to);
 
-        result.Should().HaveCount(2);
-        result.Should().Contain(e => e.Title == "Inside");
-        result.Should().Contain(e => e.Title == "JustAfterFrom");
+        result.Items.Should().HaveCount(2);
+        result.Items.Should().Contain(e => e.Title == "Inside");
+        result.Items.Should().Contain(e => e.Title == "JustAfterFrom");
     }
 
     [Fact]
@@ -198,10 +194,10 @@ public class EventServiceTests(PostgresContainerFixture fixture) : ServiceTestBa
             new EventBuilder().WithUserId(userId).WithTitle("High").WithIntensity(7).Build());
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var result = await _service.GetEventsAsync(userId, null, null, null, null, 5, null);
+        var result = await GetAllAsync(userId, minIntensity: 5);
 
-        result.Should().ContainSingle();
-        result[0].Title.Should().Be("High");
+        result.Items.Should().ContainSingle();
+        result.Items[0].Title.Should().Be("High");
     }
 
     [Fact]
@@ -213,10 +209,10 @@ public class EventServiceTests(PostgresContainerFixture fixture) : ServiceTestBa
             new EventBuilder().WithUserId(userId).WithTitle("High").WithIntensity(7).Build());
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var result = await _service.GetEventsAsync(userId, null, null, null, null, null, 5);
+        var result = await GetAllAsync(userId, maxIntensity: 5);
 
-        result.Should().ContainSingle();
-        result[0].Title.Should().Be("Low");
+        result.Items.Should().ContainSingle();
+        result.Items[0].Title.Should().Be("Low");
     }
 
     [Fact]
@@ -232,10 +228,10 @@ public class EventServiceTests(PostgresContainerFixture fixture) : ServiceTestBa
         Db.EventTags.Add(new EventTag { EventId = eventWithTag.Id, TagId = tag.Id });
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var result = await _service.GetEventsAsync(userId, null, null, null, [tag.Id], null, null);
+        var result = await GetAllAsync(userId, tagIds: [tag.Id]);
 
-        result.Should().ContainSingle();
-        result[0].Title.Should().Be("A");
+        result.Items.Should().ContainSingle();
+        result.Items[0].Title.Should().Be("A");
     }
 
     [Fact]
@@ -254,23 +250,15 @@ public class EventServiceTests(PostgresContainerFixture fixture) : ServiceTestBa
         Db.EventTags.Add(new EventTag { EventId = evHealth.Id, TagId = tagHealth.Id });
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var result = await _service.GetEventsAsync(userId, null, null, null, [tagWork.Id, tagHealth.Id], null, null);
+        var result = await GetAllAsync(userId, tagIds: [tagWork.Id, tagHealth.Id]);
 
-        result.Should().HaveCount(2);
-        result.Should().NotContain(e => e.Title == "No tags");
+        result.Items.Should().HaveCount(2);
+        result.Items.Should().NotContain(e => e.Title == "No tags");
     }
 
     #endregion
 
     #region GetByIdAsync
-
-    [Fact]
-    public async Task GetByIdAsync_EmptyUserId_ThrowsArgumentException()
-    {
-        var act = () => _service.GetByIdAsync(Guid.Empty, Guid.NewGuid());
-
-        await act.Should().ThrowAsync<ArgumentException>();
-    }
 
     [Fact]
     public async Task GetByIdAsync_OwnEvent_ReturnsDto()
@@ -281,7 +269,7 @@ public class EventServiceTests(PostgresContainerFixture fixture) : ServiceTestBa
         Db.Events.Add(ev);
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var result = await _service.GetByIdAsync(userId, ev.Id);
+        var result = await _service.GetByIdAsync(userId, ev.Id, TestContext.Current.CancellationToken);
 
         result.Should().NotBeNull();
         result!.Id.Should().Be(ev.Id);
@@ -296,7 +284,7 @@ public class EventServiceTests(PostgresContainerFixture fixture) : ServiceTestBa
         Db.Events.Add(ev);
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var result = await _service.GetByIdAsync(Guid.NewGuid(), ev.Id);
+        var result = await _service.GetByIdAsync(Guid.NewGuid(), ev.Id, TestContext.Current.CancellationToken);
 
         result.Should().BeNull();
     }
@@ -304,7 +292,7 @@ public class EventServiceTests(PostgresContainerFixture fixture) : ServiceTestBa
     [Fact]
     public async Task GetByIdAsync_NonExistentEvent_ReturnsNull()
     {
-        var result = await _service.GetByIdAsync(TestUserId, Guid.NewGuid());
+        var result = await _service.GetByIdAsync(TestUserId, Guid.NewGuid(), TestContext.Current.CancellationToken);
 
         result.Should().BeNull();
     }
@@ -314,29 +302,13 @@ public class EventServiceTests(PostgresContainerFixture fixture) : ServiceTestBa
     #region CreateEventAsync
 
     [Fact]
-    public async Task CreateEventAsync_EmptyUserId_ThrowsArgumentException()
-    {
-        var act = () => _service.CreateEventAsync(Guid.Empty, MakeCreateDto());
-
-        await act.Should().ThrowAsync<ArgumentException>();
-    }
-
-    [Fact]
-    public async Task CreateEventAsync_NullDto_ThrowsArgumentNullException()
-    {
-        var act = () => _service.CreateEventAsync(Guid.NewGuid(), null!);
-
-        await act.Should().ThrowAsync<ArgumentNullException>();
-    }
-
-    [Fact]
     public async Task CreateEventAsync_ValidDto_PersistsWithCorrectFields()
     {
         var userId = TestUserId;
         var ts = new DateTimeOffset(2024, 4, 10, 9, 0, 0, TimeSpan.Zero);
         var dto = MakeCreateDto("Promotion", intensity: 8, timestamp: ts, canInfluence: true);
 
-        var result = await _service.CreateEventAsync(userId, dto);
+        var result = await _service.CreateEventAsync(userId, dto, TestContext.Current.CancellationToken);
 
         var entity = await Db.Events.FirstOrDefaultAsync(TestContext.Current.CancellationToken);
         entity.Should().NotBeNull();
@@ -349,7 +321,7 @@ public class EventServiceTests(PostgresContainerFixture fixture) : ServiceTestBa
     [Fact]
     public async Task CreateEventAsync_ValidDto_GeneratesNonEmptyId()
     {
-        var result = await _service.CreateEventAsync(TestUserId, MakeCreateDto());
+        var result = await _service.CreateEventAsync(TestUserId, MakeCreateDto(), TestContext.Current.CancellationToken);
 
         result.Id.Should().NotBeEmpty();
     }
@@ -360,7 +332,7 @@ public class EventServiceTests(PostgresContainerFixture fixture) : ServiceTestBa
         var userId = TestUserId;
         var dto = MakeCreateDto(tagNames: ["Work", "Health"]);
 
-        var result = await _service.CreateEventAsync(userId, dto);
+        var result = await _service.CreateEventAsync(userId, dto, TestContext.Current.CancellationToken);
 
         result.Tags.Should().HaveCount(2);
         result.Tags.Should().Contain(t => t.Name == "Work");
@@ -376,7 +348,7 @@ public class EventServiceTests(PostgresContainerFixture fixture) : ServiceTestBa
         Db.Tags.Add(existingTag);
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var result = await _service.CreateEventAsync(userId, MakeCreateDto(tagNames: ["Work"]));
+        var result = await _service.CreateEventAsync(userId, MakeCreateDto(tagNames: ["Work"]), TestContext.Current.CancellationToken);
 
         result.Tags.Should().ContainSingle();
         result.Tags[0].Id.Should().Be(existingTag.Id);
@@ -386,7 +358,7 @@ public class EventServiceTests(PostgresContainerFixture fixture) : ServiceTestBa
     [Fact]
     public async Task CreateEventAsync_EmptyTagNames_NoTagsCreated()
     {
-        var result = await _service.CreateEventAsync(TestUserId, MakeCreateDto(tagNames: []));
+        var result = await _service.CreateEventAsync(TestUserId, MakeCreateDto(tagNames: []), TestContext.Current.CancellationToken);
 
         result.Tags.Should().BeEmpty();
         (await Db.Tags.CountAsync(TestContext.Current.CancellationToken)).Should().Be(0);
@@ -399,7 +371,7 @@ public class EventServiceTests(PostgresContainerFixture fixture) : ServiceTestBa
         Db.Tags.Add(otherTag);
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var result = await _service.CreateEventAsync(TestUserId, MakeCreateDto(tagNames: ["Work"]));
+        var result = await _service.CreateEventAsync(TestUserId, MakeCreateDto(tagNames: ["Work"]), TestContext.Current.CancellationToken);
 
         result.Tags.Should().ContainSingle();
         result.Tags[0].Id.Should().NotBe(otherTag.Id);
@@ -409,7 +381,7 @@ public class EventServiceTests(PostgresContainerFixture fixture) : ServiceTestBa
     [Fact]
     public async Task CreateEventAsync_TagNamesWithWhitespace_AreTrimmed()
     {
-        var result = await _service.CreateEventAsync(TestUserId, MakeCreateDto(tagNames: ["  Work  "]));
+        var result = await _service.CreateEventAsync(TestUserId, MakeCreateDto(tagNames: ["  Work  "]), TestContext.Current.CancellationToken);
 
         result.Tags.Should().ContainSingle();
         result.Tags[0].Name.Should().Be("Work");
@@ -419,7 +391,7 @@ public class EventServiceTests(PostgresContainerFixture fixture) : ServiceTestBa
     public async Task CreateEventAsync_DuplicateTagNames_CreatesOnlyOneTag()
     {
         var userId = TestUserId;
-        var result = await _service.CreateEventAsync(userId, MakeCreateDto(tagNames: ["Work", "Work"]));
+        var result = await _service.CreateEventAsync(userId, MakeCreateDto(tagNames: ["Work", "Work"]), TestContext.Current.CancellationToken);
 
         result.Tags.Should().ContainSingle();
         (await Db.Tags.CountAsync(t => t.UserId == userId, TestContext.Current.CancellationToken)).Should().Be(1);
@@ -428,7 +400,7 @@ public class EventServiceTests(PostgresContainerFixture fixture) : ServiceTestBa
     [Fact]
     public async Task CreateEventAsync_IntensityZero_SavesSuccessfully()
     {
-        var result = await _service.CreateEventAsync(TestUserId, MakeCreateDto(intensity: 0));
+        var result = await _service.CreateEventAsync(TestUserId, MakeCreateDto(intensity: 0), TestContext.Current.CancellationToken);
 
         result.Intensity.Should().Be(0);
     }
@@ -436,7 +408,7 @@ public class EventServiceTests(PostgresContainerFixture fixture) : ServiceTestBa
     [Fact]
     public async Task CreateEventAsync_IntensityTen_SavesSuccessfully()
     {
-        var result = await _service.CreateEventAsync(TestUserId, MakeCreateDto(intensity: 10));
+        var result = await _service.CreateEventAsync(TestUserId, MakeCreateDto(intensity: 10), TestContext.Current.CancellationToken);
 
         result.Intensity.Should().Be(10);
     }
@@ -444,15 +416,6 @@ public class EventServiceTests(PostgresContainerFixture fixture) : ServiceTestBa
     #endregion
 
     #region UpdateEventAsync
-
-    [Fact]
-    public async Task UpdateEventAsync_EmptyUserId_ThrowsArgumentException()
-    {
-        var dto = new UpdateEventDto { Timestamp = DateTimeOffset.UtcNow, Type = DtoEventType.Positive, Title = "T", Intensity = 5 };
-        var act = () => _service.UpdateEventAsync(Guid.Empty, Guid.NewGuid(), dto);
-
-        await act.Should().ThrowAsync<ArgumentException>();
-    }
 
     [Fact]
     public async Task UpdateEventAsync_ValidDto_UpdatesAllFields()
@@ -470,7 +433,7 @@ public class EventServiceTests(PostgresContainerFixture fixture) : ServiceTestBa
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var dto = new UpdateEventDto { Timestamp = newTs, Type = DtoEventType.Positive, Title = "New Title", Intensity = 9 };
-        var result = await _service.UpdateEventAsync(userId, ev.Id, dto);
+        var result = await _service.UpdateEventAsync(userId, ev.Id, dto, TestContext.Current.CancellationToken);
 
         var updated = await Db.Events.FirstAsync(TestContext.Current.CancellationToken);
         result.Should().BeTrue();
@@ -485,7 +448,7 @@ public class EventServiceTests(PostgresContainerFixture fixture) : ServiceTestBa
     {
         var dto = new UpdateEventDto { Timestamp = DateTimeOffset.UtcNow, Type = DtoEventType.Positive, Title = "Updated", Intensity = 5 };
 
-        var result = await _service.UpdateEventAsync(TestUserId, Guid.NewGuid(), dto);
+        var result = await _service.UpdateEventAsync(TestUserId, Guid.NewGuid(), dto, TestContext.Current.CancellationToken);
 
         result.Should().BeFalse();
     }
@@ -498,7 +461,7 @@ public class EventServiceTests(PostgresContainerFixture fixture) : ServiceTestBa
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var dto = new UpdateEventDto { Timestamp = DateTimeOffset.UtcNow, Type = DtoEventType.Positive, Title = "Hacked", Intensity = 5 };
-        var result = await _service.UpdateEventAsync(Guid.NewGuid(), ev.Id, dto);
+        var result = await _service.UpdateEventAsync(Guid.NewGuid(), ev.Id, dto, TestContext.Current.CancellationToken);
 
         result.Should().BeFalse();
         var unchanged = await Db.Events.FirstAsync(TestContext.Current.CancellationToken);
@@ -520,7 +483,7 @@ public class EventServiceTests(PostgresContainerFixture fixture) : ServiceTestBa
             Title = "T",
             Intensity = 5,
             TagNames = ["Work"]
-        });
+        }, TestContext.Current.CancellationToken);
 
         (await Db.EventTags.CountAsync(et => et.EventId == ev.Id, TestContext.Current.CancellationToken)).Should().Be(1);
     }
@@ -543,7 +506,7 @@ public class EventServiceTests(PostgresContainerFixture fixture) : ServiceTestBa
             Title = "T",
             Intensity = 5,
             TagNames = []
-        });
+        }, TestContext.Current.CancellationToken);
 
         (await Db.EventTags.CountAsync(et => et.EventId == ev.Id, TestContext.Current.CancellationToken)).Should().Be(0);
     }
@@ -566,7 +529,7 @@ public class EventServiceTests(PostgresContainerFixture fixture) : ServiceTestBa
             Title = "T",
             Intensity = 5,
             TagNames = ["Health"]
-        });
+        }, TestContext.Current.CancellationToken);
 
         var eventTags = await Db.EventTags.Where(et => et.EventId == ev.Id).ToListAsync(TestContext.Current.CancellationToken);
         eventTags.Should().ContainSingle();
@@ -579,14 +542,6 @@ public class EventServiceTests(PostgresContainerFixture fixture) : ServiceTestBa
     #region DeleteEventAsync
 
     [Fact]
-    public async Task DeleteEventAsync_EmptyUserId_ThrowsArgumentException()
-    {
-        var act = () => _service.DeleteEventAsync(Guid.Empty, Guid.NewGuid());
-
-        await act.Should().ThrowAsync<ArgumentException>();
-    }
-
-    [Fact]
     public async Task DeleteEventAsync_ExistingEvent_RemovesIt()
     {
         var userId = TestUserId;
@@ -594,7 +549,7 @@ public class EventServiceTests(PostgresContainerFixture fixture) : ServiceTestBa
         Db.Events.Add(ev);
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        await _service.DeleteEventAsync(userId, ev.Id);
+        await _service.DeleteEventAsync(userId, ev.Id, TestContext.Current.CancellationToken);
 
         (await Db.Events.AnyAsync(TestContext.Current.CancellationToken)).Should().BeFalse();
     }
@@ -602,7 +557,7 @@ public class EventServiceTests(PostgresContainerFixture fixture) : ServiceTestBa
     [Fact]
     public async Task DeleteEventAsync_NonExistentEvent_DoesNotThrow()
     {
-        var act = () => _service.DeleteEventAsync(Guid.NewGuid(), Guid.NewGuid());
+        var act = () => _service.DeleteEventAsync(Guid.NewGuid(), Guid.NewGuid(), TestContext.Current.CancellationToken);
 
         await act.Should().NotThrowAsync();
     }
@@ -614,7 +569,7 @@ public class EventServiceTests(PostgresContainerFixture fixture) : ServiceTestBa
         Db.Events.Add(ev);
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        await _service.DeleteEventAsync(Guid.NewGuid(), ev.Id);
+        await _service.DeleteEventAsync(Guid.NewGuid(), ev.Id, TestContext.Current.CancellationToken);
 
         (await Db.Events.AnyAsync(TestContext.Current.CancellationToken)).Should().BeTrue();
     }
@@ -630,7 +585,7 @@ public class EventServiceTests(PostgresContainerFixture fixture) : ServiceTestBa
         Db.EventTags.Add(new EventTag { EventId = ev.Id, TagId = tag.Id });
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        await _service.DeleteEventAsync(userId, ev.Id);
+        await _service.DeleteEventAsync(userId, ev.Id, TestContext.Current.CancellationToken);
 
         (await Db.Events.AnyAsync(TestContext.Current.CancellationToken)).Should().BeFalse();
         (await Db.EventTags.AnyAsync(et => et.EventId == ev.Id, TestContext.Current.CancellationToken)).Should().BeFalse();
@@ -647,7 +602,7 @@ public class EventServiceTests(PostgresContainerFixture fixture) : ServiceTestBa
         var originalOffset = new DateTimeOffset(2024, 6, 10, 12, 0, 0, TimeSpan.FromHours(3)); // 09:00 UTC
         var dto = MakeCreateDto(timestamp: originalOffset.ToUniversalTime()); // Npgsql requires UTC
 
-        var result = await _service.CreateEventAsync(TestUserId, dto);
+        var result = await _service.CreateEventAsync(TestUserId, dto, TestContext.Current.CancellationToken);
 
         result.Timestamp.UtcDateTime.Should().Be(originalOffset.UtcDateTime);
         result.Timestamp.Offset.Should().Be(TimeSpan.Zero); // Npgsql normalizes timestamptz → UTC+0
@@ -669,8 +624,8 @@ public class EventServiceTests(PostgresContainerFixture fixture) : ServiceTestBa
             Intensity = 7
         };
 
-        await _service.UpdateEventAsync(TestUserId, ev.Id, dto);
-        var updated = await _service.GetByIdAsync(TestUserId, ev.Id);
+        await _service.UpdateEventAsync(TestUserId, ev.Id, dto, TestContext.Current.CancellationToken);
+        var updated = await _service.GetByIdAsync(TestUserId, ev.Id, TestContext.Current.CancellationToken);
 
         updated.Should().NotBeNull();
         updated!.Timestamp.UtcDateTime.Should().Be(originalOffset.UtcDateTime);
@@ -688,7 +643,7 @@ public class EventServiceTests(PostgresContainerFixture fixture) : ServiceTestBa
         Db.Events.Add(ev);
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var result = await _service.GetByIdAsync(TestUserId, ev.Id);
+        var result = await _service.GetByIdAsync(TestUserId, ev.Id, TestContext.Current.CancellationToken);
 
         result.Should().NotBeNull();
         result!.Timestamp.UtcDateTime.Should().Be(originalOffset.UtcDateTime);

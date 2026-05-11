@@ -39,9 +39,11 @@ public class ExceptionHandlingMiddlewareTests
     {
         { new NotFoundException("not found"), 404 },
         { new UnauthorizedAccessException("unauthorized"), 401 },
-        { new InvalidOperationException("invalid"), 400 },
+        { new ValidationException("invalid input"), 400 },
         { new RateLimitExceededException("Auth.Login"), 429 },
     };
+
+    #region StatusCode
 
     [Theory]
     [MemberData(nameof(KnownExceptions))]
@@ -53,11 +55,39 @@ public class ExceptionHandlingMiddlewareTests
     }
 
     [Fact]
+    public async Task InvokeAsync_InvalidOperationException_Returns500()
+    {
+        var (statusCode, _) = await InvokeWithException(new InvalidOperationException("invariant violated"));
+
+        statusCode.Should().Be(500);
+    }
+
+    [Fact]
     public async Task InvokeAsync_UnhandledException_Returns500()
     {
         var (statusCode, _) = await InvokeWithException(new Exception("boom"));
 
         statusCode.Should().Be(500);
+    }
+
+    #endregion
+
+    #region ErrorBody
+
+    [Fact]
+    public async Task InvokeAsync_UnhandledException_InProduction_MessageIsGeneric()
+    {
+        var (_, body) = await InvokeWithException(new Exception("connection refused for postgresql://..."), "Production");
+
+        body.Message.Should().Be("Internal server error");
+    }
+
+    [Fact]
+    public async Task InvokeAsync_UnhandledException_InDevelopment_MessageIsOriginal()
+    {
+        var (_, body) = await InvokeWithException(new Exception("boom details"), "Development");
+
+        body.Message.Should().Be("boom details");
     }
 
     [Fact]
@@ -81,12 +111,16 @@ public class ExceptionHandlingMiddlewareTests
     }
 
     [Fact]
-    public async Task InvokeAsync_UnhandledException_InDevelopment_DetailsIsAlwaysNull()
+    public async Task InvokeAsync_UnhandledException_DetailsIsAlwaysNull()
     {
         var (_, body) = await InvokeWithException(new Exception("boom"), "Development");
 
         body.Details.Should().BeNull();
     }
+
+    #endregion
+
+    #region ContentType
 
     [Fact]
     public async Task InvokeAsync_AnyException_SetsContentTypeApplicationJson()
@@ -102,6 +136,10 @@ public class ExceptionHandlingMiddlewareTests
 
         ctx.Response.ContentType.Should().StartWith("application/json");
     }
+
+    #endregion
+
+    #region CorrelationId
 
     [Fact]
     public async Task InvokeAsync_CorrelationIdInItems_IncludedInResponseBody()
@@ -120,4 +158,6 @@ public class ExceptionHandlingMiddlewareTests
 
         body.CorrelationId.Should().BeNull();
     }
+
+    #endregion
 }

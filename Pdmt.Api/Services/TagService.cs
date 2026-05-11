@@ -7,7 +7,7 @@ namespace Pdmt.Api.Services;
 
 public class TagService(AppDbContext db) : ITagService
 {
-    public async Task<IReadOnlyList<TagResponseDto>> GetTagsAsync(Guid userId)
+    public async Task<IReadOnlyList<TagResponseDto>> GetTagsAsync(Guid userId, CancellationToken ct)
     {
         return await db.Tags
             .AsNoTracking()
@@ -21,16 +21,16 @@ public class TagService(AppDbContext db) : ITagService
                 EventCount = t.EventTags.Count
             })
             .OrderBy(t => t.Name)
-            .ToListAsync();
+            .ToListAsync(ct);
     }
 
-    public async Task<TagResponseDto> UpsertTagAsync(Guid userId, CreateTagDto dto)
+    public async Task<TagResponseDto> UpsertTagAsync(Guid userId, CreateTagDto dto, CancellationToken ct)
     {
         var normalizedName = dto.Name.Trim();
 
         var existing = await db.Tags
             .Include(t => t.EventTags)
-            .FirstOrDefaultAsync(t => t.UserId == userId && t.Name == normalizedName);
+            .FirstOrDefaultAsync(t => t.UserId == userId && t.Name == normalizedName, ct);
 
         if (existing is not null)
             return new TagResponseDto
@@ -49,7 +49,7 @@ public class TagService(AppDbContext db) : ITagService
             CreatedAt = DateTimeOffset.UtcNow
         };
         db.Tags.Add(tag);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(ct);
 
         return new TagResponseDto
         {
@@ -60,14 +60,14 @@ public class TagService(AppDbContext db) : ITagService
         };
     }
 
-    public async Task<bool> DeleteTagAsync(Guid userId, Guid tagId)
+    public async Task<bool> DeleteTagAsync(Guid userId, Guid tagId, CancellationToken ct)
     {
         var tag = await db.Tags
             .Include(t => t.EventTags)
-            .FirstOrDefaultAsync(t => t.Id == tagId && t.UserId == userId);
+            .FirstOrDefaultAsync(t => t.Id == tagId && t.UserId == userId, ct);
         if (tag is null) return false;
         db.Tags.Remove(tag);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(ct);
         return true;
     }
 }

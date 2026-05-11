@@ -3,9 +3,7 @@ using Pdmt.Api.Data;
 
 namespace Pdmt.Api.Services;
 
-public class TokenCleanupBgService(
-    IServiceProvider sp,
-    ILogger<TokenCleanupBgService> logger) : BackgroundService
+public class FailedLoginCleanupBgService(IServiceProvider sp, ILogger<FailedLoginCleanupBgService> logger) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken ct)
     {
@@ -15,16 +13,17 @@ public class TokenCleanupBgService(
             {
                 using var scope = sp.CreateScope();
                 var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-                var deleted = await db.RefreshTokens
-                    .Where(t => t.ExpiresAt < DateTimeOffset.UtcNow)
+                var cutoff = DateTimeOffset.UtcNow.AddDays(-30);
+                var deleted = await db.FailedLoginAttempts
+                    .Where(f => f.OccurredAtUtc < cutoff)
                     .ExecuteDeleteAsync(ct);
                 if (deleted > 0)
-                    logger.LogInformation("Cleaned {Count} expired refresh tokens", deleted);
+                    logger.LogInformation("Cleaned {Count} expired failed-login attempts", deleted);
             }
             catch (OperationCanceledException) { throw; }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Refresh-token cleanup iteration failed");
+                logger.LogError(ex, "Failed-login cleanup iteration failed");
             }
 
             try { await Task.Delay(TimeSpan.FromHours(6), ct); }

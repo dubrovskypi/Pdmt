@@ -2,6 +2,7 @@
 // Mirrors the pattern from Pdmt.Client/Services/AuthHeaderHandler.cs.
 
 import { config } from "@/config";
+import { WebAuthResultSchema } from "./schemas";
 
 type TokenGetter = () => string | null;
 type TokenSetter = (token: string) => void;
@@ -36,7 +37,7 @@ async function tryRefresh(): Promise<boolean> {
         credentials: "include", // sends httpOnly refreshToken cookie
       });
       if (!res.ok) return false;
-      const data = (await res.json()) as { accessToken: string };
+      const data = WebAuthResultSchema.parse(await res.json());
       setToken(data.accessToken);
       return true;
     } catch {

@@ -93,6 +93,20 @@ public static class MauiProgram
 #endif
         .AddHttpMessageHandler<AuthHeaderHandler>();
 
+        // Auth-only client — no AuthHeaderHandler (used for login/register/refresh/logout)
+        builder.Services.AddHttpClient("PdmtAuth", (sp, client) =>
+        {
+            var options = sp.GetRequiredService<IOptions<PdmtApiOptions>>().Value;
+            client.BaseAddress = new Uri(options.BaseUrl);
+        })
+#if DEBUG
+        .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+        {
+            ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+        })
+#endif
+        ;
+
         // ViewModels
         builder.Services.AddTransient<LoginViewModel>();
         builder.Services.AddTransient<RegisterViewModel>();

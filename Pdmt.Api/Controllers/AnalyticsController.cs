@@ -14,10 +14,10 @@ public class AnalyticsController(IAnalyticsService analyticsService) : Controlle
 {
     [HttpGet("weekly-summary")]
     [ProducesResponseType(typeof(WeeklySummaryDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<WeeklySummaryDto>> GetWeeklySummary([FromQuery] DateOnly weekOf)
+    public async Task<ActionResult<WeeklySummaryDto>> GetWeeklySummary([FromQuery] DateOnly weekOf, CancellationToken ct)
     {
         var userId = User.GetUserId();
-        return Ok(await analyticsService.GetWeeklySummaryAsync(userId, weekOf));
+        return Ok(await analyticsService.GetWeeklySummaryAsync(userId, weekOf, ct));
     }
 
     [HttpGet("correlations")]
@@ -27,27 +27,25 @@ public class AnalyticsController(IAnalyticsService analyticsService) : Controlle
     public async Task<ActionResult<CorrelationsDto>> GetCorrelations(
         [FromQuery] Guid tagId,
         [FromQuery] DateTimeOffset from,
-        [FromQuery] DateTimeOffset to)
+        [FromQuery] DateTimeOffset to,
+        CancellationToken ct)
     {
-        if (from > to)
-            return BadRequest("'from' must be earlier than 'to'.");
-
         var userId = User.GetUserId();
-        return Ok(await analyticsService.GetCorrelationsAsync(userId, tagId, from, to));
+        return Ok(await analyticsService.GetCorrelationsAsync(userId, tagId, from, to, ct));
     }
 
     [HttpGet("calendar/week")]
     [ProducesResponseType(typeof(CalendarWeekDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<CalendarWeekDto>> GetCalendarWeek([FromQuery] DateOnly weekOf)
+    public async Task<ActionResult<CalendarWeekDto>> GetCalendarWeek([FromQuery] DateOnly weekOf, CancellationToken ct)
     {
         var userId = User.GetUserId();
-        return Ok(await analyticsService.GetCalendarWeekAsync(userId, weekOf));
+        return Ok(await analyticsService.GetCalendarWeekAsync(userId, weekOf, ct));
     }
 
     [HttpGet("calendar/month")]
     [ProducesResponseType(typeof(CalendarMonthDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<CalendarMonthDto>> GetCalendarMonth([FromQuery] string month)
+    public async Task<ActionResult<CalendarMonthDto>> GetCalendarMonth([FromQuery] string month, CancellationToken ct)
     {
         if (!DateTime.TryParseExact(month, "yyyy-MM",
                 System.Globalization.CultureInfo.InvariantCulture,
@@ -58,7 +56,6 @@ public class AnalyticsController(IAnalyticsService analyticsService) : Controlle
         }
 
         var userId = User.GetUserId();
-        return Ok(await analyticsService.GetCalendarMonthAsync(userId, parsed.Year, parsed.Month));
+        return Ok(await analyticsService.GetCalendarMonthAsync(userId, parsed.Year, parsed.Month, ct));
     }
-
 }

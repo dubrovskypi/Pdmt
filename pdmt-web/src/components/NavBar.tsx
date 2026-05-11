@@ -33,7 +33,7 @@ export function NavBar() {
         variant="ghost"
         size="sm"
         className="ml-auto text-slate-500"
-        onClick={() => void clearAuth()}
+        onClick={clearAuth}
       >
         Logout
       </Button>

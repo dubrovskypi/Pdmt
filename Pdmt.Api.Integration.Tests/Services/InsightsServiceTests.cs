@@ -32,7 +32,7 @@ public class InsightsServiceTests(PostgresContainerFixture fixture) : ServiceTes
     {
         var now = DateTimeOffset.UtcNow;
 
-        var result = await _service.GetMostIntenseTagsAsync(TestUserId, now.AddDays(-7), now);
+        var result = await _service.GetMostIntenseTagsAsync(TestUserId, now.AddDays(-7), now, TestContext.Current.CancellationToken);
 
         result.TopPosTags.Should().BeEmpty();
         result.TopNegTags.Should().BeEmpty();
@@ -53,7 +53,7 @@ public class InsightsServiceTests(PostgresContainerFixture fixture) : ServiceTes
         Db.EventTags.Add(new EventTag { EventId = evLow.Id, TagId = tagLow.Id });
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var result = await _service.GetMostIntenseTagsAsync(userId, now.AddDays(-1), now.AddDays(1));
+        var result = await _service.GetMostIntenseTagsAsync(userId, now.AddDays(-1), now.AddDays(1), TestContext.Current.CancellationToken);
 
         result.TopPosTags.Should().HaveCount(2);
         result.TopPosTags[0].TagName.Should().Be("HighTag");
@@ -71,7 +71,7 @@ public class InsightsServiceTests(PostgresContainerFixture fixture) : ServiceTes
         Db.EventTags.Add(new EventTag { EventId = ev.Id, TagId = tag.Id });
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var result = await _service.GetMostIntenseTagsAsync(TestUserId, now.AddDays(-1), now.AddDays(1));
+        var result = await _service.GetMostIntenseTagsAsync(TestUserId, now.AddDays(-1), now.AddDays(1), TestContext.Current.CancellationToken);
 
         result.TopPosTags.Should().BeEmpty();
     }
@@ -95,7 +95,7 @@ public class InsightsServiceTests(PostgresContainerFixture fixture) : ServiceTes
         }
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var result = await _service.GetRepeatingTriggersAsync(userId, now, now.AddDays(3), minCount: 3);
+        var result = await _service.GetRepeatingTriggersAsync(userId, now, now.AddDays(3), minCount: 3, TestContext.Current.CancellationToken);
 
         result.Should().ContainSingle();
         result[0].TagName.Should().Be("Work");
@@ -116,7 +116,7 @@ public class InsightsServiceTests(PostgresContainerFixture fixture) : ServiceTes
         }
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var result = await _service.GetRepeatingTriggersAsync(userId, now, now.AddDays(3), minCount: 3);
+        var result = await _service.GetRepeatingTriggersAsync(userId, now, now.AddDays(3), minCount: 3, TestContext.Current.CancellationToken);
 
         result.Should().BeEmpty();
     }
@@ -143,7 +143,7 @@ public class InsightsServiceTests(PostgresContainerFixture fixture) : ServiceTes
         }
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var result = await _service.GetRepeatingTriggersAsync(userId, now, now.AddDays(3), minCount: 3);
+        var result = await _service.GetRepeatingTriggersAsync(userId, now, now.AddDays(3), minCount: 3, TestContext.Current.CancellationToken);
 
         result.Should().BeEmpty();
     }
@@ -166,7 +166,7 @@ public class InsightsServiceTests(PostgresContainerFixture fixture) : ServiceTes
         }
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var result = await _service.GetRepeatingTriggersAsync(userId, now, now.AddDays(3), minCount: 3);
+        var result = await _service.GetRepeatingTriggersAsync(userId, now, now.AddDays(3), minCount: 3, TestContext.Current.CancellationToken);
 
         result.Should().HaveCount(2);
         result[0].TagName.Should().Be("HighIntensity");
@@ -178,7 +178,7 @@ public class InsightsServiceTests(PostgresContainerFixture fixture) : ServiceTes
     {
         var now = DateTimeOffset.UtcNow;
 
-        var result = await _service.GetRepeatingTriggersAsync(TestUserId, now, now.AddDays(7), minCount: 3);
+        var result = await _service.GetRepeatingTriggersAsync(TestUserId, now, now.AddDays(7), minCount: 3, TestContext.Current.CancellationToken);
 
         result.Should().BeEmpty();
     }
@@ -202,7 +202,7 @@ public class InsightsServiceTests(PostgresContainerFixture fixture) : ServiceTes
         Db.EventTags.Add(new EventTag { EventId = outsideEv.Id, TagId = tag.Id });
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var result = await _service.GetRepeatingTriggersAsync(userId, start, end, minCount: 3);
+        var result = await _service.GetRepeatingTriggersAsync(userId, start, end, minCount: 3, TestContext.Current.CancellationToken);
 
         result.Should().ContainSingle();
         result[0].Count.Should().Be(3);
@@ -225,7 +225,7 @@ public class InsightsServiceTests(PostgresContainerFixture fixture) : ServiceTes
         }
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var result = await _service.GetRepeatingTriggersAsync(TestUserId, now, now.AddDays(7), minCount: 3);
+        var result = await _service.GetRepeatingTriggersAsync(TestUserId, now, now.AddDays(7), minCount: 3, TestContext.Current.CancellationToken);
 
         result.Should().ContainSingle();
         result[0].TagName.Should().Be("Work");
@@ -240,7 +240,7 @@ public class InsightsServiceTests(PostgresContainerFixture fixture) : ServiceTes
     {
         var now = DateTimeOffset.UtcNow;
 
-        var result = await _service.GetBalanceAsync(TestUserId, now.AddDays(-7), now);
+        var result = await _service.GetBalanceAsync(TestUserId, now.AddDays(-7), now, TestContext.Current.CancellationToken);
 
         result.PosCount.Should().Be(0);
         result.NegCount.Should().Be(0);
@@ -259,7 +259,7 @@ public class InsightsServiceTests(PostgresContainerFixture fixture) : ServiceTes
             new Event { Id = Guid.NewGuid(), UserId = userId, Timestamp = now.AddHours(2), Type = EventType.Negative, Title = "N1", Intensity = 4 });
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var result = await _service.GetBalanceAsync(userId, now.AddDays(-1), now.AddDays(1));
+        var result = await _service.GetBalanceAsync(userId, now.AddDays(-1), now.AddDays(1), TestContext.Current.CancellationToken);
 
         result.PosCount.Should().Be(2);
         result.NegCount.Should().Be(1);
@@ -275,7 +275,7 @@ public class InsightsServiceTests(PostgresContainerFixture fixture) : ServiceTes
         Db.Events.Add(new Event { Id = Guid.NewGuid(), UserId = userId, Timestamp = now, Type = EventType.Positive, Title = "P1", Intensity = 7 });
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var result = await _service.GetBalanceAsync(userId, now.AddDays(-1), now.AddDays(1));
+        var result = await _service.GetBalanceAsync(userId, now.AddDays(-1), now.AddDays(1), TestContext.Current.CancellationToken);
 
         result.PosCount.Should().Be(1);
         result.NegCount.Should().Be(0);
@@ -301,7 +301,7 @@ public class InsightsServiceTests(PostgresContainerFixture fixture) : ServiceTes
         }
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var result = await _service.GetDiscountedPositivesAsync(userId, now, now.AddDays(1));
+        var result = await _service.GetDiscountedPositivesAsync(userId, now, now.AddDays(1), TestContext.Current.CancellationToken);
 
         result.Should().ContainSingle();
         result[0].TagName.Should().Be("Achievement");
@@ -322,7 +322,7 @@ public class InsightsServiceTests(PostgresContainerFixture fixture) : ServiceTes
         }
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var result = await _service.GetDiscountedPositivesAsync(userId, now, now.AddDays(1));
+        var result = await _service.GetDiscountedPositivesAsync(userId, now, now.AddDays(1), TestContext.Current.CancellationToken);
 
         result.Should().BeEmpty();
     }
@@ -342,7 +342,7 @@ public class InsightsServiceTests(PostgresContainerFixture fixture) : ServiceTes
         }
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var result = await _service.GetDiscountedPositivesAsync(userId, now, now.AddDays(1));
+        var result = await _service.GetDiscountedPositivesAsync(userId, now, now.AddDays(1), TestContext.Current.CancellationToken);
 
         result.Should().BeEmpty();
     }
@@ -369,7 +369,7 @@ public class InsightsServiceTests(PostgresContainerFixture fixture) : ServiceTes
         }
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var result = await _service.GetDiscountedPositivesAsync(userId, now, now.AddDays(7));
+        var result = await _service.GetDiscountedPositivesAsync(userId, now, now.AddDays(7), TestContext.Current.CancellationToken);
 
         result.Should().BeEmpty();
     }
@@ -379,7 +379,7 @@ public class InsightsServiceTests(PostgresContainerFixture fixture) : ServiceTes
     {
         var now = DateTimeOffset.UtcNow;
 
-        var result = await _service.GetDiscountedPositivesAsync(TestUserId, now, now.AddDays(7));
+        var result = await _service.GetDiscountedPositivesAsync(TestUserId, now, now.AddDays(7), TestContext.Current.CancellationToken);
 
         result.Should().BeEmpty();
     }
@@ -406,7 +406,7 @@ public class InsightsServiceTests(PostgresContainerFixture fixture) : ServiceTes
             Db.Events.Add(new Event { Id = Guid.NewGuid(), UserId = userId, Timestamp = new DateTimeOffset(dayStart.AddDays(i), TimeSpan.Zero), Type = EventType.Positive, Title = $"Follow{i}", Intensity = 4 });
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var result = await _service.GetNextDayEffectsAsync(userId, new DateTimeOffset(dayStart, TimeSpan.Zero), new DateTimeOffset(dayStart.AddDays(5), TimeSpan.Zero));
+        var result = await _service.GetNextDayEffectsAsync(userId, new DateTimeOffset(dayStart, TimeSpan.Zero), new DateTimeOffset(dayStart.AddDays(5), TimeSpan.Zero), TestContext.Current.CancellationToken);
 
         result.Should().ContainSingle();
         result[0].TagName.Should().Be("Exercise");
@@ -427,7 +427,7 @@ public class InsightsServiceTests(PostgresContainerFixture fixture) : ServiceTes
         }
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var result = await _service.GetNextDayEffectsAsync(userId, new DateTimeOffset(dayStart, TimeSpan.Zero), new DateTimeOffset(dayStart.AddDays(5), TimeSpan.Zero));
+        var result = await _service.GetNextDayEffectsAsync(userId, new DateTimeOffset(dayStart, TimeSpan.Zero), new DateTimeOffset(dayStart.AddDays(5), TimeSpan.Zero), TestContext.Current.CancellationToken);
 
         result.Should().BeEmpty();
     }
@@ -461,7 +461,7 @@ public class InsightsServiceTests(PostgresContainerFixture fixture) : ServiceTes
             Db.Events.Add(new Event { Id = Guid.NewGuid(), UserId = userId, Timestamp = new DateTimeOffset(dayStart.AddDays(i), TimeSpan.Zero), Type = EventType.Negative, Title = $"FollowNeg{i}", Intensity = 2 });
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var result = await _service.GetNextDayEffectsAsync(userId, new DateTimeOffset(dayStart, TimeSpan.Zero), new DateTimeOffset(dayStart.AddDays(8), TimeSpan.Zero));
+        var result = await _service.GetNextDayEffectsAsync(userId, new DateTimeOffset(dayStart, TimeSpan.Zero), new DateTimeOffset(dayStart.AddDays(8), TimeSpan.Zero), TestContext.Current.CancellationToken);
 
         result.Should().HaveCount(2);
         Math.Abs(result[0].NextDayAvgScore).Should().BeGreaterThanOrEqualTo(Math.Abs(result[1].NextDayAvgScore));
@@ -490,7 +490,7 @@ public class InsightsServiceTests(PostgresContainerFixture fixture) : ServiceTes
         }
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var result = await _service.GetTagCombosAsync(userId, new DateTimeOffset(dayStart, TimeSpan.Zero), new DateTimeOffset(dayStart.AddDays(4), TimeSpan.Zero));
+        var result = await _service.GetTagCombosAsync(userId, new DateTimeOffset(dayStart, TimeSpan.Zero), new DateTimeOffset(dayStart.AddDays(4), TimeSpan.Zero), TestContext.Current.CancellationToken);
 
         result.Should().ContainSingle();
         result[0].CoOccurrences.Should().Be(3);
@@ -515,7 +515,7 @@ public class InsightsServiceTests(PostgresContainerFixture fixture) : ServiceTes
         }
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var result = await _service.GetTagCombosAsync(userId, new DateTimeOffset(dayStart, TimeSpan.Zero), new DateTimeOffset(dayStart.AddDays(3), TimeSpan.Zero));
+        var result = await _service.GetTagCombosAsync(userId, new DateTimeOffset(dayStart, TimeSpan.Zero), new DateTimeOffset(dayStart.AddDays(3), TimeSpan.Zero), TestContext.Current.CancellationToken);
 
         result.Should().BeEmpty();
     }
@@ -539,7 +539,7 @@ public class InsightsServiceTests(PostgresContainerFixture fixture) : ServiceTes
         }
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var result = await _service.GetTagCombosAsync(userId, new DateTimeOffset(dayStart, TimeSpan.Zero), new DateTimeOffset(dayStart.AddDays(4), TimeSpan.Zero));
+        var result = await _service.GetTagCombosAsync(userId, new DateTimeOffset(dayStart, TimeSpan.Zero), new DateTimeOffset(dayStart.AddDays(4), TimeSpan.Zero), TestContext.Current.CancellationToken);
 
         result.Should().ContainSingle();
         result[0].Tag1.Should().Be("Apple");
@@ -551,7 +551,7 @@ public class InsightsServiceTests(PostgresContainerFixture fixture) : ServiceTes
     {
         var dayStart = DateTimeOffset.UtcNow.Date;
 
-        var result = await _service.GetTagCombosAsync(TestUserId, new DateTimeOffset(dayStart, TimeSpan.Zero), new DateTimeOffset(dayStart.AddDays(7), TimeSpan.Zero));
+        var result = await _service.GetTagCombosAsync(TestUserId, new DateTimeOffset(dayStart, TimeSpan.Zero), new DateTimeOffset(dayStart.AddDays(7), TimeSpan.Zero), TestContext.Current.CancellationToken);
 
         result.Should().BeEmpty();
     }
@@ -576,7 +576,7 @@ public class InsightsServiceTests(PostgresContainerFixture fixture) : ServiceTes
         Db.EventTags.Add(new EventTag { EventId = ev2.Id, TagId = tag.Id });
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var result = await _service.GetTagTrendAsync(userId, monday1, monday2.AddDays(6), Granularity.Week);
+        var result = await _service.GetTagTrendAsync(userId, monday1, monday2.AddDays(6), Granularity.Week, TestContext.Current.CancellationToken);
 
         result.Should().ContainSingle();
         result[0].Points.Should().HaveCount(2);
@@ -597,7 +597,7 @@ public class InsightsServiceTests(PostgresContainerFixture fixture) : ServiceTes
         Db.EventTags.Add(new EventTag { EventId = ev2.Id, TagId = tag.Id });
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var result = await _service.GetTagTrendAsync(userId, jan, feb.AddDays(15), Granularity.Month);
+        var result = await _service.GetTagTrendAsync(userId, jan, feb.AddDays(15), Granularity.Month, TestContext.Current.CancellationToken);
 
         result.Should().ContainSingle();
         result[0].Points.Should().HaveCount(2);
@@ -620,7 +620,7 @@ public class InsightsServiceTests(PostgresContainerFixture fixture) : ServiceTes
         // ev3 is not tagged
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var result = await _service.GetTagTrendAsync(userId, monday, monday.AddDays(7), Granularity.Week);
+        var result = await _service.GetTagTrendAsync(userId, monday, monday.AddDays(7), Granularity.Week, TestContext.Current.CancellationToken);
 
         result.Should().ContainSingle();
         result[0].Points[0].Count.Should().Be(2);
@@ -642,7 +642,7 @@ public class InsightsServiceTests(PostgresContainerFixture fixture) : ServiceTes
             new Event { Id = Guid.NewGuid(), UserId = userId, Timestamp = monday2, Type = EventType.Positive, Title = "E2", Intensity = 5 });
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var result = await _service.GetTrendsAsync(userId, monday1, monday2.AddDays(6), Granularity.Week);
+        var result = await _service.GetTrendsAsync(userId, monday1, monday2.AddDays(6), Granularity.Week, TestContext.Current.CancellationToken);
 
         result.Should().HaveCount(2);
     }
@@ -658,7 +658,7 @@ public class InsightsServiceTests(PostgresContainerFixture fixture) : ServiceTes
             new Event { Id = Guid.NewGuid(), UserId = userId, Timestamp = feb, Type = EventType.Positive, Title = "E2", Intensity = 5 });
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var result = await _service.GetTrendsAsync(userId, jan, feb.AddDays(15), Granularity.Month);
+        var result = await _service.GetTrendsAsync(userId, jan, feb.AddDays(15), Granularity.Month, TestContext.Current.CancellationToken);
 
         result.Should().HaveCount(2);
         result[0].PeriodStart.Day.Should().Be(1);
@@ -676,7 +676,7 @@ public class InsightsServiceTests(PostgresContainerFixture fixture) : ServiceTes
             new Event { Id = Guid.NewGuid(), UserId = userId, Timestamp = new DateTimeOffset(2024, 2, 1, 0, 0, 0, TimeSpan.Zero), Type = EventType.Positive, Title = "E2", Intensity = 5 });
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var result = await _service.GetTrendsAsync(userId, start, end, Granularity.Week);
+        var result = await _service.GetTrendsAsync(userId, start, end, Granularity.Week, TestContext.Current.CancellationToken);
 
         result.Should().ContainSingle();
     }
@@ -684,7 +684,7 @@ public class InsightsServiceTests(PostgresContainerFixture fixture) : ServiceTes
     [Fact]
     public async Task GetTrendsAsync_EmptyRange_ReturnsEmpty()
     {
-        var result = await _service.GetTrendsAsync(TestUserId, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddDays(30), Granularity.Week);
+        var result = await _service.GetTrendsAsync(TestUserId, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddDays(30), Granularity.Week, TestContext.Current.CancellationToken);
 
         result.Should().BeEmpty();
     }
@@ -705,7 +705,7 @@ public class InsightsServiceTests(PostgresContainerFixture fixture) : ServiceTes
             Db.Events.Add(new Event { Id = Guid.NewGuid(), UserId = userId, Timestamp = now.AddDays(1).AddHours(i), Type = EventType.Negative, Title = $"N{i}", Intensity = 5, CanInfluence = true });
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var result = await _service.GetInfluenceabilitySplitAsync(userId, now, now.AddDays(2));
+        var result = await _service.GetInfluenceabilitySplitAsync(userId, now, now.AddDays(2), TestContext.Current.CancellationToken);
 
         (result.CanInfluenceCount + result.CannotInfluenceCount).Should().Be(2);
     }
@@ -723,7 +723,7 @@ public class InsightsServiceTests(PostgresContainerFixture fixture) : ServiceTes
             Db.Events.Add(new Event { Id = Guid.NewGuid(), UserId = userId, Timestamp = now.AddHours(10 + i), Type = EventType.Negative, Title = $"NotInf{i}", Intensity = 4, CanInfluence = false });
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var result = await _service.GetInfluenceabilitySplitAsync(userId, now, now.AddDays(1));
+        var result = await _service.GetInfluenceabilitySplitAsync(userId, now, now.AddDays(1), TestContext.Current.CancellationToken);
 
         result.CanInfluenceCount.Should().Be(3);
         result.CannotInfluenceCount.Should().Be(2);
@@ -740,7 +740,7 @@ public class InsightsServiceTests(PostgresContainerFixture fixture) : ServiceTes
             Db.Events.Add(new Event { Id = Guid.NewGuid(), UserId = userId, Timestamp = now.AddHours(i), Type = EventType.Negative, Title = $"N{i}", Intensity = 6, CanInfluence = true });
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var result = await _service.GetInfluenceabilitySplitAsync(userId, now, now.AddDays(1));
+        var result = await _service.GetInfluenceabilitySplitAsync(userId, now, now.AddDays(1), TestContext.Current.CancellationToken);
 
         result.CanInfluenceCount.Should().Be(3);
         result.CannotInfluenceCount.Should().Be(0);
@@ -752,7 +752,7 @@ public class InsightsServiceTests(PostgresContainerFixture fixture) : ServiceTes
     {
         var now = DateTimeOffset.UtcNow;
 
-        var result = await _service.GetInfluenceabilitySplitAsync(TestUserId, now, now.AddDays(7));
+        var result = await _service.GetInfluenceabilitySplitAsync(TestUserId, now, now.AddDays(7), TestContext.Current.CancellationToken);
 
         result.CanInfluenceCount.Should().Be(0);
         result.CannotInfluenceCount.Should().Be(0);
@@ -768,14 +768,14 @@ public class InsightsServiceTests(PostgresContainerFixture fixture) : ServiceTes
     public async Task GetWeekdayStatsAsync_AlwaysReturnsSevenDays()
     {
         var userId = TestUserId;
-        // Events only on Monday 2024-04-01 and Wednesday 2024-04-03 (noon UTC — stays same calendar day in Vilnius UTC+3)
+        // Events only on Monday 2024-04-01 and Wednesday 2024-04-03 (noon UTC Ã¢â‚¬â€ stays same calendar day in Vilnius UTC+3)
         var monday = new DateTimeOffset(2024, 4, 1, 12, 0, 0, TimeSpan.Zero);
         var wednesday = new DateTimeOffset(2024, 4, 3, 12, 0, 0, TimeSpan.Zero);
         Db.Events.Add(new Event { Id = Guid.NewGuid(), UserId = userId, Timestamp = monday, Type = EventType.Positive, Title = "Mon", Intensity = 5 });
         Db.Events.Add(new Event { Id = Guid.NewGuid(), UserId = userId, Timestamp = wednesday, Type = EventType.Negative, Title = "Wed", Intensity = 3 });
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var result = await _service.GetWeekdayStatsAsync(userId, monday, wednesday.AddDays(4));
+        var result = await _service.GetWeekdayStatsAsync(userId, monday, wednesday.AddDays(4), TestContext.Current.CancellationToken);
 
         result.Should().HaveCount(7);
         var tuesday = result.First(d => d.Day == "Tuesday");
@@ -787,7 +787,7 @@ public class InsightsServiceTests(PostgresContainerFixture fixture) : ServiceTes
     [Fact]
     public async Task GetWeekdayStatsAsync_OrderIsMonToSun()
     {
-        var result = await _service.GetWeekdayStatsAsync(TestUserId, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddDays(30));
+        var result = await _service.GetWeekdayStatsAsync(TestUserId, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddDays(30), TestContext.Current.CancellationToken);
 
         result.Should().HaveCount(7);
         result[0].Day.Should().Be("Monday");
@@ -806,7 +806,7 @@ public class InsightsServiceTests(PostgresContainerFixture fixture) : ServiceTes
         Db.Events.Add(new EventBuilder().WithUserId(TestUserId).WithTimestamp(ts).WithType(EventType.Positive).Build());
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var result = await _service.GetWeekdayStatsAsync(TestUserId, ts.AddDays(-1), ts.AddDays(1));
+        var result = await _service.GetWeekdayStatsAsync(TestUserId, ts.AddDays(-1), ts.AddDays(1), TestContext.Current.CancellationToken);
 
         result.First(d => d.Day == "Monday").PosCount.Should().Be(1);
         result.First(d => d.Day == "Sunday").PosCount.Should().Be(0);
@@ -820,7 +820,7 @@ public class InsightsServiceTests(PostgresContainerFixture fixture) : ServiceTes
         Db.Events.Add(new EventBuilder().WithUserId(TestUserId).WithTimestamp(ts).WithType(EventType.Positive).Build());
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var result = await _service.GetWeekdayStatsAsync(TestUserId, ts.AddDays(-1), ts.AddDays(1));
+        var result = await _service.GetWeekdayStatsAsync(TestUserId, ts.AddDays(-1), ts.AddDays(1), TestContext.Current.CancellationToken);
 
         result.First(d => d.Day == "Sunday").PosCount.Should().Be(1);
         result.First(d => d.Day == "Monday").PosCount.Should().Be(0);
@@ -829,7 +829,7 @@ public class InsightsServiceTests(PostgresContainerFixture fixture) : ServiceTes
     [Fact]
     public async Task GetTrendsAsync_Week_EventsAtWeekBoundaryMidnight_GroupedInDifferentWeeks()
     {
-        // 21:59 UTC → Su 23:59+02:00 → week Jan 1 (Mo); 22:00 UTC → Mo 00:00+02:00 → week Jan 8 (Mo)
+        // 21:59 UTC Ã¢â€ â€™ Su 23:59+02:00 Ã¢â€ â€™ week Jan 1 (Mo); 22:00 UTC Ã¢â€ â€™ Mo 00:00+02:00 Ã¢â€ â€™ week Jan 8 (Mo)
         var inFirstWeek  = new DateTimeOffset(2024, 1, 7, 21, 59, 0, TimeSpan.Zero);
         var inSecondWeek = new DateTimeOffset(2024, 1, 7, 22,  0, 0, TimeSpan.Zero);
         Db.Events.AddRange(
@@ -838,7 +838,7 @@ public class InsightsServiceTests(PostgresContainerFixture fixture) : ServiceTes
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var result = await _service.GetTrendsAsync(TestUserId,
-            inFirstWeek.AddDays(-1), inSecondWeek.AddDays(1), Granularity.Week);
+            inFirstWeek.AddDays(-1), inSecondWeek.AddDays(1), Granularity.Week, TestContext.Current.CancellationToken);
 
         result.Should().HaveCount(2);
         result[0].PeriodStart.Should().Be(new DateOnly(2024, 1, 1)); // week of Jan 1 (Mon)
@@ -848,7 +848,7 @@ public class InsightsServiceTests(PostgresContainerFixture fixture) : ServiceTes
     [Fact]
     public async Task GetTrendsAsync_Month_EventsAtMonthBoundaryMidnight_GroupedInDifferentMonths()
     {
-        // Jan 31 21:59 UTC = Jan 31 23:59+02:00 → January; Jan 31 22:00 UTC = Feb 1 00:00+02:00 → February
+        // Jan 31 21:59 UTC = Jan 31 23:59+02:00 Ã¢â€ â€™ January; Jan 31 22:00 UTC = Feb 1 00:00+02:00 Ã¢â€ â€™ February
         var inJanuary  = new DateTimeOffset(2024, 1, 31, 21, 59, 0, TimeSpan.Zero);
         var inFebruary = new DateTimeOffset(2024, 1, 31, 22,  0, 0, TimeSpan.Zero);
         Db.Events.AddRange(
@@ -857,7 +857,7 @@ public class InsightsServiceTests(PostgresContainerFixture fixture) : ServiceTes
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var result = await _service.GetTrendsAsync(TestUserId,
-            inJanuary.AddDays(-1), inFebruary.AddDays(1), Granularity.Month);
+            inJanuary.AddDays(-1), inFebruary.AddDays(1), Granularity.Month, TestContext.Current.CancellationToken);
 
         result.Should().HaveCount(2);
         result[0].PeriodStart.Month.Should().Be(1); // Jan
@@ -885,7 +885,7 @@ public class InsightsServiceTests(PostgresContainerFixture fixture) : ServiceTes
 
         var result = await _service.GetTagCombosAsync(TestUserId,
             new DateTimeOffset(2024, 1, 6, 0, 0, 0, TimeSpan.Zero),
-            new DateTimeOffset(2024, 1, 12, 0, 0, 0, TimeSpan.Zero));
+            new DateTimeOffset(2024, 1, 12, 0, 0, 0, TimeSpan.Zero), TestContext.Current.CancellationToken);
 
         result.Should().BeEmpty(); // tags never coincide on the same local day
     }
@@ -911,7 +911,7 @@ public class InsightsServiceTests(PostgresContainerFixture fixture) : ServiceTes
 
         var result = await _service.GetTagCombosAsync(TestUserId,
             new DateTimeOffset(2024, 1, 6, 0, 0, 0, TimeSpan.Zero),
-            new DateTimeOffset(2024, 1, 12, 0, 0, 0, TimeSpan.Zero));
+            new DateTimeOffset(2024, 1, 12, 0, 0, 0, TimeSpan.Zero), TestContext.Current.CancellationToken);
 
         result.Should().ContainSingle();
         result[0].CoOccurrences.Should().Be(3);
@@ -922,7 +922,7 @@ public class InsightsServiceTests(PostgresContainerFixture fixture) : ServiceTes
     {
         var tag = new Tag { Id = Guid.NewGuid(), Name = "Work", UserId = TestUserId, CreatedAt = DateTimeOffset.UtcNow };
         Db.Tags.Add(tag);
-        // 21:59 UTC Sun = 23:59+02:00 → week of Jan 1; 22:00 UTC Sun = 00:00+02:00 → week of Jan 8
+        // 21:59 UTC Sun = 23:59+02:00 Ã¢â€ â€™ week of Jan 1; 22:00 UTC Sun = 00:00+02:00 Ã¢â€ â€™ week of Jan 8
         var inFirstWeek  = new DateTimeOffset(2024, 1, 7, 21, 59, 0, TimeSpan.Zero);
         var inSecondWeek = new DateTimeOffset(2024, 1, 7, 22,  0, 0, TimeSpan.Zero);
         var ev1 = new EventBuilder().WithUserId(TestUserId).WithTimestamp(inFirstWeek).Build();
@@ -934,7 +934,7 @@ public class InsightsServiceTests(PostgresContainerFixture fixture) : ServiceTes
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var result = await _service.GetTagTrendAsync(TestUserId,
-            inFirstWeek.AddDays(-1), inSecondWeek.AddDays(1), Granularity.Week);
+            inFirstWeek.AddDays(-1), inSecondWeek.AddDays(1), Granularity.Week, TestContext.Current.CancellationToken);
 
         result.Should().ContainSingle();
         result[0].Points.Should().HaveCount(2);
@@ -947,7 +947,7 @@ public class InsightsServiceTests(PostgresContainerFixture fixture) : ServiceTes
     {
         var tag = new Tag { Id = Guid.NewGuid(), Name = "Work", UserId = TestUserId, CreatedAt = DateTimeOffset.UtcNow };
         Db.Tags.Add(tag);
-        // Jan 31 21:59 UTC = Jan 31 23:59+02:00 → January; Jan 31 22:00 UTC = Feb 1 00:00+02:00 → February
+        // Jan 31 21:59 UTC = Jan 31 23:59+02:00 Ã¢â€ â€™ January; Jan 31 22:00 UTC = Feb 1 00:00+02:00 Ã¢â€ â€™ February
         var inJanuary  = new DateTimeOffset(2024, 1, 31, 21, 59, 0, TimeSpan.Zero);
         var inFebruary = new DateTimeOffset(2024, 1, 31, 22,  0, 0, TimeSpan.Zero);
         var ev1 = new EventBuilder().WithUserId(TestUserId).WithTimestamp(inJanuary).Build();
@@ -959,7 +959,7 @@ public class InsightsServiceTests(PostgresContainerFixture fixture) : ServiceTes
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var result = await _service.GetTagTrendAsync(TestUserId,
-            inJanuary.AddDays(-1), inFebruary.AddDays(1), Granularity.Month);
+            inJanuary.AddDays(-1), inFebruary.AddDays(1), Granularity.Month, TestContext.Current.CancellationToken);
 
         result.Should().ContainSingle();
         result[0].Points.Should().HaveCount(2);
@@ -970,8 +970,8 @@ public class InsightsServiceTests(PostgresContainerFixture fixture) : ServiceTes
     [Fact]
     public async Task GetNextDayEffectsAsync_TagEventAtLocalMidnight_AssignedToNewLocalDay()
     {
-        // Tag events at 22:00 UTC = 00:00+02:00 → local dates Jan 8, 9, 10
-        // Follow-up events at 22:30 UTC = 00:30+02:00 next local day → local dates Jan 9, 10, 11
+        // Tag events at 22:00 UTC = 00:00+02:00 Ã¢â€ â€™ local dates Jan 8, 9, 10
+        // Follow-up events at 22:30 UTC = 00:30+02:00 next local day Ã¢â€ â€™ local dates Jan 9, 10, 11
         var tagA = new Tag { Id = Guid.NewGuid(), Name = "TagA", UserId = TestUserId, CreatedAt = DateTimeOffset.UtcNow };
         Db.Tags.Add(tagA);
         for (var i = 0; i < 3; i++)
@@ -987,7 +987,7 @@ public class InsightsServiceTests(PostgresContainerFixture fixture) : ServiceTes
 
         var result = await _service.GetNextDayEffectsAsync(TestUserId,
             new DateTimeOffset(2024, 1, 7, 0, 0, 0, TimeSpan.Zero),
-            new DateTimeOffset(2024, 1, 11, 0, 0, 0, TimeSpan.Zero));
+            new DateTimeOffset(2024, 1, 11, 0, 0, 0, TimeSpan.Zero), TestContext.Current.CancellationToken);
 
         result.Should().ContainSingle();
         result[0].TagName.Should().Be("TagA");

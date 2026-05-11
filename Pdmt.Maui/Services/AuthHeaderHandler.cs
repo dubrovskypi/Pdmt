@@ -4,9 +4,10 @@ using Pdmt.Maui.Models;
 
 namespace Pdmt.Maui.Services;
 
-public class AuthHeaderHandler(ITokenService tokenService) : DelegatingHandler
+public class AuthHeaderHandler(ITokenService tokenService, IHttpClientFactory factory) : DelegatingHandler
 {
-    private readonly SemaphoreSlim _refreshLock = new(1, 1);
+    // static — single-flight across all handler instances (IHttpClientFactory rotates instances on HandlerLifetime)
+    private static readonly SemaphoreSlim _refreshLock = new(1, 1);
 
     protected override async Task<HttpResponseMessage> SendAsync(
         HttpRequestMessage request, CancellationToken cancellationToken)
@@ -19,17 +20,13 @@ public class AuthHeaderHandler(ITokenService tokenService) : DelegatingHandler
                 if (await tokenService.IsAccessTokenExpiredAsync())
                     await TryRefreshAsync(cancellationToken);
             }
-            finally
-            {
-                _refreshLock.Release();
-            }
+            finally { _refreshLock.Release(); }
         }
 
         var accessToken = await tokenService.GetAccessTokenAsync();
         if (accessToken is not null)
             request.Headers.Authorization = new("Bearer", accessToken);
 
-        // Buffer the request body so it can be replayed after a token refresh
         byte[]? bodyBytes = null;
         if (request.Content is not null)
             bodyBytes = await request.Content.ReadAsByteArrayAsync(cancellationToken);
@@ -43,17 +40,11 @@ public class AuthHeaderHandler(ITokenService tokenService) : DelegatingHandler
         bool refreshed;
         try
         {
-            // Another concurrent request may have already refreshed — check first
             var tokenAfterWait = await tokenService.GetAccessTokenAsync();
-            if (tokenAfterWait is not null && tokenAfterWait != accessToken)
-                refreshed = true;
-            else
-                refreshed = await TryRefreshAsync(cancellationToken);
+            refreshed = (tokenAfterWait is not null && tokenAfterWait != accessToken)
+                || await TryRefreshAsync(cancellationToken);
         }
-        finally
-        {
-            _refreshLock.Release();
-        }
+        finally { _refreshLock.Release(); }
 
         if (!refreshed)
         {
@@ -67,8 +58,7 @@ public class AuthHeaderHandler(ITokenService tokenService) : DelegatingHandler
             return response;
         }
 
-        // Replay the original request with the new token
-        var retry = new HttpRequestMessage(request.Method, request.RequestUri);
+        using var retry = new HttpRequestMessage(request.Method, request.RequestUri);
         foreach (var header in request.Headers)
             retry.Headers.TryAddWithoutValidation(header.Key, header.Value);
 
@@ -80,39 +70,31 @@ public class AuthHeaderHandler(ITokenService tokenService) : DelegatingHandler
                     retry.Content.Headers.TryAddWithoutValidation(header.Key, header.Value);
         }
 
-        var newToken = await tokenService.GetAccessTokenAsync();
-        retry.Headers.Authorization = new("Bearer", newToken!);
-
+        retry.Headers.Authorization = new("Bearer", (await tokenService.GetAccessTokenAsync())!);
         return await base.SendAsync(retry, cancellationToken);
     }
 
     private async Task<bool> TryRefreshAsync(CancellationToken cancellationToken)
     {
         var refreshToken = await tokenService.GetRefreshTokenAsync();
-        if (refreshToken is null)
-            return false;
-
-        var refreshRequest = new HttpRequestMessage(HttpMethod.Post, "api/auth/refresh")
-        {
-            Content = JsonContent.Create(new { refreshToken })
-        };
-
+        if (refreshToken is null) return false;
         try
         {
-            var refreshResponse = await base.SendAsync(refreshRequest, cancellationToken);
-            if (!refreshResponse.IsSuccessStatusCode)
-                return false;
+            // "PdmtAuth" has no AuthHeaderHandler — HttpClient merges BaseAddress before the pipeline,
+            // so a relative URI here resolves correctly (unlike base.SendAsync which bypasses that step).
+            var http = factory.CreateClient("PdmtAuth");
+            var refreshResponse = await http.PostAsJsonAsync(
+                "api/auth/refresh", new { refreshToken }, cancellationToken);
+            if (!refreshResponse.IsSuccessStatusCode) return false;
 
             var result = await refreshResponse.Content.ReadFromJsonAsync<AuthResultDto>(cancellationToken);
-            if (result is null)
-                return false;
+            if (result is null) return false;
 
-            await tokenService.SetTokensAsync(result.AccessToken, result.AccessTokenExpiresAt, result.RefreshToken);
+            await tokenService.SetTokensAsync(
+                result.AccessToken, result.AccessTokenExpiresAt,
+                result.RefreshToken, result.RefreshTokenExpiresAt);
             return true;
         }
-        catch
-        {
-            return false;
-        }
+        catch { return false; }
     }
 }

@@ -104,7 +104,7 @@ npm run build  # Output: dist/ directory; requires VITE_PDMT_API_BASE_URL env va
 - Token rotation: old refresh tokens are invalidated on login/refresh
 - **Two auth endpoint groups** — same `IAuthService`, different response contracts:
   - `AuthController` (`/api/auth/*`) — MAUI / Blazor: returns `AuthResultDto` with `refreshToken` in body
-  - `WebAuthController` (`/api/auth/web/*`) — React SPA: returns `WebAuthResultDto` (no `refreshToken`), sets httpOnly cookie (`SameSite=None; Secure`)
+  - `WebAuthController` (`/api/auth/web/*`) — React SPA: returns `WebAuthResultDto` (no `refreshToken`), sets httpOnly cookie (`SameSite=None; Secure`). `Refresh`, `Logout`, `LogoutAll` validate the `Origin` header against `Cors:AllowedOrigins` and return 403 if it doesn't match — CSRF protection against token rotation from third-party pages.
 - CORS policy `"WebClients"` covers all browser origins with `AllowCredentials()` — required for cookie to pass on cross-origin requests
  
 ### Tags
@@ -223,6 +223,8 @@ Configuration uses `appsettings.json` (base) + `appsettings.{Environment}.json` 
 **Docker Compose** — requires `POSTGRES_PASSWORD` env var (used by `docker-compose.yml`).
 
 **pdmt-web** — requires `VITE_PDMT_API_BASE_URL` in `.env` (see `.env.example`).
+
+**HSTS** — `app.UseHsts()` is enabled in production (max-age 30 days). The reverse proxy must pass through the `Strict-Transport-Security` header to clients and must terminate TLS itself.
 
 ## Observability
 

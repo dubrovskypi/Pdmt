@@ -30,7 +30,7 @@ public class TagServiceTests(PostgresContainerFixture fixture) : ServiceTestBase
             new TagBuilder().WithUserId(OtherUserId).WithName("Personal").Build());
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var result = await _service.GetTagsAsync(TestUserId);
+        var result = await _service.GetTagsAsync(TestUserId, TestContext.Current.CancellationToken);
 
         result.Should().ContainSingle();
         result[0].Name.Should().Be("Work");
@@ -46,7 +46,7 @@ public class TagServiceTests(PostgresContainerFixture fixture) : ServiceTestBase
             new TagBuilder().WithUserId(userId).WithName("Mango").Build());
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var result = await _service.GetTagsAsync(userId);
+        var result = await _service.GetTagsAsync(userId, TestContext.Current.CancellationToken);
 
         result[0].Name.Should().Be("Apple");
         result[1].Name.Should().Be("Mango");
@@ -69,7 +69,7 @@ public class TagServiceTests(PostgresContainerFixture fixture) : ServiceTestBase
             new Domain.EventTag { EventId = ev3.Id, TagId = tag.Id });
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var result = await _service.GetTagsAsync(userId);
+        var result = await _service.GetTagsAsync(userId, TestContext.Current.CancellationToken);
 
         result.Should().ContainSingle();
         result[0].EventCount.Should().Be(3);
@@ -78,7 +78,7 @@ public class TagServiceTests(PostgresContainerFixture fixture) : ServiceTestBase
     [Fact]
     public async Task GetTagsAsync_NoTags_ReturnsEmptyList()
     {
-        var result = await _service.GetTagsAsync(TestUserId);
+        var result = await _service.GetTagsAsync(TestUserId, TestContext.Current.CancellationToken);
 
         result.Should().BeEmpty();
     }
@@ -92,7 +92,7 @@ public class TagServiceTests(PostgresContainerFixture fixture) : ServiceTestBase
     {
         var dto = new CreateTagDto { Name = "Work" };
 
-        var result = await _service.UpsertTagAsync(TestUserId, dto);
+        var result = await _service.UpsertTagAsync(TestUserId, dto, TestContext.Current.CancellationToken);
 
         result.Id.Should().NotBeEmpty();
         result.Name.Should().Be("Work");
@@ -104,9 +104,9 @@ public class TagServiceTests(PostgresContainerFixture fixture) : ServiceTestBase
     {
         var userId = TestUserId;
         var dto = new CreateTagDto { Name = "Work" };
-        var result1 = await _service.UpsertTagAsync(userId, dto);
+        var result1 = await _service.UpsertTagAsync(userId, dto, TestContext.Current.CancellationToken);
 
-        var result2 = await _service.UpsertTagAsync(userId, dto);
+        var result2 = await _service.UpsertTagAsync(userId, dto, TestContext.Current.CancellationToken);
 
         result2.Id.Should().Be(result1.Id);
         (await Db.Tags.CountAsync(TestContext.Current.CancellationToken)).Should().Be(1);
@@ -116,9 +116,9 @@ public class TagServiceTests(PostgresContainerFixture fixture) : ServiceTestBase
     public async Task UpsertTagAsync_TrimsWhitespace_MatchesExisting()
     {
         var userId = TestUserId;
-        var result1 = await _service.UpsertTagAsync(userId, new CreateTagDto { Name = "Work" });
+        var result1 = await _service.UpsertTagAsync(userId, new CreateTagDto { Name = "Work" }, TestContext.Current.CancellationToken);
 
-        var result2 = await _service.UpsertTagAsync(userId, new CreateTagDto { Name = "  Work  " });
+        var result2 = await _service.UpsertTagAsync(userId, new CreateTagDto { Name = "  Work  " }, TestContext.Current.CancellationToken);
 
         result2.Id.Should().Be(result1.Id);
         (await Db.Tags.CountAsync(TestContext.Current.CancellationToken)).Should().Be(1);
@@ -128,9 +128,9 @@ public class TagServiceTests(PostgresContainerFixture fixture) : ServiceTestBase
     public async Task UpsertTagAsync_SameNameDifferentUsers_CreatesTwo()
     {
         var dto = new CreateTagDto { Name = "Work" };
-        await _service.UpsertTagAsync(TestUserId, dto);
+        await _service.UpsertTagAsync(TestUserId, dto, TestContext.Current.CancellationToken);
 
-        await _service.UpsertTagAsync(OtherUserId, dto);
+        await _service.UpsertTagAsync(OtherUserId, dto, TestContext.Current.CancellationToken);
 
         (await Db.Tags.CountAsync(TestContext.Current.CancellationToken)).Should().Be(2);
     }
@@ -147,7 +147,7 @@ public class TagServiceTests(PostgresContainerFixture fixture) : ServiceTestBase
         Db.Tags.Add(tag);
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var result = await _service.DeleteTagAsync(userId, tag.Id);
+        var result = await _service.DeleteTagAsync(userId, tag.Id, TestContext.Current.CancellationToken);
 
         result.Should().BeTrue();
         (await Db.Tags.AnyAsync(TestContext.Current.CancellationToken)).Should().BeFalse();
@@ -156,7 +156,7 @@ public class TagServiceTests(PostgresContainerFixture fixture) : ServiceTestBase
     [Fact]
     public async Task DeleteTagAsync_NotFound_ReturnsFalse()
     {
-        var result = await _service.DeleteTagAsync(TestUserId, Guid.NewGuid());
+        var result = await _service.DeleteTagAsync(TestUserId, Guid.NewGuid(), TestContext.Current.CancellationToken);
 
         result.Should().BeFalse();
     }
@@ -168,7 +168,7 @@ public class TagServiceTests(PostgresContainerFixture fixture) : ServiceTestBase
         Db.Tags.Add(tag);
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var result = await _service.DeleteTagAsync(OtherUserId, tag.Id);
+        var result = await _service.DeleteTagAsync(OtherUserId, tag.Id, TestContext.Current.CancellationToken);
 
         result.Should().BeFalse();
         (await Db.Tags.CountAsync(TestContext.Current.CancellationToken)).Should().Be(1);

@@ -17,7 +17,8 @@ namespace Pdmt.Client.Services
         public async Task<List<EventResponseDto>> GetEventsAsync(
             DateTimeOffset? from = null, DateTimeOffset? to = null,
             int? type = null, IReadOnlyList<Guid>? tagIds = null,
-            int? minIntensity = null, int? maxIntensity = null)
+            int? minIntensity = null, int? maxIntensity = null,
+            int page = 1, int pageSize = 100)
         {
             var query = new List<string>();
             if (from.HasValue) query.Add($"from={Uri.EscapeDataString(from.Value.ToUniversalTime().ToString("o"))}");
@@ -26,9 +27,12 @@ namespace Pdmt.Client.Services
             if (tagIds is not null && tagIds.Count > 0) query.Add($"tags={string.Join(",", tagIds)}");
             if (minIntensity.HasValue) query.Add($"minIntensity={minIntensity.Value}");
             if (maxIntensity.HasValue) query.Add($"maxIntensity={maxIntensity.Value}");
+            query.Add($"page={page}");
+            query.Add($"pageSize={pageSize}");
 
-            var url = query.Count > 0 ? $"api/events?{string.Join("&", query)}" : "api/events";
-            return await _http.GetFromJsonAsync<List<EventResponseDto>>(url) ?? [];
+            var url = $"api/events?{string.Join("&", query)}";
+            var result = await _http.GetFromJsonAsync<PagedResult<EventResponseDto>>(url);
+            return result?.Items.ToList() ?? [];
         }
 
         public async Task<EventResponseDto?> GetByIdAsync(Guid id)

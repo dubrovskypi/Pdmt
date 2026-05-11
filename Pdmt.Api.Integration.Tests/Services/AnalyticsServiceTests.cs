@@ -30,7 +30,7 @@ public class AnalyticsServiceTests(PostgresContainerFixture fixture) : ServiceTe
     [Fact]
     public async Task GetWeeklySummaryAsync_NoEvents_ReturnsZeroedSummary()
     {
-        var result = await _service.GetWeeklySummaryAsync(TestUserId, DateOnly.FromDateTime(DateTime.UtcNow));
+        var result = await _service.GetWeeklySummaryAsync(TestUserId, DateOnly.FromDateTime(DateTime.UtcNow), TestContext.Current.CancellationToken);
 
         result.PosCount.Should().Be(0);
         result.NegCount.Should().Be(0);
@@ -52,7 +52,7 @@ public class AnalyticsServiceTests(PostgresContainerFixture fixture) : ServiceTe
             new EventBuilder().WithUserId(TestUserId).WithTitle("N2").WithType(EventType.Negative).WithIntensity(6).WithTimestamp(monday.AddDays(4)).Build());
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var result = await _service.GetWeeklySummaryAsync(TestUserId, DateOnly.FromDateTime(monday.DateTime));
+        var result = await _service.GetWeeklySummaryAsync(TestUserId, DateOnly.FromDateTime(monday.DateTime), TestContext.Current.CancellationToken);
 
         result.PosCount.Should().Be(3);
         result.NegCount.Should().Be(2);
@@ -72,7 +72,7 @@ public class AnalyticsServiceTests(PostgresContainerFixture fixture) : ServiceTe
             new EventBuilder().WithUserId(TestUserId).WithTitle("N2").WithType(EventType.Negative).WithTimestamp(monday).Build());
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var result = await _service.GetWeeklySummaryAsync(TestUserId, DateOnly.FromDateTime(monday.DateTime));
+        var result = await _service.GetWeeklySummaryAsync(TestUserId, DateOnly.FromDateTime(monday.DateTime), TestContext.Current.CancellationToken);
 
         result.PosToNegRatio.Should().Be(4.0 / 2.0);
     }
@@ -87,7 +87,7 @@ public class AnalyticsServiceTests(PostgresContainerFixture fixture) : ServiceTe
             new EventBuilder().WithUserId(TestUserId).WithTitle("P2").WithTimestamp(monday).Build());
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var result = await _service.GetWeeklySummaryAsync(TestUserId, DateOnly.FromDateTime(monday.DateTime));
+        var result = await _service.GetWeeklySummaryAsync(TestUserId, DateOnly.FromDateTime(monday.DateTime), TestContext.Current.CancellationToken);
 
         result.PosToNegRatio.Should().Be(0.0);
     }
@@ -105,7 +105,7 @@ public class AnalyticsServiceTests(PostgresContainerFixture fixture) : ServiceTe
             Db.EventTags.Add(new EventTag { EventId = events[i].Id, TagId = tags[i].Id });
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var result = await _service.GetWeeklySummaryAsync(TestUserId, DateOnly.FromDateTime(monday.DateTime));
+        var result = await _service.GetWeeklySummaryAsync(TestUserId, DateOnly.FromDateTime(monday.DateTime), TestContext.Current.CancellationToken);
 
         result.TopTags.Count.Should().BeLessOrEqualTo(5);
     }
@@ -116,13 +116,13 @@ public class AnalyticsServiceTests(PostgresContainerFixture fixture) : ServiceTe
         var tz = TimeZoneInfo.FindSystemTimeZoneById("Europe/Vilnius");
         var nowLocal = TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow, tz);
         var monday = nowLocal.AddDays(-(int)nowLocal.DayOfWeek + 1);
-        // PostgreSQL stores timestamptz in UTC — convert before seeding
+        // PostgreSQL stores timestamptz in UTC - convert before seeding
         Db.Events.AddRange(
             new EventBuilder().WithUserId(TestUserId).WithTitle("P1").WithTimestamp(monday.AddDays(-1).ToUniversalTime()).Build(),
             new EventBuilder().WithUserId(TestUserId).WithTitle("P2").WithTimestamp(monday.ToUniversalTime()).Build());
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var result = await _service.GetWeeklySummaryAsync(TestUserId, DateOnly.FromDateTime(monday.DateTime));
+        var result = await _service.GetWeeklySummaryAsync(TestUserId, DateOnly.FromDateTime(monday.DateTime), TestContext.Current.CancellationToken);
 
         result.PosCount.Should().Be(1);
     }
@@ -137,7 +137,7 @@ public class AnalyticsServiceTests(PostgresContainerFixture fixture) : ServiceTe
             new EventBuilder().WithUserId(OtherUserId).WithTitle("P2").WithTimestamp(monday).Build());
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var result = await _service.GetWeeklySummaryAsync(TestUserId, DateOnly.FromDateTime(monday.DateTime));
+        var result = await _service.GetWeeklySummaryAsync(TestUserId, DateOnly.FromDateTime(monday.DateTime), TestContext.Current.CancellationToken);
 
         result.PosCount.Should().Be(1);
     }
@@ -154,7 +154,7 @@ public class AnalyticsServiceTests(PostgresContainerFixture fixture) : ServiceTe
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
         var now = DateTimeOffset.UtcNow;
 
-        var act = () => _service.GetCorrelationsAsync(TestUserId, tag.Id, now, now.AddDays(7));
+        var act = () => _service.GetCorrelationsAsync(TestUserId, tag.Id, now, now.AddDays(7), TestContext.Current.CancellationToken);
 
         await act.Should().ThrowAsync<NotFoundException>();
     }
@@ -177,7 +177,7 @@ public class AnalyticsServiceTests(PostgresContainerFixture fixture) : ServiceTe
             Db.EventTags.Add(new EventTag { EventId = ev.Id, TagId = tag.Id });
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var result = await _service.GetCorrelationsAsync(TestUserId, tag.Id, now, now.AddDays(1));
+        var result = await _service.GetCorrelationsAsync(TestUserId, tag.Id, now, now.AddDays(1), TestContext.Current.CancellationToken);
 
         result.AvgIntensityWithTag.Should().BePositive();
         result.AvgIntensityWithoutTag.Should().BePositive();
@@ -193,7 +193,7 @@ public class AnalyticsServiceTests(PostgresContainerFixture fixture) : ServiceTe
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
         var now = DateTimeOffset.UtcNow;
 
-        var result = await _service.GetCorrelationsAsync(TestUserId, tag.Id, now, now.AddDays(1));
+        var result = await _service.GetCorrelationsAsync(TestUserId, tag.Id, now, now.AddDays(1), TestContext.Current.CancellationToken);
 
         result.AvgIntensityWithTag.Should().Be(0.0);
     }
@@ -208,7 +208,7 @@ public class AnalyticsServiceTests(PostgresContainerFixture fixture) : ServiceTe
         var now = DateTimeOffset.UtcNow;
         var monday = now.AddDays(-(int)now.DayOfWeek + 1);
 
-        var result = await _service.GetCalendarWeekAsync(TestUserId, DateOnly.FromDateTime(monday.DateTime));
+        var result = await _service.GetCalendarWeekAsync(TestUserId, DateOnly.FromDateTime(monday.DateTime), TestContext.Current.CancellationToken);
 
         result.Days.Should().HaveCount(7);
     }
@@ -219,9 +219,9 @@ public class AnalyticsServiceTests(PostgresContainerFixture fixture) : ServiceTe
         var now = DateTimeOffset.UtcNow;
         var monday = now.AddDays(-(int)now.DayOfWeek + 1);
 
-        var result = await _service.GetCalendarWeekAsync(TestUserId, DateOnly.FromDateTime(monday.DateTime));
+        var result = await _service.GetCalendarWeekAsync(TestUserId, DateOnly.FromDateTime(monday.DateTime), TestContext.Current.CancellationToken);
 
-        var emptyDay = result.Days.First();
+        var emptyDay = result.Days[0];
         emptyDay.PosCount.Should().Be(0);
         emptyDay.NegCount.Should().Be(0);
         emptyDay.DayScore.Should().Be(0.0);
@@ -233,13 +233,13 @@ public class AnalyticsServiceTests(PostgresContainerFixture fixture) : ServiceTe
         var tz = TimeZoneInfo.FindSystemTimeZoneById("Europe/Vilnius");
         var nowLocal = TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow, tz);
         var monday = nowLocal.AddDays(-(int)nowLocal.DayOfWeek + 1);
-        // PostgreSQL stores timestamptz in UTC — convert before seeding
+        // PostgreSQL stores timestamptz in UTC - convert before seeding
         Db.Events.AddRange(
             new EventBuilder().WithUserId(TestUserId).WithTitle("P1").WithIntensity(8).WithTimestamp(monday.ToUniversalTime()).Build(),
             new EventBuilder().WithUserId(TestUserId).WithTitle("N1").WithType(EventType.Negative).WithIntensity(4).WithTimestamp(monday.ToUniversalTime()).Build());
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var result = await _service.GetCalendarWeekAsync(TestUserId, DateOnly.FromDateTime(monday.DateTime));
+        var result = await _service.GetCalendarWeekAsync(TestUserId, DateOnly.FromDateTime(monday.DateTime), TestContext.Current.CancellationToken);
 
         result.Days[0].DayScore.Should().Be((8.0 - 4.0) / 2.0);
     }
@@ -251,7 +251,7 @@ public class AnalyticsServiceTests(PostgresContainerFixture fixture) : ServiceTe
     [Fact]
     public async Task GetCalendarMonthAsync_FebruaryLeapYear_Returns29Days()
     {
-        var result = await _service.GetCalendarMonthAsync(TestUserId, 2024, 2);
+        var result = await _service.GetCalendarMonthAsync(TestUserId, 2024, 2, TestContext.Current.CancellationToken);
 
         result.Days.Should().HaveCount(29);
     }
@@ -264,7 +264,7 @@ public class AnalyticsServiceTests(PostgresContainerFixture fixture) : ServiceTe
             new EventBuilder().WithUserId(TestUserId).WithTitle("E2").WithTimestamp(new DateTimeOffset(2024, 3, 31, 0, 0, 0, TimeSpan.Zero)).Build());
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var result = await _service.GetCalendarMonthAsync(TestUserId, 2024, 3);
+        var result = await _service.GetCalendarMonthAsync(TestUserId, 2024, 3, TestContext.Current.CancellationToken);
 
         result.Days[0].PosCount.Should().BePositive();
         result.Days[30].PosCount.Should().BePositive();
@@ -278,7 +278,7 @@ public class AnalyticsServiceTests(PostgresContainerFixture fixture) : ServiceTe
             new EventBuilder().WithUserId(TestUserId).WithTitle("E2").WithTimestamp(new DateTimeOffset(2024, 4, 15, 0, 0, 0, TimeSpan.Zero)).Build());
         await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var result = await _service.GetCalendarMonthAsync(TestUserId, 2024, 3);
+        var result = await _service.GetCalendarMonthAsync(TestUserId, 2024, 3, TestContext.Current.CancellationToken);
 
         result.Days.Where(d => d.PosCount > 0).Should().ContainSingle();
     }

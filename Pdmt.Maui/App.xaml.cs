@@ -15,9 +15,11 @@ public partial class App : Application
     {
         // Give Shell time to fully initialize before navigating
         await Task.Delay(100);
-        var isAuthenticated = await tokenService.IsAuthenticatedAsync();
-        if (!isAuthenticated)
+        if (!await tokenService.IsRefreshTokenValidAsync())
+        {
+            await tokenService.ClearAsync();
             await Shell.Current.GoToAsync("//login");
+        }
     }
 }
 

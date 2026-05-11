@@ -1,32 +1,33 @@
-﻿using StackExchange.Redis;
+﻿using Pdmt.Api.Infrastructure.Exceptions;
+using Pdmt.Api.Infrastructure.Metrics;
+using StackExchange.Redis;
 
 namespace Pdmt.Api.Services
 {
-    public class CompositeRateLimitService : IRateLimitService
+    public class CompositeRateLimitService(
+        RedisRateLimitService redis,
+        InMemoryRateLimitService fallback,
+        AuthMetrics metrics,
+        ILogger<CompositeRateLimitService> logger) : IRateLimitService
     {
-        private readonly RedisRateLimitService _redis;
-        private readonly InMemoryRateLimitService _fallback;
-        private readonly ILogger<CompositeRateLimitService> _logger;
-
-        public CompositeRateLimitService(RedisRateLimitService redis,
-                                         InMemoryRateLimitService fallback,
-                                         ILogger<CompositeRateLimitService> logger)
-        {
-            _redis = redis;
-            _fallback = fallback;
-            _logger = logger;
-        }
-
         public async Task CheckAsync(string ruleName, string subject)
         {
             try
             {
-                await _redis.CheckAsync(ruleName, subject);
+                try
+                {
+                    await redis.CheckAsync(ruleName, subject);
+                }
+                catch (RedisConnectionException ex)
+                {
+                    logger.LogError(ex, "Redis unavailable, falling back to in-memory rate limiting");
+                    await fallback.CheckAsync(ruleName, subject);
+                }
             }
-            catch (RedisConnectionException ex)
+            catch (RateLimitExceededException)
             {
-                _logger.LogError(ex, "Redis unavailable, falling back to in-memory rate limiting");
-                await _fallback.CheckAsync(ruleName, subject);
+                metrics.RateLimitTripped(ruleName);
+                throw;
             }
         }
     }

@@ -41,9 +41,11 @@ const mockTags: TagResponseDto[] = [
   { id: "tag-2", name: "health", createdAt: "2026-01-01T00:00:00Z", eventCount: 3 },
 ];
 
+const mockPage = { items: mockEvents, total: mockEvents.length, page: 1, pageSize: 20 };
+
 describe("useEventList", () => {
   beforeEach(() => {
-    mockGetEvents.mockResolvedValue(mockEvents);
+    mockGetEvents.mockResolvedValue(mockPage);
     mockGetTags.mockResolvedValue(mockTags);
   });
 
@@ -59,6 +61,7 @@ describe("useEventList", () => {
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     expect(result.current.events).toEqual(mockEvents);
+    expect(result.current.total).toBe(mockEvents.length);
     expect(result.current.allTags).toEqual(mockTags);
     expect(result.current.error).toBeNull();
   });

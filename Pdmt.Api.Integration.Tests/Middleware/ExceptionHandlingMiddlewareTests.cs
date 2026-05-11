@@ -8,6 +8,8 @@ namespace Pdmt.Api.Integration.Tests.Middleware;
 
 public class ExceptionHandlingMiddlewareTests(PostgresWebAppFactory factory) : HttpTestBase(factory)
 {
+    #region NotFoundException
+
     [Fact]
     public async Task NotFoundException_Returns404WithJsonBody()
     {
@@ -23,8 +25,12 @@ public class ExceptionHandlingMiddlewareTests(PostgresWebAppFactory factory) : H
         body.GetProperty("message").GetString().Should().NotBeNullOrEmpty();
     }
 
+    #endregion
+
+    #region ValidationException
+
     [Fact]
-    public async Task InvalidOperationException_Returns400WithJsonBody()
+    public async Task ValidationException_DuplicateRegister_Returns400WithJsonBody()
     {
         var dto = new { Email = "dup@example.com", Password = "password123" };
         await Client.PostAsJsonAsync("/api/auth/register", dto, TestContext.Current.CancellationToken);
@@ -36,6 +42,10 @@ public class ExceptionHandlingMiddlewareTests(PostgresWebAppFactory factory) : H
         var body = await response.Content.ReadFromJsonAsync<JsonElement>(TestContext.Current.CancellationToken);
         body.GetProperty("message").GetString().Should().NotBeNullOrEmpty();
     }
+
+    #endregion
+
+    #region UnauthorizedAccessException
 
     [Fact]
     public async Task UnauthorizedAccessException_Returns401WithJsonBody()
@@ -49,4 +59,6 @@ public class ExceptionHandlingMiddlewareTests(PostgresWebAppFactory factory) : H
         var body = await response.Content.ReadFromJsonAsync<JsonElement>(TestContext.Current.CancellationToken);
         body.GetProperty("message").GetString().Should().NotBeNullOrEmpty();
     }
+
+    #endregion
 }

@@ -32,6 +32,8 @@ public class TagsControllerTests
         }
     };
 
+    #region GetTags
+
     [Fact]
     public async Task GetTags_Returns200WithList()
     {
@@ -40,34 +42,42 @@ public class TagsControllerTests
             new() { Id = Guid.NewGuid(), Name = "stress" },
             new() { Id = Guid.NewGuid(), Name = "joy" }
         ];
-        _tagService.Setup(s => s.GetTagsAsync(_userId)).ReturnsAsync(tags);
+        _tagService.Setup(s => s.GetTagsAsync(_userId, It.IsAny<CancellationToken>())).ReturnsAsync(tags);
 
-        var result = await _sut.GetTags();
+        var result = await _sut.GetTags(CancellationToken.None);
 
         var ok = result.Result.Should().BeOfType<OkObjectResult>().Subject;
         ok.Value.Should().Be(tags);
     }
+
+    #endregion
+
+    #region UpsertTag
 
     [Fact]
     public async Task UpsertTag_Returns200WithTag()
     {
         var dto = new CreateTagDto { Name = "stress" };
         var tag = new TagResponseDto { Id = Guid.NewGuid(), Name = "stress" };
-        _tagService.Setup(s => s.UpsertTagAsync(_userId, dto)).ReturnsAsync(tag);
+        _tagService.Setup(s => s.UpsertTagAsync(_userId, dto, It.IsAny<CancellationToken>())).ReturnsAsync(tag);
 
-        var result = await _sut.UpsertTag(dto);
+        var result = await _sut.UpsertTag(dto, CancellationToken.None);
 
         var ok = result.Result.Should().BeOfType<OkObjectResult>().Subject;
         ok.Value.Should().Be(tag);
     }
 
+    #endregion
+
+    #region DeleteTag
+
     [Fact]
     public async Task DeleteTag_TagFound_Returns204()
     {
         var tagId = Guid.NewGuid();
-        _tagService.Setup(s => s.DeleteTagAsync(_userId, tagId)).ReturnsAsync(true);
+        _tagService.Setup(s => s.DeleteTagAsync(_userId, tagId, It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
-        var result = await _sut.DeleteTag(tagId);
+        var result = await _sut.DeleteTag(tagId, CancellationToken.None);
 
         result.Should().BeOfType<NoContentResult>();
     }
@@ -76,10 +86,12 @@ public class TagsControllerTests
     public async Task DeleteTag_TagNotFound_Returns404()
     {
         var tagId = Guid.NewGuid();
-        _tagService.Setup(s => s.DeleteTagAsync(_userId, tagId)).ReturnsAsync(false);
+        _tagService.Setup(s => s.DeleteTagAsync(_userId, tagId, It.IsAny<CancellationToken>())).ReturnsAsync(false);
 
-        var result = await _sut.DeleteTag(tagId);
+        var result = await _sut.DeleteTag(tagId, CancellationToken.None);
 
         result.Should().BeOfType<NotFoundResult>();
     }
+
+    #endregion
 }

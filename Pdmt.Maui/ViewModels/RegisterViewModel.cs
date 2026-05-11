@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Pdmt.Maui.Models;
 using Pdmt.Maui.Services;
 
 namespace Pdmt.Maui.ViewModels;
@@ -51,13 +52,12 @@ public partial class RegisterViewModel(AuthService authService, ITokenService to
         try
         {
             var result = await authService.RegisterAsync(Email, Password);
-            await tokenService.SetTokensAsync(result.AccessToken, result.AccessTokenExpiresAt, result.RefreshToken);
+            await tokenService.SetTokensAsync(result.AccessToken, result.AccessTokenExpiresAt, result.RefreshToken, result.RefreshTokenExpiresAt);
             await Shell.Current.GoToAsync("//events");
         }
-        catch (HttpRequestException ex) when (
-            ex.Message.Contains("already exists", StringComparison.OrdinalIgnoreCase))
+        catch (AuthException ex)
         {
-            ErrorMessage = "Account with this email already exists";
+            ErrorMessage = ex.Message;
         }
         catch (HttpRequestException)
         {

@@ -66,10 +66,8 @@ public class EventsControllerTests(PostgresWebAppFactory factory) : HttpTestBase
         var otherClient = CreateJwtClient(GenerateJwtToken(OtherUserId));
         await otherClient.PostAsJsonAsync("/api/events", MakeDto("User B Event", DtoEventType.Positive, 5), TestContext.Current.CancellationToken);
 
-        var eventsA = await (await Client.GetAsync("/api/events", TestContext.Current.CancellationToken))
-            .Content.ReadFromJsonAsync<IEnumerable<EventResponseDto>>(TestContext.Current.CancellationToken);
-        var eventsB = await (await otherClient.GetAsync("/api/events", TestContext.Current.CancellationToken))
-            .Content.ReadFromJsonAsync<IEnumerable<EventResponseDto>>(TestContext.Current.CancellationToken);
+        var eventsA = await GetEventsItems(Client, "/api/events");
+        var eventsB = await GetEventsItems(otherClient, "/api/events");
 
         eventsB.Should().NotContain(e => e.Title == "User A Secret Event");
         eventsB.Should().Contain(e => e.Title == "User B Event");
@@ -83,8 +81,7 @@ public class EventsControllerTests(PostgresWebAppFactory factory) : HttpTestBase
         await jwtClient.PostAsJsonAsync("/api/events", MakeDto("Positive Event", DtoEventType.Positive, 5), TestContext.Current.CancellationToken);
         await jwtClient.PostAsJsonAsync("/api/events", MakeDto("Negative Event", DtoEventType.Negative, 5), TestContext.Current.CancellationToken);
 
-        var events = await (await jwtClient.GetAsync("/api/events?type=Negative", TestContext.Current.CancellationToken))
-            .Content.ReadFromJsonAsync<IEnumerable<EventResponseDto>>(TestContext.Current.CancellationToken);
+        var events = await GetEventsItems(jwtClient, "/api/events?type=Negative");
 
         events.Should().AllSatisfy(e => e.Type.Should().Be(DtoEventType.Negative));
         events.Should().NotContain(e => e.Title == "Positive Event");
@@ -98,8 +95,7 @@ public class EventsControllerTests(PostgresWebAppFactory factory) : HttpTestBase
         await jwtClient.PostAsJsonAsync("/api/events", MakeDto("Out Range", DtoEventType.Positive, 5, DateTimeOffset.UtcNow.AddDays(-10)), TestContext.Current.CancellationToken);
 
         var from = DateTimeOffset.UtcNow.AddDays(-5).ToString("O");
-        var events = await (await jwtClient.GetAsync($"/api/events?from={Uri.EscapeDataString(from)}", TestContext.Current.CancellationToken))
-            .Content.ReadFromJsonAsync<IEnumerable<EventResponseDto>>(TestContext.Current.CancellationToken);
+        var events = await GetEventsItems(jwtClient, $"/api/events?from={Uri.EscapeDataString(from)}");
 
         events.Should().Contain(e => e.Title == "In Range");
         events.Should().NotContain(e => e.Title == "Out Range");
@@ -113,8 +109,7 @@ public class EventsControllerTests(PostgresWebAppFactory factory) : HttpTestBase
         await jwtClient.PostAsJsonAsync("/api/events", MakeDto("Medium", DtoEventType.Positive, 5), TestContext.Current.CancellationToken);
         await jwtClient.PostAsJsonAsync("/api/events", MakeDto("High", DtoEventType.Positive, 9), TestContext.Current.CancellationToken);
 
-        var events = await (await jwtClient.GetAsync("/api/events?minIntensity=4&maxIntensity=6", TestContext.Current.CancellationToken))
-            .Content.ReadFromJsonAsync<IEnumerable<EventResponseDto>>(TestContext.Current.CancellationToken);
+        var events = await GetEventsItems(jwtClient, "/api/events?minIntensity=4&maxIntensity=6");
 
         events.Should().Contain(e => e.Title == "Medium");
         events.Should().NotContain(e => e.Title == "Low");
@@ -131,8 +126,7 @@ public class EventsControllerTests(PostgresWebAppFactory factory) : HttpTestBase
         await jwtClient.PostAsJsonAsync("/api/events", MakeDto("Untagged", DtoEventType.Positive, 5), TestContext.Current.CancellationToken);
 
         var tagId = tagged!.Tags.Single(t => t.Name == "FilterTag").Id;
-        var events = await (await jwtClient.GetAsync($"/api/events?tags={tagId}", TestContext.Current.CancellationToken))
-            .Content.ReadFromJsonAsync<IEnumerable<EventResponseDto>>(TestContext.Current.CancellationToken);
+        var events = await GetEventsItems(jwtClient, $"/api/events?tags={tagId}");
 
         events.Should().Contain(e => e.Title == "Tagged");
         events.Should().NotContain(e => e.Title == "Untagged");
@@ -146,10 +140,58 @@ public class EventsControllerTests(PostgresWebAppFactory factory) : HttpTestBase
         await jwtClient.PostAsJsonAsync("/api/events", MakeDto("Event B", DtoEventType.Positive, 5), TestContext.Current.CancellationToken);
 
         var response = await jwtClient.GetAsync("/api/events?tags=not-a-guid,also-invalid", TestContext.Current.CancellationToken);
-        var events = await response.Content.ReadFromJsonAsync<IEnumerable<EventResponseDto>>(TestContext.Current.CancellationToken);
+        var result = await response.Content.ReadFromJsonAsync<PagedResult<EventResponseDto>>(TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        events.Should().HaveCount(2);
+        result!.Items.Should().HaveCount(2);
+    }
+
+    [Fact]
+    public async Task GetEvents_Pagination_ReturnsCorrectPageAndTotal()
+    {
+        var jwtClient = CreateJwtClient(GenerateJwtToken());
+        for (var i = 0; i < 5; i++)
+            await jwtClient.PostAsJsonAsync("/api/events", MakeDto($"Event {i}", DtoEventType.Positive, 5), TestContext.Current.CancellationToken);
+
+        var response = await jwtClient.GetAsync("/api/events?page=1&pageSize=3", TestContext.Current.CancellationToken);
+        var result = await response.Content.ReadFromJsonAsync<PagedResult<EventResponseDto>>(TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        result!.Total.Should().Be(5);
+        result.Items.Should().HaveCount(3);
+        result.Page.Should().Be(1);
+        result.PageSize.Should().Be(3);
+
+        var page2 = await (await jwtClient.GetAsync("/api/events?page=2&pageSize=3", TestContext.Current.CancellationToken))
+            .Content.ReadFromJsonAsync<PagedResult<EventResponseDto>>(TestContext.Current.CancellationToken);
+        page2!.Items.Should().HaveCount(2);
+    }
+
+    [Fact]
+    public async Task GetEvents_DefaultSort_TimestampDescending()
+    {
+        var jwtClient = CreateJwtClient(GenerateJwtToken());
+        await jwtClient.PostAsJsonAsync("/api/events", MakeDto("Oldest", DtoEventType.Positive, 5, DateTimeOffset.UtcNow.AddDays(-3)), TestContext.Current.CancellationToken);
+        await jwtClient.PostAsJsonAsync("/api/events", MakeDto("Newest", DtoEventType.Positive, 5, DateTimeOffset.UtcNow), TestContext.Current.CancellationToken);
+        await jwtClient.PostAsJsonAsync("/api/events", MakeDto("Middle", DtoEventType.Positive, 5, DateTimeOffset.UtcNow.AddDays(-1)), TestContext.Current.CancellationToken);
+
+        var items = await GetEventsItems(jwtClient, "/api/events");
+
+        items[0].Title.Should().Be("Newest");
+        items[1].Title.Should().Be("Middle");
+        items[2].Title.Should().Be("Oldest");
+    }
+
+    [Fact]
+    public async Task GetEvents_PageSizeOver500_ClampedTo500()
+    {
+        var jwtClient = CreateJwtClient(GenerateJwtToken());
+        await jwtClient.PostAsJsonAsync("/api/events", MakeDto("Event", DtoEventType.Positive, 5), TestContext.Current.CancellationToken);
+
+        var result = await (await jwtClient.GetAsync("/api/events?pageSize=9999", TestContext.Current.CancellationToken))
+            .Content.ReadFromJsonAsync<PagedResult<EventResponseDto>>(TestContext.Current.CancellationToken);
+
+        result!.PageSize.Should().Be(500);
     }
 
     #endregion
@@ -365,5 +407,12 @@ public class EventsControllerTests(PostgresWebAppFactory factory) : HttpTestBase
     {
         var response = await client.PostAsJsonAsync("/api/events", MakeDto(title, DtoEventType.Positive, 5), TestContext.Current.CancellationToken);
         return (await response.Content.ReadFromJsonAsync<EventResponseDto>(TestContext.Current.CancellationToken))!;
+    }
+
+    private async Task<IList<EventResponseDto>> GetEventsItems(HttpClient client, string url)
+    {
+        var result = await (await client.GetAsync(url, TestContext.Current.CancellationToken))
+            .Content.ReadFromJsonAsync<PagedResult<EventResponseDto>>(TestContext.Current.CancellationToken);
+        return result!.Items.ToList();
     }
 }

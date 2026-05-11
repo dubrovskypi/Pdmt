@@ -33,7 +33,7 @@
 
 ## 1. Security
 
-### Sec-1. Настроить UseForwardedHeaders под cloud-proxy
+### ✅ Sec-1. Настроить UseForwardedHeaders под cloud-proxy
 - **Приоритет:** P0  **Размер:** S
 - **Файл:** [Program.cs:181-184](Program.cs#L181)
 - **Проблема:** `UseForwardedHeaders` подключён, но без `KnownProxies`/`KnownNetworks` middleware принимает `X-Forwarded-For` только от `127.0.0.1` и `::1` (defaults). На render.com / Fly.io / Railway прокси-сервер имеет другой IP, поэтому headers **молча игнорируются** и `RemoteIpAddress` всегда равен IP прокси. Следствие — rate-limit по IP работает per-instance, а не per-client (все логины делят один bucket из 5 попыток / 10 минут).
@@ -43,7 +43,7 @@
   - Проверить интеграционным тестом: `X-Forwarded-For: 1.2.3.4` → `HttpContext.Connection.RemoteIpAddress.ToString() == "1.2.3.4"`.
   - В логе на старте писать "Trusting forwarded headers from networks: …" (sanity check).
 
-### Sec-2. LoginAsync не должен ревокать все refresh-токены
+### ✅ Sec-2. LoginAsync не должен ревокать все refresh-токены
 - **Приоритет:** P0  **Размер:** S
 - **Файл:** [Services/AuthService.cs:71-72](Services/AuthService.cs#L71)
 - **Проблема:** При логине ревокаются **все** активные refresh-токены пользователя. UX-сломано (логин на телефоне выкидывает с веба), и это активный источник флапов: если фоновый тред мобилки делает запрос ровно в момент логина с другого устройства — получает 401.
@@ -53,7 +53,7 @@
   - Logout остаётся как есть (revoke all → см. Sec-7).
   - Тест: два последовательных логина → оба refresh-токена работают.
 
-### Sec-3. Refresh token race + reuse detection
+### ✅ Sec-3. Refresh token race + reuse detection
 - **Приоритет:** P0  **Размер:** M
 - **Файл:** [Services/AuthService.cs:88-103](Services/AuthService.cs#L88)
 - **Проблема (двойная):**
@@ -65,7 +65,7 @@
   - Тест: 5 параллельных `/refresh` с одним токеном → все возвращают валидный access token (один и тот же или эквивалентный), 0 × 401.
   - Тест: использовать revoked токен через 5 минут → 401 + все токены в семье revoked.
 
-### Sec-4. Скрыть ex.Message в 500-ках в проде
+### ✅ Sec-4. Скрыть ex.Message в 500-ках в проде
 - **Приоритет:** P0  **Размер:** S
 - **Файл:** [Middleware/ExceptionHandlingMiddleware.cs:33-37,52-58](Middleware/ExceptionHandlingMiddleware.cs#L33)
 - **Проблема:** для generic `Exception` `hideDetails: true`, но `ex.Message` всё равно записывается в `response.Message`. Сообщения системных исключений могут раскрывать структуру (`Connection refused for postgresql://...`, имена таблиц, путь файла).
@@ -73,7 +73,7 @@
   - Для catch-all 500 в проде: `Message = "Internal server error"`, `Details = null`. В dev можно оставить как есть.
   - `correlationId` — единственное, что отдаём, чтобы пользователь мог сослаться при поддержке.
 
-### Sec-5. CSRF-защита на /api/auth/web/refresh
+### ✅ Sec-5. CSRF-защита на /api/auth/web/refresh
 - **Приоритет:** P1  **Размер:** S
 - **Файл:** [Controllers/WebAuthController.cs:43-55](Controllers/WebAuthController.cs#L43)
 - **Проблема:** refresh-cookie с `SameSite=None`, и endpoint вызывается без явной anti-CSRF меры. CORS+`AllowCredentials` блокирует чтение **ответа** атакующим, поэтому украсть access-token нельзя. Но атакующий может тригерить ротацию refresh-токена с произвольной страницы → DoS-вектор: легитимный клиент после этого видит 401 на каждом следующем запросе.
@@ -82,7 +82,7 @@
   - Альтернатива: double-submit cookie или custom header `X-Csrf-Token`, но это усложнение, для single-user избыточно.
   - Опасения отметить в `intentional-non-goals` если решено остановиться на проверке Origin.
 
-### Sec-6. Hide internal exception types в маппинге
+### ✅ Sec-6. Hide internal exception types в маппинге
 - **Приоритет:** P1  **Размер:** S
 - **Файл:** [Middleware/ExceptionHandlingMiddleware.cs:29-32](Middleware/ExceptionHandlingMiddleware.cs#L29)
 - **Проблема:** `InvalidOperationException → 400` опасно: EF Core, Npgsql, BCL спокойно бросают `InvalidOperationException` по разным причинам, не связанным с бизнес-валидацией. Например, `BCrypt.Verify` с битым hash → `InvalidOperationException` → 400 «битый хеш» вместо 500.
@@ -91,7 +91,7 @@
   - `InvalidOperationException` → попадает в catch-all 500.
   - Прошерстить сервисы и заменить `throw new InvalidOperationException(...)` на новую.
 
-### Sec-7. Logout — текущая сессия vs все устройства
+### ✅ Sec-7. Logout — текущая сессия vs все устройства
 - **Приоритет:** P1  **Размер:** S
 - **Файл:** [Services/AuthService.cs:114-124](Services/AuthService.cs#L114), [Controllers/AuthController.cs:50](Controllers/AuthController.cs#L50)
 - **Проблема:** `LogoutAsync(userId)` ревокает **все** refresh-токены пользователя. Семантика «logout с текущего устройства» отсутствует.
@@ -100,7 +100,7 @@
   - Опционально — отдельный endpoint `/logout-all` для «выйти со всех устройств».
   - Идемпотентность: повторный logout не падает.
 
-### Sec-8. Email — ToLowerInvariant и нормализация
+### ✅ Sec-8. Email — ToLowerInvariant и нормализация
 - **Приоритет:** P1  **Размер:** S
 - **Файл:** [Services/AuthService.cs:21,53](Services/AuthService.cs#L21)
 - **Проблема:** `.ToLower()` зависит от текущей культуры. Турецкая `İ` → `i̇` ломает уникальность email при определённых локалях контейнера. На уровне БД email хранится без CITEXT-типа, поэтому всё держится на нормализации в коде.
@@ -108,7 +108,7 @@
   - Заменить на `.ToLowerInvariant()` везде.
   - Добавить unit-тест с турецким `İ` (он же кейс с `Tag.Name`, кстати).
 
-### Sec-9. HSTS в production
+### ✅ Sec-9. HSTS в production
 - **Приоритет:** P1  **Размер:** S
 - **Файл:** [Program.cs:189-191](Program.cs#L189)
 - **Проблема:** в проде нет ни `app.UseHsts()`, ни `app.UseHttpsRedirection()`. За reverse proxy с TLS-терминацией HTTPS-redirection не нужен, но HSTS-header клиенту лучше отдавать всегда (ответ всё равно идёт через TLS).
@@ -117,7 +117,7 @@
   - max-age — стартовать с 30 дней, потом увеличить.
   - Документировать в CLAUDE.md, что reverse proxy должен пропускать `Strict-Transport-Security`.
 
-### Sec-10. FailedLoginAttempts — использовать или удалить
+### ✅ Sec-10. FailedLoginAttempts — использовать или удалить
 - **Приоритет:** P1  **Размер:** M
 - **Файл:** [Services/AuthService.cs:59-65](Services/AuthService.cs#L59), [Domain/FailedLoginAttempt.cs](Domain/FailedLoginAttempt.cs)
 - **Проблема:** таблица растёт, но не используется. Либо реализуем lockout, либо убираем сущность.
@@ -144,7 +144,7 @@
 
 ## 2. Architecture / Layering
 
-### Arch-1. Разделить service-result и transport-DTO для auth
+### ✅ Arch-1. Разделить service-result и transport-DTO для auth
 - **Приоритет:** P0 (это и есть нарушение изоляции, которое ты подозревал)  **Размер:** M
 - **Файлы:** [Services/IAuthService.cs](Services/IAuthService.cs), [Services/AuthService.cs](Services/AuthService.cs), [Controllers/WebAuthController.cs:22-28,38-40](Controllers/WebAuthController.cs#L22), [Dto/AuthResultDto.cs](Dto/AuthResultDto.cs), [Dto/WebAuthResultDto.cs](Dto/WebAuthResultDto.cs)
 - **Проблема:** `IAuthService` возвращает `AuthResultDto` — DTO с `RefreshToken` в теле. `WebAuthController` достаёт оттуда `RefreshToken`, кладёт в cookie и **руками** конструирует `WebAuthResultDto`. Это работает только потому, что Web-контроллер дисциплинирован. Случайная правка (например, `[ProducesResponseType(typeof(AuthResultDto), …)]` в Web-action или маппер на webhook) — и refresh-токен утечёт в JSON web-клиента, обходя cookie-only контракт. Сервис знает про два разных транспортных DTO больше, чем нужно.
@@ -156,13 +156,13 @@
   - DTO-классы остаются в `Dto/`, internal model — в `Services/`.
   - Тест: `AuthResultDto` не используется в `WebAuthController` ни в каком виде (architecture test или просто grep).
 
-### Arch-2. Вынести 30 дней из WebAuthController (TODO)
+### ✅ Arch-2. Вынести 30 дней из WebAuthController (TODO)
 - **Приоритет:** P1  **Размер:** S (после Arch-1 — тривиально)
 - **Файл:** [Controllers/WebAuthController.cs:74](Controllers/WebAuthController.cs#L74)
 - **Проблема:** `Expires = DateTimeOffset.UtcNow.AddDays(30)` хардкод. Если поменяется `Jwt:RefreshTokenLifetimeDays` (сейчас тоже 30, но всё впечатление совпадения) — cookie-expiry рассинхронизируется с серверной валидностью. Уже отмечено в `TODO.md`.
 - **Acceptance:** `SetRefreshCookie` принимает `DateTimeOffset expiresAt`, который приходит из `AuthResult` (см. Arch-1). Никаких хардкодов.
 
-### Arch-3. Унификация валидации диапазона дат
+### ✅ Arch-3. Унификация валидации диапазона дат
 - **Приоритет:** P1  **Размер:** S
 - **Файлы:** [Controllers/AnalyticsController.cs:32-33](Controllers/AnalyticsController.cs#L32), [Services/InsightsService.cs:15-19](Services/InsightsService.cs#L15)
 - **Проблема:** `from > to` проверяется в `AnalyticsController.GetCorrelations` (контроллер), но в `InsightsService.ValidateDateRange` (сервис). CLAUDE.md явно говорит «No business logic in controllers». В `AnalyticsController.GetWeeklySummary` / `GetCalendarWeek` валидации вообще нет.
@@ -171,7 +171,7 @@
   - Поднять exception type до `ValidationException` (см. Sec-6).
   - Удалить `if (from > to)` из контроллера.
 
-### Arch-4. Убрать двойную загрузку в Update/Delete event
+### ✅ Arch-4. Убрать двойную загрузку в Update/Delete event
 - **Приоритет:** P2  **Размер:** S
 - **Файл:** [Controllers/EventsController.cs:65-71,77-83](Controllers/EventsController.cs#L65)
 - **Проблема:** контроллер делает `GetByIdAsync` (1 SELECT), потом сервис ещё раз грузит entity внутри Update/Delete. Два round-trip на одну операцию.
@@ -180,24 +180,24 @@
   - `DeleteEventAsync` сделать возвращающей `bool` так же.
   - Убрать предварительные `GetByIdAsync` из контроллера.
 
-### Arch-5. Убрать защитные `userId == Guid.Empty` в сервисах
+### ✅ Arch-5. Убрать защитные `userId == Guid.Empty` в сервисах
 - **Приоритет:** P2  **Размер:** S
 - **Файлы:** [Services/EventService.cs:19,49,65,94](Services/EventService.cs#L19), [Services/AuthService.cs](Services/AuthService.cs)
 - **Проблема:** все вызовы идут через `[Authorize]` контроллеры; `User.GetUserId()` уже бросает `InvalidOperationException` при отсутствии claim. Дополнительные проверки — мёртвый код, дают ложное чувство безопасности.
 - **Acceptance:** убрать проверки. Опираться на гарантии аутентификационного pipeline + extension method.
 
-### Arch-6. EventService — лишняя `if (ev is null)` проверка
+### ✅ Arch-6. EventService — лишняя `if (ev is null)` проверка
 - **Приоритет:** P2  **Размер:** S
 - **Файл:** [Services/EventService.cs:63-64](Services/EventService.cs#L63)
 - **Проблема:** `[ApiController]` сам отвергает null-body (400). CLAUDE.md прямо говорит «No manual `if (model == null)`».
 - **Acceptance:** убрать.
 
-### Arch-7. Удалить пустой `JwtGenerator.cs`
+### ✅ Arch-7. Удалить пустой `JwtGenerator.cs`
 - **Приоритет:** P2  **Размер:** S
 - **Файл:** [Infrastructure/JwtGenerator.cs](Infrastructure/JwtGenerator.cs) — пустой класс.
 - **Acceptance:** удалить файл.
 
-### Arch-8. Использовать IOptions для Jwt-конфига
+### ✅ Arch-8. Использовать IOptions для Jwt-конфига
 - **Приоритет:** P2  **Размер:** S
 - **Файл:** [Services/AuthService.cs:128-129,147](Services/AuthService.cs#L128)
 - **Проблема:** `int.Parse(jwt["TokenLifetimeMinutes"]!)` парсится при каждом login/register/refresh. Плюс null-forgiving `!` — при опечатке в конфиге runtime-крэш в горячем пути, а не на старте.
@@ -211,7 +211,7 @@
 
 ## 3. Reliability / Concurrency
 
-### Rel-1. CancellationToken через всю цепочку
+### ✅ Rel-1. CancellationToken через всю цепочку
 - **Приоритет:** P1  **Размер:** M
 - **Файлы:** все Controllers + Services
 - **Проблема:** `CancellationToken` не пробрасывается. Если клиент закрыл вкладку или таймаутил, сервер всё равно дочитывает запрос (особенно тяжёлые insights). Под cold-start это особенно дорого.
@@ -221,7 +221,7 @@
   - Все `ToListAsync()` / `FirstOrDefaultAsync()` / `SaveChangesAsync()` получают токен.
   - Тест: при отмене запроса операция прерывается (можно через `HttpClient.Timeout` + проверка логов).
 
-### Rel-2. Migration retry на старте
+### ✅ Rel-2. Migration retry на старте
 - **Приоритет:** P1  **Размер:** S
 - **Файл:** [Program.cs:165-172](Program.cs#L165)
 - **Проблема:** `db.Database.MigrateAsync()` бросит и упадёт контейнер, если БД не готова в момент старта (типичная ситуация после redeploy / managed-Postgres provisioning lag). На render.com приводит к failed-deploy и автоматическому reverter-у.
@@ -230,7 +230,7 @@
   - На каждой неудаче — log warning с попыткой и причиной.
   - Если все попытки исчерпаны — крэш с понятным сообщением.
 
-### Rel-3. Health check — разделить liveness и readiness
+### ✅ Rel-3. Health check — разделить liveness и readiness
 - **Приоритет:** P1  **Размер:** S
 - **Файл:** [Program.cs:122-124,195](Program.cs#L122)
 - **Проблема:** один `/health` с `AddNpgSql + AddRedis`. Если Postgres временно лежит, hosting-платформа решит «контейнер мёртв» и перезапустит — тогда как процесс жив и при возврате Postgres вернётся в строй сам.
@@ -240,7 +240,7 @@
   - На hosting (next provider) liveness привязать к `/health/live`, readiness — к `/health/ready`.
   - Документировать в CLAUDE.md.
 
-### Rel-4. Подключить TokenCleanupBgService и почистить
+### ✅ Rel-4. Подключить TokenCleanupBgService и почистить
 - **Приоритет:** P2  **Размер:** S
 - **Файл:** [Services/TokenCleanupBgService.cs](Services/TokenCleanupBgService.cs), [Program.cs:158](Program.cs#L158)
 - **Проблема:** сервис закомментирован. Без него `RefreshTokens` растёт (revoked+expired никогда не удаляются). Также unused variable `expired` (warning).
@@ -273,7 +273,7 @@
 
 ## 4. Performance / DB
 
-### Perf-1. Pagination в EventService.GetEvents
+### ✅ Perf-1. Pagination в EventService.GetEvents
 - **Приоритет:** P1  **Размер:** M
 - **Файл:** [Services/EventService.cs:10-45](Services/EventService.cs#L10), [Controllers/EventsController.cs:17-40](Controllers/EventsController.cs#L17)
 - **Проблема:** возвращает все события за период без лимита. Через год активного использования — несколько тысяч записей, каждая с тегами. Под cold-start это лишние секунды плюс память.
@@ -314,7 +314,7 @@
 
 ## 5. Observability
 
-### Obs-1. Логировать non-500 exceptions на Warning
+### ✅ Obs-1. Логировать non-500 exceptions на Warning
 - **Приоритет:** P1  **Размер:** S
 - **Файл:** [Middleware/ExceptionHandlingMiddleware.cs:17-38](Middleware/ExceptionHandlingMiddleware.cs#L17)
 - **Проблема:** только generic 500 логируются. 401/404/400/429 — невидимы в логах/трейсах. Для security audit (брут-форс, перебор event-id) нужно видеть всплески.
@@ -323,7 +323,7 @@
   - Generic — Error.
   - Rate-limit нарушения — особенно важны: лог + увеличить metric (см. Obs-2).
 
-### Obs-2. Аудит auth-событий + метрики rate-limit
+### ✅ Obs-2. Аудит auth-событий + метрики rate-limit
 - **Приоритет:** P1  **Размер:** M
 - **Файлы:** [Services/AuthService.cs](Services/AuthService.cs), [Services/CompositeRateLimitService.cs](Services/CompositeRateLimitService.cs)
 - **Проблема:** ни logging, ни metrics для login-success / login-fail / refresh-success / refresh-fail / rate-limit-trip. В Seq невозможно понять, был ли всплеск ошибок или один пользователь систематически фейлится.
@@ -332,7 +332,7 @@
   - OTel-counter: `auth.login.attempts` (labels: outcome=success/fail), `auth.refresh.attempts`, `rate_limit.tripped` (label: rule).
   - Дашборд (или sample-query в Seq) для security audit.
 
-### Obs-3. HttpLoggingMiddleware vs OTel AspNetCore Instrumentation
+### ✅ Obs-3. HttpLoggingMiddleware vs OTel AspNetCore Instrumentation
 - **Приоритет:** P2  **Размер:** S
 - **Файл:** [Middleware/HttpLoggingMiddleware.cs](Middleware/HttpLoggingMiddleware.cs), [Program.cs:138-139](Program.cs#L138)
 - **Проблема:** `AddAspNetCoreInstrumentation()` уже логирует HTTP request/duration через OTel. Кастомный middleware дублирует это в Seq. Пересечение — двойной шум.

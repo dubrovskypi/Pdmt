@@ -17,10 +17,11 @@ public class InsightsController(IInsightsService insightsService) : ControllerBa
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<MostIntenseTagsDto>> GetMostIntenseTags(
         [FromQuery] DateTimeOffset from,
-        [FromQuery] DateTimeOffset to)
+        [FromQuery] DateTimeOffset to,
+        CancellationToken ct)
     {
         var userId = User.GetUserId();
-        return Ok(await insightsService.GetMostIntenseTagsAsync(userId, from, to));
+        return Ok(await insightsService.GetMostIntenseTagsAsync(userId, from, to, ct));
     }
 
     [HttpGet("repeating-triggers")]
@@ -29,10 +30,11 @@ public class InsightsController(IInsightsService insightsService) : ControllerBa
     public async Task<ActionResult<IReadOnlyList<RepeatingTriggerDto>>> GetRepeatingTriggers(
         [FromQuery] DateTimeOffset from,
         [FromQuery] DateTimeOffset to,
+        CancellationToken ct,
         [FromQuery] int minCount = 3)
     {
         var userId = User.GetUserId();
-        return Ok(await insightsService.GetRepeatingTriggersAsync(userId, from, to, minCount));
+        return Ok(await insightsService.GetRepeatingTriggersAsync(userId, from, to, minCount, ct));
     }
 
     [HttpGet("balance")]
@@ -40,22 +42,24 @@ public class InsightsController(IInsightsService insightsService) : ControllerBa
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<PosNegBalanceDto>> GetBalance(
         [FromQuery] DateTimeOffset from,
-        [FromQuery] DateTimeOffset to)
+        [FromQuery] DateTimeOffset to,
+        CancellationToken ct)
     {
         var userId = User.GetUserId();
-        return Ok(await insightsService.GetBalanceAsync(userId, from, to));
+        return Ok(await insightsService.GetBalanceAsync(userId, from, to, ct));
     }
 
     [HttpGet("trends")]
     [ProducesResponseType(typeof(IReadOnlyList<TrendPeriodDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<IReadOnlyList<TrendPeriodDto>>> GetTrends(
-    [FromQuery] DateTimeOffset from,
-    [FromQuery] DateTimeOffset to,
-    [FromQuery] Granularity period = Granularity.Week)
+        [FromQuery] DateTimeOffset from,
+        [FromQuery] DateTimeOffset to,
+        CancellationToken ct,
+        [FromQuery] Granularity period = Granularity.Week)
     {
         var userId = User.GetUserId();
-        return Ok(await insightsService.GetTrendsAsync(userId, from, to, period));
+        return Ok(await insightsService.GetTrendsAsync(userId, from, to, period, ct));
     }
 
     [HttpGet("discounted-positives")]
@@ -63,10 +67,11 @@ public class InsightsController(IInsightsService insightsService) : ControllerBa
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<IReadOnlyList<DiscountedPositiveDto>>> GetDiscountedPositives(
         [FromQuery] DateTimeOffset from,
-        [FromQuery] DateTimeOffset to)
+        [FromQuery] DateTimeOffset to,
+        CancellationToken ct)
     {
         var userId = User.GetUserId();
-        return Ok(await insightsService.GetDiscountedPositivesAsync(userId, from, to));
+        return Ok(await insightsService.GetDiscountedPositivesAsync(userId, from, to, ct));
     }
 
     [HttpGet("weekday-stats")]
@@ -74,10 +79,11 @@ public class InsightsController(IInsightsService insightsService) : ControllerBa
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<IReadOnlyList<WeekdayStatDto>>> GetWeekdayStats(
         [FromQuery] DateTimeOffset from,
-        [FromQuery] DateTimeOffset to)
+        [FromQuery] DateTimeOffset to,
+        CancellationToken ct)
     {
         var userId = User.GetUserId();
-        return Ok(await insightsService.GetWeekdayStatsAsync(userId, from, to));
+        return Ok(await insightsService.GetWeekdayStatsAsync(userId, from, to, ct));
     }
 
     [HttpGet("next-day-effects")]
@@ -85,10 +91,11 @@ public class InsightsController(IInsightsService insightsService) : ControllerBa
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<IReadOnlyList<NextDayEffectDto>>> GetNextDayEffects(
         [FromQuery] DateTimeOffset from,
-        [FromQuery] DateTimeOffset to)
+        [FromQuery] DateTimeOffset to,
+        CancellationToken ct)
     {
         var userId = User.GetUserId();
-        return Ok(await insightsService.GetNextDayEffectsAsync(userId, from, to));
+        return Ok(await insightsService.GetNextDayEffectsAsync(userId, from, to, ct));
     }
 
     [HttpGet("tag-combos")]
@@ -96,10 +103,11 @@ public class InsightsController(IInsightsService insightsService) : ControllerBa
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<IReadOnlyList<TagComboDto>>> GetTagCombos(
         [FromQuery] DateTimeOffset from,
-        [FromQuery] DateTimeOffset to)
+        [FromQuery] DateTimeOffset to,
+        CancellationToken ct)
     {
         var userId = User.GetUserId();
-        return Ok(await insightsService.GetTagCombosAsync(userId, from, to));
+        return Ok(await insightsService.GetTagCombosAsync(userId, from, to, ct));
     }
 
     [HttpGet("tag-trend")]
@@ -108,10 +116,11 @@ public class InsightsController(IInsightsService insightsService) : ControllerBa
     public async Task<ActionResult<IReadOnlyList<TagTrendSeriesDto>>> GetTagTrend(
         [FromQuery] DateTimeOffset from,
         [FromQuery] DateTimeOffset to,
+        CancellationToken ct,
         [FromQuery] Granularity period = Granularity.Week)
     {
         var userId = User.GetUserId();
-        return Ok(await insightsService.GetTagTrendAsync(userId, from, to, period));
+        return Ok(await insightsService.GetTagTrendAsync(userId, from, to, period, ct));
     }
 
     [HttpGet("influenceability")]
@@ -119,9 +128,10 @@ public class InsightsController(IInsightsService insightsService) : ControllerBa
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<InfluenceabilitySplitDto>> GetInfluenceabilitySplit(
         [FromQuery] DateTimeOffset from,
-        [FromQuery] DateTimeOffset to)
+        [FromQuery] DateTimeOffset to,
+        CancellationToken ct)
     {
         var userId = User.GetUserId();
-        return Ok(await insightsService.GetInfluenceabilitySplitAsync(userId, from, to));
+        return Ok(await insightsService.GetInfluenceabilitySplitAsync(userId, from, to, ct));
     }
 }

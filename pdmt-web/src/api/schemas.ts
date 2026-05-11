@@ -2,7 +2,6 @@ import { z } from "zod";
 
 export const WebAuthResultSchema = z.object({
   accessToken: z.string(),
-  accessTokenExpiresAt: z.string(),
 });
 
 export const TagResponseSchema = z.object({

@@ -10,10 +10,15 @@ using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Pdmt.Api.Data;
 using Pdmt.Api.Infrastructure;
+using Pdmt.Api.Infrastructure.Metrics;
+using Pdmt.Api.Infrastructure.Options;
 using Pdmt.Api.Middleware;
 using Pdmt.Api.Services;
 using StackExchange.Redis;
+using System.Diagnostics;
+using System.IdentityModel.Tokens.Jwt;
 using System.Reflection;
+using System.Security.Claims;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -110,6 +115,17 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidAudience = jwt["Audience"],
             IssuerSigningKey = signingCredentials.Key
         };
+        options.Events = new JwtBearerEvents
+        {
+            OnTokenValidated = ctx =>
+            {
+                var sub = ctx.Principal?.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
+                       ?? ctx.Principal?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (sub is not null)
+                    Activity.Current?.SetTag("enduser.id", sub);
+                return Task.CompletedTask;
+            }
+        };
     });
 builder.Services.AddSingleton(signingCredentials);
 builder.Services.AddAuthorization();
@@ -120,8 +136,8 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
     return ConnectionMultiplexer.Connect(config);
 });
 builder.Services.AddHealthChecks()
-    .AddNpgSql(pgCs)
-    .AddRedis(redisCs);
+    .AddNpgSql(pgCs, tags: ["ready"])
+    .AddRedis(redisCs, tags: ["ready"]);
 var otelEndpoint = builder.Configuration["OpenTelemetry:Endpoint"]
     ?? throw new InvalidOperationException(
         "OpenTelemetry:Endpoint is not configured. " +
@@ -143,7 +159,8 @@ builder.Services.AddOpenTelemetry()
     .WithMetrics(metrics => metrics
         .AddAspNetCoreInstrumentation()
         .AddHttpClientInstrumentation()
-        .AddRuntimeInstrumentation())
+        .AddRuntimeInstrumentation()
+        .AddMeter(AuthMetrics.MeterName))
     .WithLogging(_ => { });
 // Register application services
 builder.Services.AddScoped<IEventService, EventService>();
@@ -154,11 +171,17 @@ builder.Services.AddScoped<IInsightsService, InsightsService>();
 builder.Services.AddScoped<RedisRateLimitService>();
 builder.Services.AddScoped<InMemoryRateLimitService>();
 builder.Services.AddScoped<IRateLimitService, CompositeRateLimitService>();
+builder.Services.AddSingleton<AuthMetrics>();
 // Register background services
-//builder.Services.AddHostedService<TokenCleanupBgService>(); //uncoment when cleanup will be needed
+builder.Services.AddHostedService<TokenCleanupBgService>();
+builder.Services.AddHostedService<FailedLoginCleanupBgService>();
 
 // Configurations
 builder.Services.Configure<RateLimitOptions>(builder.Configuration.GetSection("RateLimiting"));
+builder.Services.AddOptions<JwtOptions>()
+    .Bind(builder.Configuration.GetSection("Jwt"))
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
     options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
@@ -184,7 +207,26 @@ using (var scope = app.Services.CreateScope())
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     if (db.Database.IsRelational())
     {
-        await db.Database.MigrateAsync();
+        var migLogger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+        const int maxAttempts = 5;
+        for (var attempt = 1; attempt <= maxAttempts; attempt++)
+        {
+            try
+            {
+                await db.Database.MigrateAsync();
+                break;
+            }
+            catch (Exception ex) when (attempt < maxAttempts)
+            {
+                var delay = (int)Math.Pow(2, attempt - 1);
+                migLogger.LogWarning(ex, "Migration attempt {Attempt}/{Max} failed, retrying in {Delay}s", attempt, maxAttempts, delay);
+                await Task.Delay(TimeSpan.FromSeconds(delay));
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Database not reachable after 5 attempts during startup", ex);
+            }
+        }
     }
 }
 
@@ -195,10 +237,11 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+if (!app.Environment.IsDevelopment())
+    app.UseHsts();
 app.UseForwardedHeaders();
 app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseMiddleware<ExceptionHandlingMiddleware>();
-app.UseMiddleware<HttpLoggingMiddleware>();
 // Configure the HTTP request pipeline.
 app.UseCors("WebClients");
 if (app.Environment.IsDevelopment())
@@ -206,7 +249,9 @@ if (app.Environment.IsDevelopment())
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
-app.MapHealthChecks("/health");
+app.MapHealthChecks("/health/live", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions { Predicate = _ => false });
+app.MapHealthChecks("/health/ready", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions { Predicate = check => check.Tags.Contains("ready") });
+app.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions { Predicate = check => check.Tags.Contains("ready") });
 
 await app.RunAsync();
 
