@@ -20,7 +20,7 @@ public class AuthService(AppDbContext db, IConfiguration config, IRateLimitServi
     {
         await rateLimit.CheckAsync("Auth.Register", ip);
 
-        var normalizedEmail = dto.Email.Trim().ToLower();
+        var normalizedEmail = dto.Email.Trim().ToLowerInvariant();
         var exists = await db.Users.AnyAsync(u => u.Email == normalizedEmail, ct);
         if (exists)
             throw new ValidationException("User already exists");
@@ -46,7 +46,7 @@ public class AuthService(AppDbContext db, IConfiguration config, IRateLimitServi
     {
         await rateLimit.CheckAsync("Auth.Login", ip);
 
-        var normalizedEmail = dto.Email.Trim().ToLower();
+        var normalizedEmail = dto.Email.Trim().ToLowerInvariant();
         var user = await db.Users.FirstOrDefaultAsync(u => u.Email == normalizedEmail, ct);
         if (user is null || !BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash))
         {

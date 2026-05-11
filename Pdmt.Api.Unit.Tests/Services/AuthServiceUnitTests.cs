@@ -5,6 +5,7 @@ using Moq;
 using Pdmt.Api.Dto;
 using Pdmt.Api.Infrastructure.Exceptions;
 using Pdmt.Api.Services;
+using System.Globalization;
 using System.Text;
 
 namespace Pdmt.Api.Unit.Tests.Services;
@@ -92,6 +93,28 @@ public class AuthServiceUnitTests
 
         await act.Should().ThrowAsync<RateLimitExceededException>()
             .WithMessage("*Auth.Refresh*");
+    }
+
+    #endregion
+
+    #region Email normalization
+
+    [Fact]
+    public void EmailNormalization_IsInvariantUnderTurkishCulture()
+    {
+        var original = CultureInfo.CurrentCulture;
+        try
+        {
+            CultureInfo.CurrentCulture = new CultureInfo("tr-TR");
+            // Turkish "I".ToLower() → "ı" (dotless i), breaking email lookup uniqueness.
+            // Regression guard: verify ToLowerInvariant() is always "i", not "ı".
+            "USER@EXAMPLE.COM".ToLowerInvariant().Should().Be("user@example.com");
+            "USER@EXAMPLE.COM".ToLower().Should().NotBe("user@example.com");
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = original;
+        }
     }
 
     #endregion
