@@ -45,11 +45,21 @@ public class AuthService(AppDbContext db, IOptions<JwtOptions> jwtOptions, IRate
         return new AuthResult(accessToken.Token, accessToken.ExpiresAt, rawRefreshToken, refreshTokenEntity.ExpiresAt);
     }
 
+    private const int LockoutFailureThreshold = 5;
+    private static readonly TimeSpan LockoutWindow = TimeSpan.FromMinutes(15);
+
     public async Task<AuthResult> LoginAsync(UserDto dto, string ip, CancellationToken ct)
     {
         await rateLimit.CheckAsync("Auth.Login", ip);
 
         var normalizedEmail = dto.Email.Trim().ToLowerInvariant();
+
+        var cutoff = DateTimeOffset.UtcNow.Subtract(LockoutWindow);
+        var recentFails = await db.FailedLoginAttempts
+            .CountAsync(f => f.Email == normalizedEmail && f.OccurredAtUtc >= cutoff, ct);
+        if (recentFails >= LockoutFailureThreshold)
+            throw new UnauthorizedAccessException("Account temporarily locked. Try again later.");
+
         var user = await db.Users.FirstOrDefaultAsync(u => u.Email == normalizedEmail, ct);
         if (user is null || !BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash))
         {

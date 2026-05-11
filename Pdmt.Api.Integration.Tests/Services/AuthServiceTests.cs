@@ -1,10 +1,11 @@
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Pdmt.Api.Domain;
 using Pdmt.Api.Dto;
 using Pdmt.Api.Infrastructure.Exceptions;
+using Pdmt.Api.Infrastructure.Options;
 using Pdmt.Api.Integration.Tests.Infrastructure;
 using Pdmt.Api.Services;
 using System.Security.Cryptography;
@@ -20,18 +21,17 @@ public class AuthServiceTests(PostgresContainerFixture fixture) : ServiceTestBas
     {
         await base.InitializeAsync();
 
-        var config = new ConfigurationBuilder()
-            .AddInMemoryCollection([
-                new("Jwt:Issuer", PostgresWebAppFactory.TestJwtIssuer),
-                new("Jwt:Audience", PostgresWebAppFactory.TestJwtAudience),
-                new("Jwt:TokenLifetimeMinutes", "60"),
-                new("Jwt:RefreshTokenLifetimeDays", "1")
-            ])
-            .Build();
+        var jwtOptions = Options.Create(new JwtOptions
+        {
+            Issuer = PostgresWebAppFactory.TestJwtIssuer,
+            Audience = PostgresWebAppFactory.TestJwtAudience,
+            TokenLifetimeMinutes = 60,
+            RefreshTokenLifetimeDays = 1
+        });
         SigningCredentials testSigningCreds = new(
             new SymmetricSecurityKey(Encoding.UTF8.GetBytes(PostgresWebAppFactory.TestJwtSecret)),
             SecurityAlgorithms.HmacSha256);
-        _service = new AuthService(Db, config, new NoOpRateLimitService(), testSigningCreds);
+        _service = new AuthService(Db, jwtOptions, new NoOpRateLimitService(), testSigningCreds);
     }
 
     private static string HashToken(string token)
@@ -414,6 +414,55 @@ public class AuthServiceTests(PostgresContainerFixture fixture) : ServiceTestBas
         var act = () => _service.LogoutAllAsync(Guid.NewGuid(), TestContext.Current.CancellationToken);
 
         await act.Should().NotThrowAsync();
+    }
+
+    #endregion
+
+    #region Account lockout
+
+    [Fact]
+    public async Task LoginAsync_AfterFiveFailedAttempts_ThrowsLockedOut()
+    {
+        var email = "lockout@example.com";
+        var dto = new UserDto { Email = email, Password = "password123" };
+        await _service.RegisterAsync(dto, "1.1.1.1", TestContext.Current.CancellationToken);
+
+        for (var i = 0; i < 5; i++)
+        {
+            try { await _service.LoginAsync(new UserDto { Email = email, Password = "wrong" }, "1.1.1.1", TestContext.Current.CancellationToken); }
+            catch (UnauthorizedAccessException) { }
+        }
+
+        var act = () => _service.LoginAsync(new UserDto { Email = email, Password = "password123" }, "1.1.1.1", TestContext.Current.CancellationToken);
+
+        await act.Should().ThrowAsync<UnauthorizedAccessException>()
+            .WithMessage("*locked*");
+    }
+
+    [Fact]
+    public async Task LoginAsync_AfterFiveFailedAttemptsOutsideWindow_AllowsLogin()
+    {
+        var email = "lockout-expired@example.com";
+        var dto = new UserDto { Email = email, Password = "password123" };
+        await _service.RegisterAsync(dto, "1.1.1.1", TestContext.Current.CancellationToken);
+
+        // Seed 5 failed attempts with OccurredAtUtc outside the lockout window (> 15 min ago)
+        var oldCutoff = DateTimeOffset.UtcNow.AddMinutes(-16);
+        for (var i = 0; i < 5; i++)
+        {
+            Db.FailedLoginAttempts.Add(new FailedLoginAttempt
+            {
+                Email = email,
+                IpAddress = "1.1.1.1",
+                OccurredAtUtc = oldCutoff,
+                Reason = "Invalid credentials"
+            });
+        }
+        await Db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var result = await _service.LoginAsync(new UserDto { Email = email, Password = "password123" }, "1.1.1.1", TestContext.Current.CancellationToken);
+
+        result.AccessToken.Should().NotBeNullOrEmpty();
     }
 
     #endregion

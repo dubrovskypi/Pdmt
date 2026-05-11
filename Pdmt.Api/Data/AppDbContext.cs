@@ -56,9 +56,7 @@ public class AppDbContext(DbContextOptions options) : DbContext(options)
             .HasMaxLength(128)
             .IsRequired();
         modelBuilder.Entity<FailedLoginAttempt>()
-            .HasIndex(f => f.Email);
-        modelBuilder.Entity<FailedLoginAttempt>()
-            .HasIndex(f => f.OccurredAtUtc);
+            .HasIndex(f => new { f.Email, f.OccurredAtUtc });
 
         modelBuilder.Entity<Tag>()
             .Property(t => t.Name)
