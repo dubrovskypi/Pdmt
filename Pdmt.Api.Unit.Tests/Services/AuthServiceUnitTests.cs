@@ -117,8 +117,8 @@ public class AuthServiceUnitTests
             CultureInfo.CurrentCulture = new CultureInfo("tr-TR");
             // Turkish "I".ToLower() → "ı" (dotless i), breaking email lookup uniqueness.
             // Regression guard: verify ToLowerInvariant() is always "i", not "ı".
-            "USER@EXAMPLE.COM".ToLowerInvariant().Should().Be("user@example.com");
-            "USER@EXAMPLE.COM".ToLower().Should().NotBe("user@example.com");
+            "USERID@EXAMPLE.COM".ToLowerInvariant().Should().Be("userid@example.com");
+            "USERID@EXAMPLE.COM".ToLower().Should().NotBe("userid@example.com");
         }
         finally
         {

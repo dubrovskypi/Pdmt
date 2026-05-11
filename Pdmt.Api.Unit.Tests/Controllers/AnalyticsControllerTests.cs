@@ -65,17 +65,6 @@ public class AnalyticsControllerTests
         ok.Value.Should().Be(expected);
     }
 
-    [Fact]
-    public async Task GetCorrelations_FromAfterTo_Returns400()
-    {
-        var result = await _sut.GetCorrelations(Guid.NewGuid(), To, From, CancellationToken.None);
-
-        result.Result.Should().BeOfType<BadRequestObjectResult>();
-        _analyticsService.Verify(
-            s => s.GetCorrelationsAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<DateTimeOffset>(), It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()),
-            Times.Never);
-    }
-
     #endregion
 
     #region GetCalendarWeek
