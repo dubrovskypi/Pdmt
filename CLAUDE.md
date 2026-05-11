@@ -224,6 +224,8 @@ Configuration uses `appsettings.json` (base) + `appsettings.{Environment}.json` 
 
 **pdmt-web** — requires `VITE_PDMT_API_BASE_URL` in `.env` (see `.env.example`).
 
+**HSTS** — `app.UseHsts()` is enabled in production (max-age 30 days). The reverse proxy must pass through the `Strict-Transport-Security` header to clients and must terminate TLS itself.
+
 ## Observability
 
 **Seq Structured Logging**
