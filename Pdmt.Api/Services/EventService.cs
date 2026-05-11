@@ -14,7 +14,8 @@ public class EventService(AppDbContext db) : IEventService
         DtoEventType? type,
         IReadOnlyList<Guid>? tagIds,
         int? minIntensity,
-        int? maxIntensity)
+        int? maxIntensity,
+        CancellationToken ct)
     {
         if (userId == Guid.Empty)
             throw new ArgumentException("User ID cannot be empty.", nameof(userId));
@@ -39,12 +40,12 @@ public class EventService(AppDbContext db) : IEventService
         var events = await query
             .Include(e => e.EventTags)
             .ThenInclude(et => et.Tag)
-            .ToListAsync();
+            .ToListAsync(ct);
 
         return events.Select(MapToResponseDto).ToList();
     }
 
-    public async Task<EventResponseDto?> GetByIdAsync(Guid userId, Guid id)
+    public async Task<EventResponseDto?> GetByIdAsync(Guid userId, Guid id, CancellationToken ct)
     {
         if (userId == Guid.Empty)
             throw new ArgumentException("User ID cannot be empty.", nameof(userId));
@@ -53,12 +54,12 @@ public class EventService(AppDbContext db) : IEventService
             .AsNoTracking()
             .Include(e => e.EventTags)
             .ThenInclude(et => et.Tag)
-            .FirstOrDefaultAsync(e => e.Id == id && e.UserId == userId);
+            .FirstOrDefaultAsync(e => e.Id == id && e.UserId == userId, ct);
 
         return ev is null ? null : MapToResponseDto(ev);
     }
 
-    public async Task<EventResponseDto> CreateEventAsync(Guid userId, CreateEventDto ev)
+    public async Task<EventResponseDto> CreateEventAsync(Guid userId, CreateEventDto ev, CancellationToken ct)
     {
         if (ev is null)
             throw new ArgumentNullException(nameof(ev), "Event cannot be null.");
@@ -66,7 +67,7 @@ public class EventService(AppDbContext db) : IEventService
             throw new ArgumentException("User ID cannot be empty.", nameof(userId));
 
         var eventId = Guid.NewGuid();
-        var resolvedTags = await ResolveTagsAsync(userId, ev.TagNames);
+        var resolvedTags = await ResolveTagsAsync(userId, ev.TagNames, ct);
         var entity = new Event
         {
             Id = eventId,
@@ -84,19 +85,19 @@ public class EventService(AppDbContext db) : IEventService
         };
 
         db.Events.Add(entity);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(ct);
 
         return MapToResponseDto(entity);
     }
 
-    public async Task<bool> UpdateEventAsync(Guid userId, Guid id, UpdateEventDto ev)
+    public async Task<bool> UpdateEventAsync(Guid userId, Guid id, UpdateEventDto ev, CancellationToken ct)
     {
         if (userId == Guid.Empty)
             throw new ArgumentException("User ID cannot be empty.", nameof(userId));
 
         var existing = await db.Events
             .Include(e => e.EventTags)
-            .FirstOrDefaultAsync(e => e.Id == id && e.UserId == userId);
+            .FirstOrDefaultAsync(e => e.Id == id && e.UserId == userId, ct);
 
         if (existing is null) return false;
 
@@ -108,7 +109,7 @@ public class EventService(AppDbContext db) : IEventService
         existing.Context = ev.Context;
         existing.CanInfluence = ev.CanInfluence;
 
-        var resolvedTags = await ResolveTagsAsync(userId, ev.TagNames);
+        var resolvedTags = await ResolveTagsAsync(userId, ev.TagNames, ct);
         var newTagIds = resolvedTags.Select(t => t.Id).ToHashSet();
         var oldTagIds = existing.EventTags.Select(et => et.TagId).ToHashSet();
 
@@ -117,22 +118,22 @@ public class EventService(AppDbContext db) : IEventService
             .Where(t => !oldTagIds.Contains(t.Id))
             .Select(t => new EventTag { EventId = existing.Id, TagId = t.Id }));
 
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(ct);
         return true;
     }
 
-    public async Task DeleteEventAsync(Guid userId, Guid id)
+    public async Task DeleteEventAsync(Guid userId, Guid id, CancellationToken ct)
     {
         if (userId == Guid.Empty)
             throw new ArgumentException("User ID cannot be empty.", nameof(userId));
 
-        var ev = await db.Events.FirstOrDefaultAsync(e => e.Id == id && e.UserId == userId);
+        var ev = await db.Events.FirstOrDefaultAsync(e => e.Id == id && e.UserId == userId, ct);
         if (ev is null) return;
         db.Events.Remove(ev);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(ct);
     }
 
-    private async Task<List<Tag>> ResolveTagsAsync(Guid userId, List<string> tagNames)
+    private async Task<List<Tag>> ResolveTagsAsync(Guid userId, List<string> tagNames, CancellationToken ct)
     {
         if (tagNames.Count == 0) return new();
 
@@ -144,7 +145,7 @@ public class EventService(AppDbContext db) : IEventService
 
         var existing = await db.Tags
             .Where(t => t.UserId == userId && normalized.Contains(t.Name))
-            .ToListAsync();
+            .ToListAsync(ct);
 
         var existingNames = existing.Select(t => t.Name).ToHashSet();
 

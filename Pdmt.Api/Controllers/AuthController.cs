@@ -14,10 +14,10 @@ namespace Pdmt.Api.Controllers
         [AllowAnonymous]
         [ProducesResponseType(typeof(AuthResultDto), StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ActionResult<AuthResultDto>> Register(UserDto dto)
+        public async Task<ActionResult<AuthResultDto>> Register(UserDto dto, CancellationToken ct)
         {
             var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-            return StatusCode(StatusCodes.Status201Created, ToDto(await auth.RegisterAsync(dto, ip)));
+            return StatusCode(StatusCodes.Status201Created, ToDto(await auth.RegisterAsync(dto, ip, ct)));
         }
 
         [HttpPost("login")]
@@ -25,10 +25,10 @@ namespace Pdmt.Api.Controllers
         [ProducesResponseType(typeof(AuthResultDto), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        public async Task<ActionResult<AuthResultDto>> Login(UserDto dto)
+        public async Task<ActionResult<AuthResultDto>> Login(UserDto dto, CancellationToken ct)
         {
             var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-            return Ok(ToDto(await auth.LoginAsync(dto, ip)));
+            return Ok(ToDto(await auth.LoginAsync(dto, ip, ct)));
         }
 
         [HttpPost("refresh")]
@@ -36,20 +36,29 @@ namespace Pdmt.Api.Controllers
         [ProducesResponseType(typeof(AuthResultDto), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        public async Task<ActionResult<AuthResultDto>> Refresh(RefreshRequestDto dto)
+        public async Task<ActionResult<AuthResultDto>> Refresh(RefreshRequestDto dto, CancellationToken ct)
         {
             var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-            return Ok(ToDto(await auth.RefreshAsync(dto.RefreshToken, ip)));
+            return Ok(ToDto(await auth.RefreshAsync(dto.RefreshToken, ip, ct)));
         }
 
         [HttpPost("logout")]
         [Authorize]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        public async Task<IActionResult> Logout()
+        public async Task<IActionResult> Logout(RefreshRequestDto dto, CancellationToken ct)
         {
-            await auth.LogoutAsync(User.GetUserId());
+            await auth.LogoutAsync(dto.RefreshToken, ct);
+            return NoContent();
+        }
+
+        [HttpPost("logout-all")]
+        [Authorize]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> LogoutAll(CancellationToken ct)
+        {
+            await auth.LogoutAllAsync(User.GetUserId(), ct);
             return NoContent();
         }
 

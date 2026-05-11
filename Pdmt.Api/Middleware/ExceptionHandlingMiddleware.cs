@@ -26,14 +26,14 @@ namespace Pdmt.Api.Middleware
             {
                 await HandleException(context, ex, 401);
             }
-            catch (InvalidOperationException ex)
+            catch (ValidationException ex)
             {
                 await HandleException(context, ex, 400);
             }
             catch (Exception ex)
             {
                 logger.LogError(ex, "Unhandled exception");
-                await HandleException(context, ex, 500, hideDetails: true);
+                await HandleException(context, ex, 500, isUnhandled: true);
             }
         }
 
@@ -41,18 +41,18 @@ namespace Pdmt.Api.Middleware
             HttpContext context,
             Exception ex,
             int statusCode,
-            bool hideDetails = false)
+            bool isUnhandled = false)
         {
             context.Response.ContentType = "application/json";
             context.Response.StatusCode = statusCode;
 
             var correlationId = context.Items["CorrelationId"]?.ToString();
-            var showDetails = !hideDetails && env.IsDevelopment();
+            var isDev = env.IsDevelopment();
 
             var response = new ErrorResponse
             {
-                Message = ex.Message,
-                Details = showDetails ? ex.StackTrace : null,
+                Message = isUnhandled && !isDev ? "Internal server error" : ex.Message,
+                Details = !isUnhandled && isDev ? ex.StackTrace : null,
                 CorrelationId = correlationId
             };
 

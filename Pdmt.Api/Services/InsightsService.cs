@@ -4,6 +4,7 @@ using Pdmt.Api.Data;
 using Pdmt.Api.Domain;
 using Pdmt.Api.Dto.Insights;
 using Pdmt.Api.Infrastructure;
+using Pdmt.Api.Infrastructure.Exceptions;
 
 namespace Pdmt.Api.Services;
 
@@ -15,17 +16,17 @@ public class InsightsService(AppDbContext db, IConfiguration config) : IInsights
     private static void ValidateDateRange(DateTimeOffset from, DateTimeOffset to)
     {
         if (from > to)
-            throw new InvalidOperationException("'from' must be earlier than 'to'.");
+            throw new ValidationException("'from' must be earlier than 'to'.");
     }
 
-    public async Task<MostIntenseTagsDto> GetMostIntenseTagsAsync(Guid userId, DateTimeOffset from, DateTimeOffset to)
+    public async Task<MostIntenseTagsDto> GetMostIntenseTagsAsync(Guid userId, DateTimeOffset from, DateTimeOffset to, CancellationToken ct)
     {
         ValidateDateRange(from, to);
         var events = await db.Events
             .AsNoTracking()
             .Include(e => e.EventTags).ThenInclude(et => et.Tag)
             .Where(e => e.UserId == userId && e.Timestamp >= from && e.Timestamp < to.AddDays(1))
-            .ToListAsync();
+            .ToListAsync(ct);
 
         return ComputeMostIntenseTags(events);
     }
@@ -52,14 +53,14 @@ public class InsightsService(AppDbContext db, IConfiguration config) : IInsights
         return new MostIntenseTagsDto(posTags, negTags);
     }
 
-    public async Task<IReadOnlyList<RepeatingTriggerDto>> GetRepeatingTriggersAsync(Guid userId, DateTimeOffset from, DateTimeOffset to, int minCount = 3)
+    public async Task<IReadOnlyList<RepeatingTriggerDto>> GetRepeatingTriggersAsync(Guid userId, DateTimeOffset from, DateTimeOffset to, int minCount, CancellationToken ct)
     {
         ValidateDateRange(from, to);
         var events = await db.Events
             .AsNoTracking()
             .Include(e => e.EventTags).ThenInclude(et => et.Tag)
             .Where(e => e.UserId == userId && e.Timestamp >= from && e.Timestamp < to.AddDays(1))
-            .ToListAsync();
+            .ToListAsync(ct);
 
         return ComputeRepeatingTriggers(events, minCount);
     }
@@ -76,13 +77,13 @@ public class InsightsService(AppDbContext db, IConfiguration config) : IInsights
             .ToList();
     }
 
-    public async Task<PosNegBalanceDto> GetBalanceAsync(Guid userId, DateTimeOffset from, DateTimeOffset to)
+    public async Task<PosNegBalanceDto> GetBalanceAsync(Guid userId, DateTimeOffset from, DateTimeOffset to, CancellationToken ct)
     {
         ValidateDateRange(from, to);
         var events = await db.Events
             .AsNoTracking()
             .Where(e => e.UserId == userId && e.Timestamp >= from && e.Timestamp < to.AddDays(1))
-            .ToListAsync();
+            .ToListAsync(ct);
 
         return ComputeBalance(events);
     }
@@ -99,13 +100,13 @@ public class InsightsService(AppDbContext db, IConfiguration config) : IInsights
             neg.Count == 0 ? 0.0 : neg.Average(e => (double)e.Intensity));
     }
 
-    public async Task<IReadOnlyList<TrendPeriodDto>> GetTrendsAsync(Guid userId, DateTimeOffset from, DateTimeOffset to, Granularity period)
+    public async Task<IReadOnlyList<TrendPeriodDto>> GetTrendsAsync(Guid userId, DateTimeOffset from, DateTimeOffset to, Granularity period, CancellationToken ct)
     {
         ValidateDateRange(from, to);
         var events = await db.Events
             .AsNoTracking()
             .Where(e => e.UserId == userId && e.Timestamp >= from && e.Timestamp < to.AddDays(1))
-            .ToListAsync();
+            .ToListAsync(ct);
 
         return ComputeTrends(events, period, GetTz());
     }
@@ -127,14 +128,14 @@ public class InsightsService(AppDbContext db, IConfiguration config) : IInsights
             .ToList();
     }
 
-    public async Task<IReadOnlyList<DiscountedPositiveDto>> GetDiscountedPositivesAsync(Guid userId, DateTimeOffset from, DateTimeOffset to)
+    public async Task<IReadOnlyList<DiscountedPositiveDto>> GetDiscountedPositivesAsync(Guid userId, DateTimeOffset from, DateTimeOffset to, CancellationToken ct)
     {
         ValidateDateRange(from, to);
         var events = await db.Events
             .AsNoTracking()
             .Include(e => e.EventTags).ThenInclude(et => et.Tag)
             .Where(e => e.UserId == userId && e.Timestamp >= from && e.Timestamp < to.AddDays(1))
-            .ToListAsync();
+            .ToListAsync(ct);
 
         return ComputeDiscountedPositives(events);
     }
@@ -151,13 +152,13 @@ public class InsightsService(AppDbContext db, IConfiguration config) : IInsights
             .ToList();
     }
 
-    public async Task<IReadOnlyList<WeekdayStatDto>> GetWeekdayStatsAsync(Guid userId, DateTimeOffset from, DateTimeOffset to)
+    public async Task<IReadOnlyList<WeekdayStatDto>> GetWeekdayStatsAsync(Guid userId, DateTimeOffset from, DateTimeOffset to, CancellationToken ct)
     {
         ValidateDateRange(from, to);
         var events = await db.Events
             .AsNoTracking()
             .Where(e => e.UserId == userId && e.Timestamp >= from && e.Timestamp < to.AddDays(1))
-            .ToListAsync();
+            .ToListAsync(ct);
 
         return ComputeWeekdayStats(events, GetTz());
     }
@@ -180,7 +181,7 @@ public class InsightsService(AppDbContext db, IConfiguration config) : IInsights
             .ToList();
     }
 
-    public async Task<IReadOnlyList<NextDayEffectDto>> GetNextDayEffectsAsync(Guid userId, DateTimeOffset from, DateTimeOffset to)
+    public async Task<IReadOnlyList<NextDayEffectDto>> GetNextDayEffectsAsync(Guid userId, DateTimeOffset from, DateTimeOffset to, CancellationToken ct)
     {
         ValidateDateRange(from, to);
         // Запрашиваем на 2 дня шире — чтобы вычислить dayScore следующего дня после последнего дня периода
@@ -188,7 +189,7 @@ public class InsightsService(AppDbContext db, IConfiguration config) : IInsights
             .AsNoTracking()
             .Include(e => e.EventTags).ThenInclude(et => et.Tag)
             .Where(e => e.UserId == userId && e.Timestamp >= from && e.Timestamp < to.AddDays(2))
-            .ToListAsync();
+            .ToListAsync(ct);
 
         return ComputeNextDayEffects(events, to, GetTz());
     }
@@ -227,14 +228,14 @@ public class InsightsService(AppDbContext db, IConfiguration config) : IInsights
             .ToList();
     }
 
-    public async Task<IReadOnlyList<TagComboDto>> GetTagCombosAsync(Guid userId, DateTimeOffset from, DateTimeOffset to)
+    public async Task<IReadOnlyList<TagComboDto>> GetTagCombosAsync(Guid userId, DateTimeOffset from, DateTimeOffset to, CancellationToken ct)
     {
         ValidateDateRange(from, to);
         var events = await db.Events
             .AsNoTracking()
             .Include(e => e.EventTags).ThenInclude(et => et.Tag)
             .Where(e => e.UserId == userId && e.Timestamp >= from && e.Timestamp < to.AddDays(1))
-            .ToListAsync();
+            .ToListAsync(ct);
 
         return ComputeTagCombos(events, GetTz());
     }
@@ -301,14 +302,14 @@ public class InsightsService(AppDbContext db, IConfiguration config) : IInsights
             .ToList();
     }
 
-    public async Task<IReadOnlyList<TagTrendSeriesDto>> GetTagTrendAsync(Guid userId, DateTimeOffset from, DateTimeOffset to, Granularity period)
+    public async Task<IReadOnlyList<TagTrendSeriesDto>> GetTagTrendAsync(Guid userId, DateTimeOffset from, DateTimeOffset to, Granularity period, CancellationToken ct)
     {
         ValidateDateRange(from, to);
         var events = await db.Events
             .AsNoTracking()
             .Include(e => e.EventTags).ThenInclude(et => et.Tag)
             .Where(e => e.UserId == userId && e.Timestamp >= from && e.Timestamp < to.AddDays(1))
-            .ToListAsync();
+            .ToListAsync(ct);
 
         return ComputeTagTrend(events, period, GetTz());
     }
@@ -342,13 +343,13 @@ public class InsightsService(AppDbContext db, IConfiguration config) : IInsights
         }).ToList();
     }
 
-    public async Task<InfluenceabilitySplitDto> GetInfluenceabilitySplitAsync(Guid userId, DateTimeOffset from, DateTimeOffset to)
+    public async Task<InfluenceabilitySplitDto> GetInfluenceabilitySplitAsync(Guid userId, DateTimeOffset from, DateTimeOffset to, CancellationToken ct)
     {
         ValidateDateRange(from, to);
         var events = await db.Events
             .AsNoTracking()
             .Where(e => e.UserId == userId && e.Timestamp >= from && e.Timestamp < to.AddDays(1))
-            .ToListAsync();
+            .ToListAsync(ct);
 
         return ComputeInfluenceabilitySplit(events);
     }

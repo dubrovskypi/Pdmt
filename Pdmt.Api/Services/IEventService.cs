@@ -11,10 +11,11 @@ public interface IEventService
         DtoEventType? type,
         IReadOnlyList<Guid>? tagIds,
         int? minIntensity,
-        int? maxIntensity);
+        int? maxIntensity,
+        CancellationToken ct);
 
-    Task<EventResponseDto?> GetByIdAsync(Guid userId, Guid id);
-    Task<EventResponseDto> CreateEventAsync(Guid userId, CreateEventDto ev);
-    Task<bool> UpdateEventAsync(Guid userId, Guid id, UpdateEventDto ev);
-    Task DeleteEventAsync(Guid userId, Guid id);
+    Task<EventResponseDto?> GetByIdAsync(Guid userId, Guid id, CancellationToken ct);
+    Task<EventResponseDto> CreateEventAsync(Guid userId, CreateEventDto ev, CancellationToken ct);
+    Task<bool> UpdateEventAsync(Guid userId, Guid id, UpdateEventDto ev, CancellationToken ct);
+    Task DeleteEventAsync(Guid userId, Guid id, CancellationToken ct);
 }

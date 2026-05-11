@@ -43,9 +43,9 @@ public class AuthControllerTests
     {
         var dto = new UserDto { Email = "user@test.com", Password = "password123" };
         var authResult = BuildAuthResult();
-        _authService.Setup(s => s.RegisterAsync(dto, "unknown")).ReturnsAsync(authResult);
+        _authService.Setup(s => s.RegisterAsync(dto, "unknown", It.IsAny<CancellationToken>())).ReturnsAsync(authResult);
 
-        var result = await _sut.Register(dto);
+        var result = await _sut.Register(dto, CancellationToken.None);
 
         var objResult = result.Result.Should().BeOfType<ObjectResult>().Subject;
         objResult.StatusCode.Should().Be(201);
@@ -59,9 +59,9 @@ public class AuthControllerTests
     {
         var dto = new UserDto { Email = "user@test.com", Password = "password123" };
         var authResult = BuildAuthResult();
-        _authService.Setup(s => s.LoginAsync(dto, "unknown")).ReturnsAsync(authResult);
+        _authService.Setup(s => s.LoginAsync(dto, "unknown", It.IsAny<CancellationToken>())).ReturnsAsync(authResult);
 
-        var result = await _sut.Login(dto);
+        var result = await _sut.Login(dto, CancellationToken.None);
 
         var ok = result.Result.Should().BeOfType<OkObjectResult>().Subject;
         ok.Value.Should().BeOfType<AuthResultDto>()
@@ -73,9 +73,9 @@ public class AuthControllerTests
     {
         var dto = new RefreshRequestDto { RefreshToken = "old-refresh-token" };
         var authResult = BuildAuthResult();
-        _authService.Setup(s => s.RefreshAsync(dto.RefreshToken, "unknown")).ReturnsAsync(authResult);
+        _authService.Setup(s => s.RefreshAsync(dto.RefreshToken, "unknown", It.IsAny<CancellationToken>())).ReturnsAsync(authResult);
 
-        var result = await _sut.Refresh(dto);
+        var result = await _sut.Refresh(dto, CancellationToken.None);
 
         var ok = result.Result.Should().BeOfType<OkObjectResult>().Subject;
         ok.Value.Should().BeOfType<AuthResultDto>()
@@ -83,11 +83,22 @@ public class AuthControllerTests
     }
 
     [Fact]
-    public async Task Logout_AuthenticatedUser_Returns204()
+    public async Task Logout_ValidToken_Returns204()
     {
-        _authService.Setup(s => s.LogoutAsync(_userId)).Returns(Task.CompletedTask);
+        var dto = new RefreshRequestDto { RefreshToken = "refresh-token" };
+        _authService.Setup(s => s.LogoutAsync(dto.RefreshToken, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
 
-        var result = await _sut.Logout();
+        var result = await _sut.Logout(dto, CancellationToken.None);
+
+        result.Should().BeOfType<NoContentResult>();
+    }
+
+    [Fact]
+    public async Task LogoutAll_AuthenticatedUser_Returns204()
+    {
+        _authService.Setup(s => s.LogoutAllAsync(_userId, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+
+        var result = await _sut.LogoutAll(CancellationToken.None);
 
         result.Should().BeOfType<NoContentResult>();
     }

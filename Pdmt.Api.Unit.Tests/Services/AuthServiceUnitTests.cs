@@ -31,7 +31,7 @@ public class AuthServiceUnitTests
             })
             .Build();
 
-    // ── RegisterAsync ─────────────────────────────────────────────────────────
+    #region RegisterAsync
 
     [Fact]
     public async Task RegisterAsync_RateLimitExceeded_ThrowsRateLimitExceededException()
@@ -40,7 +40,7 @@ public class AuthServiceUnitTests
             .Setup(r => r.CheckAsync("Auth.Register", It.IsAny<string>()))
             .ThrowsAsync(new RateLimitExceededException("Auth.Register"));
 
-        Func<Task> act = () => CreateSut().RegisterAsync(new UserDto { Email = "a@b.com", Password = "password123" }, "127.0.0.1");
+        Func<Task> act = () => CreateSut().RegisterAsync(new UserDto { Email = "a@b.com", Password = "password123" }, "127.0.0.1", CancellationToken.None);
 
         await act.Should().ThrowAsync<RateLimitExceededException>()
             .WithMessage("*Auth.Register*");
@@ -54,13 +54,15 @@ public class AuthServiceUnitTests
             .ThrowsAsync(new RateLimitExceededException("Auth.Register"));
 
         var sut = CreateSut();
-        try { await sut.RegisterAsync(new UserDto { Email = "a@b.com", Password = "password123" }, "127.0.0.1"); }
+        try { await sut.RegisterAsync(new UserDto { Email = "a@b.com", Password = "password123" }, "127.0.0.1", CancellationToken.None); }
         catch (RateLimitExceededException) { }
 
         _rateLimitMock.Verify(r => r.CheckAsync("Auth.Register", "127.0.0.1"), Times.Once);
     }
 
-    // ── LoginAsync ────────────────────────────────────────────────────────────
+    #endregion
+
+    #region LoginAsync
 
     [Fact]
     public async Task LoginAsync_RateLimitExceeded_ThrowsRateLimitExceededException()
@@ -69,13 +71,15 @@ public class AuthServiceUnitTests
             .Setup(r => r.CheckAsync("Auth.Login", It.IsAny<string>()))
             .ThrowsAsync(new RateLimitExceededException("Auth.Login"));
 
-        Func<Task> act = () => CreateSut().LoginAsync(new UserDto { Email = "a@b.com", Password = "password123" }, "127.0.0.1");
+        Func<Task> act = () => CreateSut().LoginAsync(new UserDto { Email = "a@b.com", Password = "password123" }, "127.0.0.1", CancellationToken.None);
 
         await act.Should().ThrowAsync<RateLimitExceededException>()
             .WithMessage("*Auth.Login*");
     }
 
-    // ── RefreshAsync ──────────────────────────────────────────────────────────
+    #endregion
+
+    #region RefreshAsync
 
     [Fact]
     public async Task RefreshAsync_RateLimitExceeded_ThrowsRateLimitExceededException()
@@ -84,9 +88,11 @@ public class AuthServiceUnitTests
             .Setup(r => r.CheckAsync("Auth.Refresh", It.IsAny<string>()))
             .ThrowsAsync(new RateLimitExceededException("Auth.Refresh"));
 
-        Func<Task> act = () => CreateSut().RefreshAsync("any-token", "127.0.0.1");
+        Func<Task> act = () => CreateSut().RefreshAsync("any-token", "127.0.0.1", CancellationToken.None);
 
         await act.Should().ThrowAsync<RateLimitExceededException>()
             .WithMessage("*Auth.Refresh*");
     }
+
+    #endregion
 }

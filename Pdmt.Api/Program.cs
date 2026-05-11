@@ -120,8 +120,8 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
     return ConnectionMultiplexer.Connect(config);
 });
 builder.Services.AddHealthChecks()
-    .AddNpgSql(pgCs)
-    .AddRedis(redisCs);
+    .AddNpgSql(pgCs, tags: ["ready"])
+    .AddRedis(redisCs, tags: ["ready"]);
 var otelEndpoint = builder.Configuration["OpenTelemetry:Endpoint"]
     ?? throw new InvalidOperationException(
         "OpenTelemetry:Endpoint is not configured. " +
@@ -184,7 +184,26 @@ using (var scope = app.Services.CreateScope())
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     if (db.Database.IsRelational())
     {
-        await db.Database.MigrateAsync();
+        var migLogger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+        const int maxAttempts = 5;
+        for (var attempt = 1; attempt <= maxAttempts; attempt++)
+        {
+            try
+            {
+                await db.Database.MigrateAsync();
+                break;
+            }
+            catch (Exception ex) when (attempt < maxAttempts)
+            {
+                var delay = (int)Math.Pow(2, attempt - 1);
+                migLogger.LogWarning(ex, "Migration attempt {Attempt}/{Max} failed, retrying in {Delay}s", attempt, maxAttempts, delay);
+                await Task.Delay(TimeSpan.FromSeconds(delay));
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Database not reachable after 5 attempts during startup", ex);
+            }
+        }
     }
 }
 
@@ -206,7 +225,9 @@ if (app.Environment.IsDevelopment())
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
-app.MapHealthChecks("/health");
+app.MapHealthChecks("/health/live", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions { Predicate = _ => false });
+app.MapHealthChecks("/health/ready", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions { Predicate = check => check.Tags.Contains("ready") });
+app.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions { Predicate = check => check.Tags.Contains("ready") });
 
 await app.RunAsync();
 

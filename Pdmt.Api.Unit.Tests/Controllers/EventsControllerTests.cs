@@ -32,15 +32,17 @@ public class EventsControllerTests
         }
     };
 
+    #region GetEvents
+
     [Fact]
     public async Task GetEvents_NoFilter_Returns200AndCallsService()
     {
         IReadOnlyList<EventResponseDto> events = [new() { Id = Guid.NewGuid(), Title = "T", Type = DtoEventType.Positive, Intensity = 5 }];
         _eventService
-            .Setup(s => s.GetEventsAsync(_userId, null, null, null, null, null, null))
+            .Setup(s => s.GetEventsAsync(_userId, null, null, null, null, null, null, It.IsAny<CancellationToken>()))
             .ReturnsAsync(events);
 
-        var result = await _sut.GetEvents();
+        var result = await _sut.GetEvents(CancellationToken.None);
 
         var ok = result.Result.Should().BeOfType<OkObjectResult>().Subject;
         ok.Value.Should().Be(events);
@@ -52,15 +54,15 @@ public class EventsControllerTests
         var tagId = Guid.NewGuid();
         _eventService
             .Setup(s => s.GetEventsAsync(It.IsAny<Guid>(), It.IsAny<DateTimeOffset?>(), It.IsAny<DateTimeOffset?>(),
-                It.IsAny<DtoEventType?>(), It.IsAny<IReadOnlyList<Guid>?>(), It.IsAny<int?>(), It.IsAny<int?>()))
+                It.IsAny<DtoEventType?>(), It.IsAny<IReadOnlyList<Guid>?>(), It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync([]);
 
-        await _sut.GetEvents(tags: tagId.ToString());
+        await _sut.GetEvents(CancellationToken.None, tags: tagId.ToString());
 
         _eventService.Verify(s => s.GetEventsAsync(
             _userId, null, null, null,
             It.Is<IReadOnlyList<Guid>?>(ids => ids != null && ids.Count == 1 && ids[0] == tagId),
-            null, null), Times.Once);
+            null, null, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -69,25 +71,29 @@ public class EventsControllerTests
         var tagId = Guid.NewGuid();
         _eventService
             .Setup(s => s.GetEventsAsync(It.IsAny<Guid>(), It.IsAny<DateTimeOffset?>(), It.IsAny<DateTimeOffset?>(),
-                It.IsAny<DtoEventType?>(), It.IsAny<IReadOnlyList<Guid>?>(), It.IsAny<int?>(), It.IsAny<int?>()))
+                It.IsAny<DtoEventType?>(), It.IsAny<IReadOnlyList<Guid>?>(), It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync([]);
 
-        await _sut.GetEvents(tags: $"{tagId},not-a-guid,also-invalid");
+        await _sut.GetEvents(CancellationToken.None, tags: $"{tagId},not-a-guid,also-invalid");
 
         _eventService.Verify(s => s.GetEventsAsync(
             _userId, null, null, null,
             It.Is<IReadOnlyList<Guid>?>(ids => ids != null && ids.Count == 1 && ids[0] == tagId),
-            null, null), Times.Once);
+            null, null, It.IsAny<CancellationToken>()), Times.Once);
     }
+
+    #endregion
+
+    #region GetEvent
 
     [Fact]
     public async Task GetEvent_EventFound_Returns200()
     {
         var id = Guid.NewGuid();
         var ev = new EventResponseDto { Id = id, Title = "Test", Type = DtoEventType.Positive, Intensity = 5 };
-        _eventService.Setup(s => s.GetByIdAsync(_userId, id)).ReturnsAsync(ev);
+        _eventService.Setup(s => s.GetByIdAsync(_userId, id, It.IsAny<CancellationToken>())).ReturnsAsync(ev);
 
-        var result = await _sut.GetEvent(id);
+        var result = await _sut.GetEvent(id, CancellationToken.None);
 
         var ok = result.Result.Should().BeOfType<OkObjectResult>().Subject;
         ok.Value.Should().Be(ev);
@@ -97,22 +103,26 @@ public class EventsControllerTests
     public async Task GetEvent_EventNotFound_Returns404()
     {
         _eventService
-            .Setup(s => s.GetByIdAsync(_userId, It.IsAny<Guid>()))
+            .Setup(s => s.GetByIdAsync(_userId, It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((EventResponseDto?)null);
 
-        var result = await _sut.GetEvent(Guid.NewGuid());
+        var result = await _sut.GetEvent(Guid.NewGuid(), CancellationToken.None);
 
         result.Result.Should().BeOfType<NotFoundResult>();
     }
+
+    #endregion
+
+    #region CreateEvent
 
     [Fact]
     public async Task CreateEvent_ValidDto_Returns201WithCreatedAtLocation()
     {
         var dto = new CreateEventDto { Title = "Test", Type = DtoEventType.Positive, Intensity = 5 };
         var created = new EventResponseDto { Id = Guid.NewGuid(), Title = "Test", Type = DtoEventType.Positive, Intensity = 5 };
-        _eventService.Setup(s => s.CreateEventAsync(_userId, dto)).ReturnsAsync(created);
+        _eventService.Setup(s => s.CreateEventAsync(_userId, dto, It.IsAny<CancellationToken>())).ReturnsAsync(created);
 
-        var result = await _sut.CreateEvent(dto);
+        var result = await _sut.CreateEvent(dto, CancellationToken.None);
 
         var createdAt = result.Result.Should().BeOfType<CreatedAtActionResult>().Subject;
         createdAt.StatusCode.Should().Be(201);
@@ -120,17 +130,21 @@ public class EventsControllerTests
         createdAt.Value.Should().Be(created);
     }
 
+    #endregion
+
+    #region UpdateEvent
+
     [Fact]
     public async Task UpdateEvent_EventNotFound_Returns404_DoesNotCallUpdate()
     {
         var id = Guid.NewGuid();
-        _eventService.Setup(s => s.GetByIdAsync(_userId, id)).ReturnsAsync((EventResponseDto?)null);
+        _eventService.Setup(s => s.GetByIdAsync(_userId, id, It.IsAny<CancellationToken>())).ReturnsAsync((EventResponseDto?)null);
 
-        var result = await _sut.UpdateEvent(id, new UpdateEventDto { Title = "T" });
+        var result = await _sut.UpdateEvent(id, new UpdateEventDto { Title = "T" }, CancellationToken.None);
 
         result.Should().BeOfType<NotFoundResult>();
         _eventService.Verify(
-            s => s.UpdateEventAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<UpdateEventDto>()),
+            s => s.UpdateEventAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<UpdateEventDto>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -139,25 +153,29 @@ public class EventsControllerTests
     {
         var id = Guid.NewGuid();
         var existing = new EventResponseDto { Id = id, Title = "T", Type = DtoEventType.Positive, Intensity = 5 };
-        _eventService.Setup(s => s.GetByIdAsync(_userId, id)).ReturnsAsync(existing);
-        _eventService.Setup(s => s.UpdateEventAsync(_userId, id, It.IsAny<UpdateEventDto>())).ReturnsAsync(true);
+        _eventService.Setup(s => s.GetByIdAsync(_userId, id, It.IsAny<CancellationToken>())).ReturnsAsync(existing);
+        _eventService.Setup(s => s.UpdateEventAsync(_userId, id, It.IsAny<UpdateEventDto>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
-        var result = await _sut.UpdateEvent(id, new UpdateEventDto { Title = "T" });
+        var result = await _sut.UpdateEvent(id, new UpdateEventDto { Title = "T" }, CancellationToken.None);
 
         result.Should().BeOfType<NoContentResult>();
     }
+
+    #endregion
+
+    #region DeleteEvent
 
     [Fact]
     public async Task DeleteEvent_EventNotFound_Returns404_DoesNotCallDelete()
     {
         var id = Guid.NewGuid();
-        _eventService.Setup(s => s.GetByIdAsync(_userId, id)).ReturnsAsync((EventResponseDto?)null);
+        _eventService.Setup(s => s.GetByIdAsync(_userId, id, It.IsAny<CancellationToken>())).ReturnsAsync((EventResponseDto?)null);
 
-        var result = await _sut.DeleteEvent(id);
+        var result = await _sut.DeleteEvent(id, CancellationToken.None);
 
         result.Should().BeOfType<NotFoundResult>();
         _eventService.Verify(
-            s => s.DeleteEventAsync(It.IsAny<Guid>(), It.IsAny<Guid>()),
+            s => s.DeleteEventAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -166,11 +184,13 @@ public class EventsControllerTests
     {
         var id = Guid.NewGuid();
         var existing = new EventResponseDto { Id = id, Title = "T", Type = DtoEventType.Positive, Intensity = 5 };
-        _eventService.Setup(s => s.GetByIdAsync(_userId, id)).ReturnsAsync(existing);
-        _eventService.Setup(s => s.DeleteEventAsync(_userId, id)).Returns(Task.CompletedTask);
+        _eventService.Setup(s => s.GetByIdAsync(_userId, id, It.IsAny<CancellationToken>())).ReturnsAsync(existing);
+        _eventService.Setup(s => s.DeleteEventAsync(_userId, id, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
 
-        var result = await _sut.DeleteEvent(id);
+        var result = await _sut.DeleteEvent(id, CancellationToken.None);
 
         result.Should().BeOfType<NoContentResult>();
     }
+
+    #endregion
 }

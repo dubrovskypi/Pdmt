@@ -13,7 +13,7 @@ public class AnalyticsService(AppDbContext db, IConfiguration config) : IAnalyti
     private TimeZoneInfo GetTz() =>
         TimeZoneInfo.FindSystemTimeZoneById(config["App:DefaultTimeZone"]!);
 
-    public async Task<WeeklySummaryDto> GetWeeklySummaryAsync(Guid userId, DateOnly weekOf)
+    public async Task<WeeklySummaryDto> GetWeeklySummaryAsync(Guid userId, DateOnly weekOf, CancellationToken ct)
     {
         var tz = GetTz();
         var monday = DateHelper.GetMonday(weekOf, tz);
@@ -22,7 +22,7 @@ public class AnalyticsService(AppDbContext db, IConfiguration config) : IAnalyti
             .AsNoTracking()
             .Include(e => e.EventTags).ThenInclude(et => et.Tag)
             .Where(e => e.UserId == userId && e.Timestamp >= monday && e.Timestamp < monday.AddDays(7))
-            .ToListAsync();
+            .ToListAsync(ct);
 
         var posEvents = events.Where(e => e.Type == EventType.Positive).ToList();
         var negEvents = events.Where(e => e.Type == EventType.Negative).ToList();
@@ -73,11 +73,11 @@ public class AnalyticsService(AppDbContext db, IConfiguration config) : IAnalyti
             byDayOfWeek);
     }
 
-    public async Task<CorrelationsDto> GetCorrelationsAsync(Guid userId, Guid tagId, DateTimeOffset from, DateTimeOffset to)
+    public async Task<CorrelationsDto> GetCorrelationsAsync(Guid userId, Guid tagId, DateTimeOffset from, DateTimeOffset to, CancellationToken ct)
     {
         var tag = await db.Tags
             .AsNoTracking()
-            .FirstOrDefaultAsync(t => t.Id == tagId && t.UserId == userId)
+            .FirstOrDefaultAsync(t => t.Id == tagId && t.UserId == userId, ct)
             ?? throw new NotFoundException("Tag not found.");
 
         var tz = GetTz();
@@ -90,7 +90,7 @@ public class AnalyticsService(AppDbContext db, IConfiguration config) : IAnalyti
                 e.Intensity,
                 HasTag = e.EventTags.Any(et => et.TagId == tagId)
             })
-            .ToListAsync();
+            .ToListAsync(ct);
 
         var withTagEvents = allEvents.Where(e => e.HasTag).ToList();
         var withoutTagEvents = allEvents.Where(e => !e.HasTag).ToList();
@@ -107,7 +107,7 @@ public class AnalyticsService(AppDbContext db, IConfiguration config) : IAnalyti
         return new CorrelationsDto(tag.Name, avgIntensityWithTag, avgIntensityWithoutTag, daysOfWeek);
     }
 
-    public async Task<CalendarWeekDto> GetCalendarWeekAsync(Guid userId, DateOnly weekOf)
+    public async Task<CalendarWeekDto> GetCalendarWeekAsync(Guid userId, DateOnly weekOf, CancellationToken ct)
     {
         var tz = GetTz();
         var monday = DateHelper.GetMonday(weekOf, tz);
@@ -116,7 +116,7 @@ public class AnalyticsService(AppDbContext db, IConfiguration config) : IAnalyti
             .AsNoTracking()
             .Include(e => e.EventTags).ThenInclude(et => et.Tag)
             .Where(e => e.UserId == userId && e.Timestamp >= monday && e.Timestamp < monday.AddDays(7))
-            .ToListAsync();
+            .ToListAsync(ct);
         var byDay = events.GroupBy(e => DateHelper.ToLocalDate(e.Timestamp, tz)).ToDictionary(g => g.Key, g => g.ToList());
 
         // monday is UTC — derive local DateOnly for day iteration and DTO dates
@@ -164,7 +164,7 @@ public class AnalyticsService(AppDbContext db, IConfiguration config) : IAnalyti
         return new CalendarWeekDto(weekStart, weekStart.AddDays(6), days);
     }
 
-    public async Task<CalendarMonthDto> GetCalendarMonthAsync(Guid userId, int year, int month)
+    public async Task<CalendarMonthDto> GetCalendarMonthAsync(Guid userId, int year, int month, CancellationToken ct)
     {
         var tz = GetTz();
         var fromLocal = new DateTime(year, month, 1, 0, 0, 0);
@@ -176,7 +176,7 @@ public class AnalyticsService(AppDbContext db, IConfiguration config) : IAnalyti
             .AsNoTracking()
             .Where(e => e.UserId == userId && e.Timestamp >= from && e.Timestamp < to)
             .Select(e => new { e.Timestamp, e.Type, e.Intensity })
-            .ToListAsync();
+            .ToListAsync(ct);
 
         var byDay = raw.GroupBy(e => DateHelper.ToLocalDate(e.Timestamp, tz)).ToDictionary(g => g.Key, g => g.ToList());
 

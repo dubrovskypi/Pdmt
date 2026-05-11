@@ -18,10 +18,10 @@ namespace Pdmt.Api.Controllers
         [AllowAnonymous]
         [ProducesResponseType(typeof(WebAuthResultDto), StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ActionResult<WebAuthResultDto>> Register(UserDto dto)
+        public async Task<ActionResult<WebAuthResultDto>> Register(UserDto dto, CancellationToken ct)
         {
             var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-            var result = await auth.RegisterAsync(dto, ip);
+            var result = await auth.RegisterAsync(dto, ip, ct);
             SetRefreshCookie(result.RefreshToken, result.RefreshTokenExpiresAt);
             return StatusCode(StatusCodes.Status201Created,
                 new WebAuthResultDto(result.AccessToken, result.AccessTokenExpiresAt));
@@ -32,10 +32,10 @@ namespace Pdmt.Api.Controllers
         [ProducesResponseType(typeof(WebAuthResultDto), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        public async Task<ActionResult<WebAuthResultDto>> Login(UserDto dto)
+        public async Task<ActionResult<WebAuthResultDto>> Login(UserDto dto, CancellationToken ct)
         {
             var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-            var result = await auth.LoginAsync(dto, ip);
+            var result = await auth.LoginAsync(dto, ip, ct);
             SetRefreshCookie(result.RefreshToken, result.RefreshTokenExpiresAt);
             return Ok(new WebAuthResultDto(result.AccessToken, result.AccessTokenExpiresAt));
         }
@@ -44,12 +44,12 @@ namespace Pdmt.Api.Controllers
         [AllowAnonymous]
         [ProducesResponseType(typeof(WebAuthResultDto), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        public async Task<ActionResult<WebAuthResultDto>> Refresh()
+        public async Task<ActionResult<WebAuthResultDto>> Refresh(CancellationToken ct)
         {
             var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
             var token = Request.Cookies["refreshToken"]
                 ?? throw new UnauthorizedAccessException("No refresh token cookie");
-            var result = await auth.RefreshAsync(token, ip);
+            var result = await auth.RefreshAsync(token, ip, ct);
             SetRefreshCookie(result.RefreshToken, result.RefreshTokenExpiresAt);
             return Ok(new WebAuthResultDto(result.AccessToken, result.AccessTokenExpiresAt));
         }
@@ -58,9 +58,22 @@ namespace Pdmt.Api.Controllers
         [Authorize]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        public async Task<IActionResult> Logout()
+        public async Task<IActionResult> Logout(CancellationToken ct)
         {
-            await auth.LogoutAsync(User.GetUserId());
+            var token = Request.Cookies["refreshToken"];
+            if (token is not null)
+                await auth.LogoutAsync(token, ct);
+            ClearRefreshCookie();
+            return NoContent();
+        }
+
+        [HttpPost("logout-all")]
+        [Authorize]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> LogoutAll(CancellationToken ct)
+        {
+            await auth.LogoutAllAsync(User.GetUserId(), ct);
             ClearRefreshCookie();
             return NoContent();
         }

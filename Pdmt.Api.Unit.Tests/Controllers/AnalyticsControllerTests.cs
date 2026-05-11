@@ -33,27 +33,33 @@ public class AnalyticsControllerTests
         };
     }
 
+    #region GetWeeklySummary
+
     [Fact]
     public async Task GetWeeklySummary_ValidWeek_Returns200()
     {
         var weekOf = new DateOnly(2026, 1, 5);
         var expected = new WeeklySummaryDto(0, 0, 0.0, 0.0, 0.0, [], [], [], []);
-        _analyticsService.Setup(s => s.GetWeeklySummaryAsync(_userId, weekOf)).ReturnsAsync(expected);
+        _analyticsService.Setup(s => s.GetWeeklySummaryAsync(_userId, weekOf, It.IsAny<CancellationToken>())).ReturnsAsync(expected);
 
-        var result = await _sut.GetWeeklySummary(weekOf);
+        var result = await _sut.GetWeeklySummary(weekOf, CancellationToken.None);
 
         var ok = result.Result.Should().BeOfType<OkObjectResult>().Subject;
         ok.Value.Should().Be(expected);
     }
+
+    #endregion
+
+    #region GetCorrelations
 
     [Fact]
     public async Task GetCorrelations_ValidRange_Returns200()
     {
         var tagId = Guid.NewGuid();
         var expected = new CorrelationsDto("stress", 6.5, 5.0, []);
-        _analyticsService.Setup(s => s.GetCorrelationsAsync(_userId, tagId, From, To)).ReturnsAsync(expected);
+        _analyticsService.Setup(s => s.GetCorrelationsAsync(_userId, tagId, From, To, It.IsAny<CancellationToken>())).ReturnsAsync(expected);
 
-        var result = await _sut.GetCorrelations(tagId, From, To);
+        var result = await _sut.GetCorrelations(tagId, From, To, CancellationToken.None);
 
         var ok = result.Result.Should().BeOfType<OkObjectResult>().Subject;
         ok.Value.Should().Be(expected);
@@ -62,34 +68,42 @@ public class AnalyticsControllerTests
     [Fact]
     public async Task GetCorrelations_FromAfterTo_Returns400()
     {
-        var result = await _sut.GetCorrelations(Guid.NewGuid(), To, From);
+        var result = await _sut.GetCorrelations(Guid.NewGuid(), To, From, CancellationToken.None);
 
         result.Result.Should().BeOfType<BadRequestObjectResult>();
         _analyticsService.Verify(
-            s => s.GetCorrelationsAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<DateTimeOffset>(), It.IsAny<DateTimeOffset>()),
+            s => s.GetCorrelationsAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<DateTimeOffset>(), It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
+
+    #endregion
+
+    #region GetCalendarWeek
 
     [Fact]
     public async Task GetCalendarWeek_ValidWeek_Returns200()
     {
         var weekOf = new DateOnly(2026, 1, 5);
         var expected = new CalendarWeekDto(From, To, []);
-        _analyticsService.Setup(s => s.GetCalendarWeekAsync(_userId, weekOf)).ReturnsAsync(expected);
+        _analyticsService.Setup(s => s.GetCalendarWeekAsync(_userId, weekOf, It.IsAny<CancellationToken>())).ReturnsAsync(expected);
 
-        var result = await _sut.GetCalendarWeek(weekOf);
+        var result = await _sut.GetCalendarWeek(weekOf, CancellationToken.None);
 
         var ok = result.Result.Should().BeOfType<OkObjectResult>().Subject;
         ok.Value.Should().Be(expected);
     }
 
+    #endregion
+
+    #region GetCalendarMonth
+
     [Fact]
     public async Task GetCalendarMonth_ValidFormat_Returns200()
     {
         var expected = new CalendarMonthDto([]);
-        _analyticsService.Setup(s => s.GetCalendarMonthAsync(_userId, 2026, 1)).ReturnsAsync(expected);
+        _analyticsService.Setup(s => s.GetCalendarMonthAsync(_userId, 2026, 1, It.IsAny<CancellationToken>())).ReturnsAsync(expected);
 
-        var result = await _sut.GetCalendarMonth("2026-01");
+        var result = await _sut.GetCalendarMonth("2026-01", CancellationToken.None);
 
         var ok = result.Result.Should().BeOfType<OkObjectResult>().Subject;
         ok.Value.Should().Be(expected);
@@ -98,11 +112,13 @@ public class AnalyticsControllerTests
     [Fact]
     public async Task GetCalendarMonth_InvalidFormat_Returns400()
     {
-        var result = await _sut.GetCalendarMonth("2026/01");
+        var result = await _sut.GetCalendarMonth("2026/01", CancellationToken.None);
 
         result.Result.Should().BeOfType<BadRequestObjectResult>();
         _analyticsService.Verify(
-            s => s.GetCalendarMonthAsync(It.IsAny<Guid>(), It.IsAny<int>(), It.IsAny<int>()),
+            s => s.GetCalendarMonthAsync(It.IsAny<Guid>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
+
+    #endregion
 }

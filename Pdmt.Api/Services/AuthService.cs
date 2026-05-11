@@ -3,6 +3,7 @@ using Microsoft.IdentityModel.Tokens;
 using Pdmt.Api.Data;
 using Pdmt.Api.Domain;
 using Pdmt.Api.Dto;
+using Pdmt.Api.Infrastructure.Exceptions;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
@@ -15,14 +16,14 @@ public class AuthService(AppDbContext db, IConfiguration config, IRateLimitServi
     private static readonly TimeSpan RefreshTokenGracePeriod = TimeSpan.FromSeconds(30);
     private readonly SigningCredentials _signingCredentials = signingCreds;
 
-    public async Task<AuthResult> RegisterAsync(UserDto dto, string ip)
+    public async Task<AuthResult> RegisterAsync(UserDto dto, string ip, CancellationToken ct)
     {
         await rateLimit.CheckAsync("Auth.Register", ip);
 
         var normalizedEmail = dto.Email.Trim().ToLower();
-        var exists = await db.Users.AnyAsync(u => u.Email == normalizedEmail);
+        var exists = await db.Users.AnyAsync(u => u.Email == normalizedEmail, ct);
         if (exists)
-            throw new InvalidOperationException("User already exists");
+            throw new ValidationException("User already exists");
         var user = new User
         {
             Id = Guid.NewGuid(),
@@ -31,22 +32,22 @@ public class AuthService(AppDbContext db, IConfiguration config, IRateLimitServi
             CreatedAt = DateTimeOffset.UtcNow
         };
         db.Users.Add(user);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(ct);
 
         var (refreshTokenEntity, rawRefreshToken) = CreateRefreshToken(user, Guid.NewGuid());
         db.RefreshTokens.Add(refreshTokenEntity);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(ct);
 
         var accessToken = GenerateAccessToken(user);
         return new AuthResult(accessToken.Token, accessToken.ExpiresAt, rawRefreshToken, refreshTokenEntity.ExpiresAt);
     }
 
-    public async Task<AuthResult> LoginAsync(UserDto dto, string ip)
+    public async Task<AuthResult> LoginAsync(UserDto dto, string ip, CancellationToken ct)
     {
         await rateLimit.CheckAsync("Auth.Login", ip);
 
         var normalizedEmail = dto.Email.Trim().ToLower();
-        var user = await db.Users.FirstOrDefaultAsync(u => u.Email == normalizedEmail);
+        var user = await db.Users.FirstOrDefaultAsync(u => u.Email == normalizedEmail, ct);
         if (user is null || !BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash))
         {
             db.FailedLoginAttempts.Add(new FailedLoginAttempt
@@ -56,26 +57,26 @@ public class AuthService(AppDbContext db, IConfiguration config, IRateLimitServi
                 OccurredAtUtc = DateTimeOffset.UtcNow,
                 Reason = "Invalid credentials"
             });
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(ct);
             throw new UnauthorizedAccessException("Invalid credentials");
         }
 
         var (refreshTokenEntity, rawRefreshToken) = CreateRefreshToken(user, Guid.NewGuid());
         db.RefreshTokens.Add(refreshTokenEntity);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(ct);
 
         var accessToken = GenerateAccessToken(user);
         return new AuthResult(accessToken.Token, accessToken.ExpiresAt, rawRefreshToken, refreshTokenEntity.ExpiresAt);
     }
 
-    public async Task<AuthResult> RefreshAsync(string refreshToken, string ip)
+    public async Task<AuthResult> RefreshAsync(string refreshToken, string ip, CancellationToken ct)
     {
         await rateLimit.CheckAsync("Auth.Refresh", ip);
 
         var hashedRefreshToken = HashToken(refreshToken);
         var token = await db.RefreshTokens
             .Include(rt => rt.User)
-            .FirstOrDefaultAsync(rt => rt.Token == hashedRefreshToken && rt.ExpiresAt > DateTimeOffset.UtcNow)
+            .FirstOrDefaultAsync(rt => rt.Token == hashedRefreshToken && rt.ExpiresAt > DateTimeOffset.UtcNow, ct)
             ?? throw new UnauthorizedAccessException("Invalid refresh token");
 
         if (!token.IsRevoked)
@@ -85,19 +86,19 @@ public class AuthService(AppDbContext db, IConfiguration config, IRateLimitServi
                 .Where(rt => rt.Id == token.Id && !rt.IsRevoked)
                 .ExecuteUpdateAsync(s => s
                     .SetProperty(rt => rt.IsRevoked, true)
-                    .SetProperty(rt => rt.RotatedAt, DateTimeOffset.UtcNow));
+                    .SetProperty(rt => rt.RotatedAt, DateTimeOffset.UtcNow), ct);
 
             if (revoked > 0)
             {
                 var (newRt, rawRt) = CreateRefreshToken(token.User, token.FamilyId);
                 db.RefreshTokens.Add(newRt);
-                await db.SaveChangesAsync();
+                await db.SaveChangesAsync(ct);
                 var newAccess = GenerateAccessToken(token.User);
                 return new AuthResult(newAccess.Token, newAccess.ExpiresAt, rawRt, newRt.ExpiresAt);
             }
 
             // Race: another parallel request just revoked this token — reload to get RotatedAt
-            await db.Entry(token).ReloadAsync();
+            await db.Entry(token).ReloadAsync(ct);
         }
 
         // Token is revoked — check grace window for idempotent response
@@ -105,7 +106,7 @@ public class AuthService(AppDbContext db, IConfiguration config, IRateLimitServi
         {
             var (newRt, rawRt) = CreateRefreshToken(token.User, token.FamilyId);
             db.RefreshTokens.Add(newRt);
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(ct);
             var newAccess = GenerateAccessToken(token.User);
             return new AuthResult(newAccess.Token, newAccess.ExpiresAt, rawRt, newRt.ExpiresAt);
         }
@@ -113,21 +114,24 @@ public class AuthService(AppDbContext db, IConfiguration config, IRateLimitServi
         // Reuse detected outside grace window — revoke entire token family
         await db.RefreshTokens
             .Where(rt => rt.FamilyId == token.FamilyId && !rt.IsRevoked)
-            .ExecuteUpdateAsync(s => s.SetProperty(rt => rt.IsRevoked, true));
+            .ExecuteUpdateAsync(s => s.SetProperty(rt => rt.IsRevoked, true), ct);
 
         throw new UnauthorizedAccessException("Invalid refresh token");
     }
 
-    public async Task LogoutAsync(Guid userId)
+    public async Task LogoutAsync(string refreshToken, CancellationToken ct)
     {
-        var tokens = await db.RefreshTokens
+        var hash = HashToken(refreshToken);
+        await db.RefreshTokens
+            .Where(rt => rt.Token == hash && !rt.IsRevoked)
+            .ExecuteUpdateAsync(s => s.SetProperty(rt => rt.IsRevoked, true), ct);
+    }
+
+    public async Task LogoutAllAsync(Guid userId, CancellationToken ct)
+    {
+        await db.RefreshTokens
             .Where(rt => rt.UserId == userId && !rt.IsRevoked)
-            .ToListAsync();
-
-        foreach (var token in tokens)
-            token.IsRevoked = true;
-
-        await db.SaveChangesAsync();
+            .ExecuteUpdateAsync(s => s.SetProperty(rt => rt.IsRevoked, true), ct);
     }
 
     private AccessToken GenerateAccessToken(User user)
