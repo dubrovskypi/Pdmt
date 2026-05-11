@@ -17,9 +17,6 @@ public class EventService(AppDbContext db) : IEventService
         int? maxIntensity,
         CancellationToken ct)
     {
-        if (userId == Guid.Empty)
-            throw new ArgumentException("User ID cannot be empty.", nameof(userId));
-
         var query = db.Events
             .AsNoTracking()
             .Where(e => e.UserId == userId);
@@ -47,9 +44,6 @@ public class EventService(AppDbContext db) : IEventService
 
     public async Task<EventResponseDto?> GetByIdAsync(Guid userId, Guid id, CancellationToken ct)
     {
-        if (userId == Guid.Empty)
-            throw new ArgumentException("User ID cannot be empty.", nameof(userId));
-
         var ev = await db.Events
             .AsNoTracking()
             .Include(e => e.EventTags)
@@ -61,11 +55,6 @@ public class EventService(AppDbContext db) : IEventService
 
     public async Task<EventResponseDto> CreateEventAsync(Guid userId, CreateEventDto ev, CancellationToken ct)
     {
-        if (ev is null)
-            throw new ArgumentNullException(nameof(ev), "Event cannot be null.");
-        if (userId == Guid.Empty)
-            throw new ArgumentException("User ID cannot be empty.", nameof(userId));
-
         var eventId = Guid.NewGuid();
         var resolvedTags = await ResolveTagsAsync(userId, ev.TagNames, ct);
         var entity = new Event
@@ -92,9 +81,6 @@ public class EventService(AppDbContext db) : IEventService
 
     public async Task<bool> UpdateEventAsync(Guid userId, Guid id, UpdateEventDto ev, CancellationToken ct)
     {
-        if (userId == Guid.Empty)
-            throw new ArgumentException("User ID cannot be empty.", nameof(userId));
-
         var existing = await db.Events
             .Include(e => e.EventTags)
             .FirstOrDefaultAsync(e => e.Id == id && e.UserId == userId, ct);
@@ -124,9 +110,6 @@ public class EventService(AppDbContext db) : IEventService
 
     public async Task DeleteEventAsync(Guid userId, Guid id, CancellationToken ct)
     {
-        if (userId == Guid.Empty)
-            throw new ArgumentException("User ID cannot be empty.", nameof(userId));
-
         var ev = await db.Events.FirstOrDefaultAsync(e => e.Id == id && e.UserId == userId, ct);
         if (ev is null) return;
         db.Events.Remove(ev);
