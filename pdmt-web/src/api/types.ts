@@ -59,17 +59,9 @@ export interface UpdateEventDto {
 
 // --- Auth ---
 
-// Used by AuthController (/api/auth/*) — MAUI/Blazor only; React ignores refreshToken
-export interface AuthResultDto {
-  accessToken: string;
-  accessTokenExpiresAt: string;
-  refreshToken: string;
-}
-
 // Used by WebAuthController (/api/auth/web/*) — React SPA
 export interface WebAuthResultDto {
   accessToken: string;
-  accessTokenExpiresAt: string;
 }
 
 // --- Analytics ---

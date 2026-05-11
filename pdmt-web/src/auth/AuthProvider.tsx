@@ -20,33 +20,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     navigateRef.current = navigate;
   });
 
-  const setAccessToken = useCallback((token: string) => {
+  const setToken = useCallback((token: string | null) => {
     tokenRef.current = token;
     setAccessTokenState(token);
   }, []);
 
-  const clearAuth = useCallback(async () => {
-    await apiLogout().catch(() => {});
-    tokenRef.current = null;
-    setAccessTokenState(null);
+  const setAccessToken = useCallback((token: string) => setToken(token), [setToken]);
+
+  const clearAuth = useCallback(() => {
+    void apiLogout(); // best-effort: raw fetch, no retry/refresh cascade
+    setToken(null);
     void navigateRef.current("/login", { replace: true });
-  }, []);
+  }, [setToken]);
 
   // Wire up api/client.ts with token getter and callbacks (runs once on mount).
   useEffect(() => {
     initApiClient(
       () => tokenRef.current,
-      (token) => {
-        tokenRef.current = token;
-        setAccessTokenState(token);
-      },
+      (token) => setToken(token),
       () => {
-        tokenRef.current = null;
-        setAccessTokenState(null);
+        setToken(null);
         void navigateRef.current("/login", { replace: true });
       },
     );
-  }, []);
+  }, [setToken]);
 
   // Restore session from httpOnly cookie on every page load.
   useEffect(() => {

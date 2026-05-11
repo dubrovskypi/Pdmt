@@ -14,7 +14,6 @@ const mockLogout = vi.mocked(authApi.logout);
 
 const successAuth = {
   accessToken: "tok-abc",
-  accessTokenExpiresAt: "2026-04-07T01:00:00Z",
 };
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -32,7 +31,7 @@ function AuthStatus() {
 
 function LogoutButton() {
   const { clearAuth } = useAuth();
-  return <button onClick={() => { void clearAuth(); }}>logout</button>;
+  return <button onClick={clearAuth}>logout</button>;
 }
 
 function renderProvider(extraChildren?: React.ReactNode) {

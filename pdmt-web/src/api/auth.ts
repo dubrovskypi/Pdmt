@@ -1,4 +1,3 @@
-import { apiFetch } from "./client";
 import { config } from "@/config";
 import type { WebAuthResultDto } from "./types";
 import { WebAuthResultSchema } from "./schemas";
@@ -40,5 +39,8 @@ export async function refreshSilent(): Promise<WebAuthResultDto | null> {
 }
 
 export async function logout(): Promise<void> {
-  await apiFetch("/api/auth/web/logout", { method: "POST" });
+  await fetch(`${config.pdmtapi.baseUrl}/api/auth/web/logout`, {
+    method: "POST",
+    credentials: "include",
+  });
 }
